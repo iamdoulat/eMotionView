@@ -1,3 +1,4 @@
+
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -83,6 +84,26 @@ export default function AdminSettingsPage() {
           <Button asChild>
             <Link href="/admin/settings/footer">
                 Edit Footer
+                <ArrowRight className="ml-2 h-4 w-4" />
+            </Link>
+          </Button>
+        </CardFooter>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>Communication</CardTitle>
+          <CardDescription>Configure email notifications and customer support options.</CardDescription>
+        </CardHeader>
+        <CardContent>
+            <p className="text-sm text-muted-foreground">
+                Manage automated emails, SMS alerts, and how customers contact you.
+            </p>
+        </CardContent>
+        <CardFooter>
+          <Button asChild>
+            <Link href="/admin/settings/communication">
+                Configure Communication
                 <ArrowRight className="ml-2 h-4 w-4" />
             </Link>
           </Button>
