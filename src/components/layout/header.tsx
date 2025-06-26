@@ -109,7 +109,7 @@ export function Header() {
             <div className="hidden lg:flex">
               <DropdownMenu>
                   <DropdownMenuTrigger asChild>
-                      <Button variant="outline" className="items-center gap-2">
+                      <Button>
                           <LayoutGrid className="h-5 w-5" />
                           All Categories
                       </Button>
