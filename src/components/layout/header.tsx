@@ -1,4 +1,3 @@
-
 "use client"
 
 import React, { useState, useEffect } from "react"
@@ -45,7 +44,7 @@ export function Header() {
     <header className="sticky top-0 z-50 w-full bg-background/95 backdrop-blur-sm">
       {/* Top Bar (hides on scroll) */}
       <div className={cn(
-        "hidden md:block bg-secondary/50 text-xs text-foreground transition-all duration-300",
+        "hidden md:block bg-secondary/50 text-xs text-black transition-all duration-300",
         isScrolled ? 'h-0 opacity-0 overflow-hidden' : 'h-8'
       )}>
         <div className="container mx-auto flex h-full items-center justify-between px-4">
@@ -91,7 +90,7 @@ export function Header() {
           <div className="flex items-center justify-end">
             <Button variant="ghost" size="icon" asChild className="relative">
               <Link href="/cart" aria-label="Shopping Cart">
-                <ShoppingCart className="h-6 w-6" />
+                <ShoppingCart className="h-7 w-7" />
                 <Badge variant="destructive" className="absolute -top-1 -right-1 h-5 w-5 justify-center rounded-full p-0 text-xs">3</Badge>
               </Link>
             </Button>
@@ -145,7 +144,7 @@ export function Header() {
                 </Button>
                 <Button variant="ghost" size="icon" asChild className="relative">
                 <Link href="/cart" aria-label="Shopping Cart">
-                    <ShoppingCart className="h-6 w-6" />
+                    <ShoppingCart className="h-7 w-7" />
                     <Badge variant="destructive" className="absolute -top-1 -right-1 h-5 w-5 justify-center rounded-full p-0 text-xs">3</Badge>
                 </Link>
                 </Button>
@@ -190,7 +189,7 @@ export function Header() {
           </Link>
           <Button variant="ghost" size="icon" asChild className="relative">
             <Link href="/cart" aria-label="Shopping Cart">
-              <ShoppingCart className="h-6 w-6" />
+              <ShoppingCart className="h-7 w-7" />
               <Badge variant="destructive" className="absolute -top-1 -right-1 h-5 w-5 justify-center rounded-full p-0 text-xs">3</Badge>
             </Link>
           </Button>
