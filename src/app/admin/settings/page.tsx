@@ -1,15 +1,53 @@
-import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { ArrowRight } from "lucide-react";
+import Link from "next/link";
 
 export default function AdminSettingsPage() {
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle>Settings</CardTitle>
-        <CardDescription>Manage your store's settings here. This page is under construction.</CardDescription>
-      </CardHeader>
-      <CardContent>
-        <p>Coming soon...</p>
-      </CardContent>
-    </Card>
+    <div className="space-y-8">
+       <h1 className="text-3xl font-bold tracking-tight">Settings</h1>
+      <Card>
+        <CardHeader>
+          <CardTitle>Store Settings</CardTitle>
+          <CardDescription>Manage your store's basic information.</CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="space-y-2">
+            <Label htmlFor="store-name">Store Name</Label>
+            <Input id="store-name" defaultValue="eMotionView" />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="store-email">Contact Email</Label>
+            <Input id="store-email" type="email" defaultValue="contact@emotionview.com" />
+          </div>
+        </CardContent>
+        <CardFooter>
+          <Button>Save Store Info</Button>
+        </CardFooter>
+      </Card>
+      
+      <Card>
+        <CardHeader>
+          <CardTitle>Homepage Customization</CardTitle>
+          <CardDescription>Customize the layout and content of your homepage.</CardDescription>
+        </CardHeader>
+        <CardContent>
+            <p className="text-sm text-muted-foreground">
+                Control the hero banner, featured sections, and more to create a unique look for your store.
+            </p>
+        </CardContent>
+        <CardFooter>
+          <Button asChild>
+            <Link href="/admin/settings/homepage">
+                Customize Homepage
+                <ArrowRight className="ml-2 h-4 w-4" />
+            </Link>
+          </Button>
+        </CardFooter>
+      </Card>
+    </div>
   );
 }
