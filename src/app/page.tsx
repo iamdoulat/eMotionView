@@ -41,7 +41,7 @@ export default function HomePage() {
     <div className="flex flex-col">
       {/* Hero Section */}
       <section className="bg-background">
-        <div className="container mx-auto px-4 py-6">
+        <div className="container mx-auto px-4 py-3">
             <div className="grid grid-cols-1 lg:grid-cols-4 gap-6 items-start">
                 {/* Category Menu */}
                 <div className="hidden lg:block lg:col-span-1">
@@ -90,7 +90,7 @@ export default function HomePage() {
       </section>
 
       {/* Three Banners Section */}
-      <section className="container mx-auto px-4 py-8">
+      <section className="container mx-auto px-4 py-4">
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           <Link href="#" className="block rounded-lg overflow-hidden group">
             <Image
@@ -127,8 +127,8 @@ export default function HomePage() {
 
 
       {/* Shop by Category Section */}
-      <section className="container mx-auto px-4 pb-16">
-        <div className="text-center mb-12">
+      <section className="container mx-auto px-4 py-8">
+        <div className="text-center mb-6">
           <h2 className="font-headline text-3xl font-bold tracking-tight text-foreground">Explore Popular Categories</h2>
           <p className="text-muted-foreground mt-2 max-w-2xl mx-auto">Find your preferred item in the highlighted product selection.</p>
         </div>
@@ -162,7 +162,7 @@ export default function HomePage() {
       </section>
 
       {/* New Arrival Products */}
-      <section className="container mx-auto px-4 py-16">
+      <section className="container mx-auto px-4 py-8">
         <div className="flex justify-between items-center mb-8 border-b pb-4">
           <h2 className="font-headline text-2xl font-bold tracking-tight text-foreground">New Arrival</h2>
           <Button asChild variant="link" className="text-primary">
@@ -177,7 +177,7 @@ export default function HomePage() {
       </section>
 
       {/* Promotional Banners Section */}
-      <section className="container mx-auto px-4 py-16">
+      <section className="container mx-auto px-4 py-8">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <Link href="#" className="block rounded-lg overflow-hidden group">
             <Image
@@ -203,7 +203,7 @@ export default function HomePage() {
       </section>
 
       {/* Popular Products */}
-      <section className="container mx-auto px-4 py-16">
+      <section className="container mx-auto px-4 py-8">
         <div className="flex justify-between items-center mb-8 border-b pb-4">
           <h2 className="font-headline text-2xl font-bold tracking-tight text-foreground">Popular Products</h2>
           <Button asChild variant="link" className="text-primary">
@@ -218,7 +218,7 @@ export default function HomePage() {
       </section>
 
       {/* Smart Watches Section */}
-      <section className="container mx-auto px-4 py-16">
+      <section className="container mx-auto px-4 py-8">
         <div className="mb-8">
           <Link href="/products?category=Wearables" className="block rounded-lg overflow-hidden group">
             <Image
@@ -245,7 +245,7 @@ export default function HomePage() {
       </section>
 
       {/* Headphones Section */}
-      <section className="container mx-auto px-4 py-16">
+      <section className="container mx-auto px-4 py-8">
         <div className="mb-8">
           <Link href="/products?category=Audio" className="block rounded-lg overflow-hidden group">
             <Image
