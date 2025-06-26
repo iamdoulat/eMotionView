@@ -15,6 +15,8 @@ const poppins = Poppins({
 export const metadata: Metadata = {
   title: 'eMotionView',
   description: 'AI-Powered Product Recommendations',
+  manifest: '/manifest.json',
+  themeColor: "#8B5CF6",
 };
 
 export default function RootLayout({
