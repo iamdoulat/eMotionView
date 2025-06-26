@@ -15,7 +15,6 @@ const categoryLinks = [
     { name: 'Charger & Cables', href: '/products?category=Accessories' },
     { name: 'Powerbanks', href: '/products?category=Accessories' },
     { name: 'Network Components', href: '/products?category=Accessories' },
-    { name: 'Health & Outdoors', href: '/products?category=Accessories' },
 ];
 
 export function CategoryMenu() {
