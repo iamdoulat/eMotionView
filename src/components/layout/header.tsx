@@ -45,7 +45,7 @@ export function Header() {
     <header className="sticky top-0 z-50 w-full bg-background/95 backdrop-blur-sm">
       {/* Top Bar (hides on scroll) */}
       <div className={cn(
-        "hidden md:block bg-secondary/50 text-xs text-muted-foreground transition-all duration-300",
+        "hidden md:block bg-secondary/50 text-xs text-foreground transition-all duration-300",
         isScrolled ? 'h-0 opacity-0 overflow-hidden' : 'h-8'
       )}>
         <div className="container mx-auto flex h-full items-center justify-between px-4">
@@ -57,12 +57,12 @@ export function Header() {
               <Phone className="h-4 w-4" />
               09677460460
             </a>
-            <span className="text-gray-300">|</span>
+            <span className="text-muted-foreground">|</span>
             <Link href="/sign-in" className="flex items-center gap-1 hover:text-primary">
               <User className="h-4 w-4" />
               Login
             </Link>
-             <span className="text-gray-300">|</span>
+             <span className="text-muted-foreground">|</span>
              <Link href="/account/orders" className="flex items-center gap-1 hover:text-primary">
                 <MapPin className="h-4 w-4" />
                 Order Track
