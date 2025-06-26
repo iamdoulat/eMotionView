@@ -5,6 +5,7 @@ import { ProductCard } from '@/components/product-card';
 import { products } from '@/lib/placeholder-data';
 import { ArrowRight, Star, Tag, Truck } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
+import { CategoryMenu } from '@/components/category-menu';
 
 export default function HomePage() {
   const featuredProducts = products.slice(0, 4);
@@ -26,34 +27,40 @@ export default function HomePage() {
     <div className="flex flex-col bg-secondary/50">
       {/* Hero Section */}
       <section className="bg-background">
-        <div className="container mx-auto px-4 py-6 flex flex-col gap-6">
-            
-            {/* Hero Banner */}
-            <div className="w-full">
-              <div className="relative h-64 md:h-[425px] w-full rounded-lg overflow-hidden group">
-                <Image 
-                  src="https://placehold.co/1200x425.png"
-                  alt="Stay Powered Anywhere, Anytime"
-                  fill
-                  style={{objectFit: 'cover'}}
-                  className="transition-transform duration-300 group-hover:scale-105"
-                  data-ai-hint="power banks sale"
-                  priority
-                />
-                 <div className="absolute inset-0 bg-gradient-to-r from-black/50 to-transparent p-8 md:p-16 flex flex-col justify-center items-start">
-                    <h1 className="font-headline text-3xl font-bold tracking-tight text-white sm:text-5xl max-w-md">
-                        Stay Powered <br/> Anywhere, Anytime
-                    </h1>
-                    <p className="mt-4 text-lg leading-8 text-neutral-200 max-w-md">
-                        Explore Our Range of High-Capacity Power Banks
-                    </p>
-                    <div className="mt-6">
-                        <Button asChild size="lg">
-                            <Link href="/products?category=Accessories">Shop Now</Link>
-                        </Button>
-                    </div>
+        <div className="container mx-auto px-4 py-6">
+            <div className="grid grid-cols-1 lg:grid-cols-4 gap-6 items-stretch">
+                {/* Category Menu */}
+                <div className="hidden lg:block lg:col-span-1">
+                    <CategoryMenu />
                 </div>
-              </div>
+
+                {/* Hero Banner */}
+                <div className="lg:col-span-3">
+                  <div className="relative h-64 md:h-full w-full rounded-lg overflow-hidden group">
+                    <Image 
+                      src="https://placehold.co/900x440.png"
+                      alt="Stay Powered Anywhere, Anytime"
+                      fill
+                      style={{objectFit: 'cover'}}
+                      className="transition-transform duration-300 group-hover:scale-105"
+                      data-ai-hint="power banks sale"
+                      priority
+                    />
+                     <div className="absolute inset-0 bg-gradient-to-r from-black/50 to-transparent p-8 md:p-16 flex flex-col justify-center items-start">
+                        <h1 className="font-headline text-3xl font-bold tracking-tight text-white sm:text-5xl max-w-md">
+                            Stay Powered <br/> Anywhere, Anytime
+                        </h1>
+                        <p className="mt-4 text-lg leading-8 text-neutral-200 max-w-md">
+                            Explore Our Range of High-Capacity Power Banks
+                        </p>
+                        <div className="mt-6">
+                            <Button asChild size="lg">
+                                <Link href="/products?category=Accessories">Shop Now</Link>
+                            </Button>
+                        </div>
+                    </div>
+                  </div>
+                </div>
             </div>
         </div>
       </section>
