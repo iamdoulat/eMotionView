@@ -46,6 +46,7 @@ export default function AdminUsersPage() {
             <TableHeader>
               <TableRow>
                 <TableHead>Customer</TableHead>
+                <TableHead>Role</TableHead>
                 <TableHead>Status</TableHead>
                 <TableHead className="hidden md:table-cell">Registered</TableHead>
                 <TableHead className="hidden lg:table-cell">Last Login</TableHead>
@@ -68,6 +69,9 @@ export default function AdminUsersPage() {
                         <p className="text-sm text-muted-foreground">{user.email}</p>
                       </div>
                     </div>
+                  </TableCell>
+                  <TableCell>
+                    <Badge variant={user.role === 'Admin' ? 'destructive' : 'outline'}>{user.role}</Badge>
                   </TableCell>
                   <TableCell>
                     <Badge variant={user.status === 'Active' ? 'default' : 'secondary'}>{user.status}</Badge>
@@ -136,6 +140,21 @@ export default function AdminUsersPage() {
                     <SelectContent>
                         <SelectItem value="Active">Active</SelectItem>
                         <SelectItem value="Inactive">Inactive</SelectItem>
+                    </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="role">Role</Label>
+                 <Select
+                    value={userToEdit.role}
+                    onValueChange={(value: 'Admin' | 'Customer') => setUserToEdit({ ...userToEdit, role: value })}
+                >
+                    <SelectTrigger id="role">
+                        <SelectValue placeholder="Select role" />
+                    </SelectTrigger>
+                    <SelectContent>
+                        <SelectItem value="Admin">Admin</SelectItem>
+                        <SelectItem value="Customer">Customer</SelectItem>
                     </SelectContent>
                 </Select>
               </div>

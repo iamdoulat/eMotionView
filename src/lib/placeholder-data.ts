@@ -48,6 +48,7 @@ export type User = {
   registeredDate: string;
   status: 'Active' | 'Inactive';
   lastLogin: string;
+  role: 'Admin' | 'Customer';
 };
 
 export const products: Product[] = [
@@ -348,6 +349,7 @@ export const users: User[] = [
     registeredDate: '2024-05-01',
     status: 'Active',
     lastLogin: '2024-05-22T10:00:00Z',
+    role: 'Admin',
   },
   {
     id: '2',
@@ -357,6 +359,7 @@ export const users: User[] = [
     registeredDate: '2024-04-15',
     status: 'Active',
     lastLogin: '2024-05-21T14:30:00Z',
+    role: 'Customer',
   },
   {
     id: '3',
@@ -366,6 +369,7 @@ export const users: User[] = [
     registeredDate: '2024-03-20',
     status: 'Inactive',
     lastLogin: '2024-04-25T08:00:00Z',
+    role: 'Customer',
   },
   {
     id: '4',
@@ -375,6 +379,7 @@ export const users: User[] = [
     registeredDate: '2024-02-10',
     status: 'Active',
     lastLogin: '2024-05-22T11:00:00Z',
+    role: 'Customer',
   },
   {
     id: '5',
@@ -384,5 +389,6 @@ export const users: User[] = [
     registeredDate: '2024-01-05',
     status: 'Active',
     lastLogin: '2024-05-20T18:45:00Z',
+    role: 'Customer',
   },
 ];
