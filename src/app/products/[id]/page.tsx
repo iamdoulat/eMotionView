@@ -1,3 +1,4 @@
+
 "use client";
 
 import Image from 'next/image';
@@ -156,6 +157,8 @@ export default function ProductDetailPage({ params }: { params: { id: string } }
               <TabsTrigger value="specification" className="data-[state=active]:border-b-2 data-[state=active]:border-primary data-[state=active]:text-foreground data-[state=active]:shadow-none rounded-none bg-transparent text-lg font-semibold py-3 mr-4">Specification</TabsTrigger>
               <TabsTrigger value="description" className="data-[state=active]:border-b-2 data-[state=active]:border-primary data-[state=active]:text-foreground data-[state=active]:shadow-none rounded-none bg-transparent text-lg font-semibold py-3 mr-4">Description</TabsTrigger>
               <TabsTrigger value="reviews" className="data-[state=active]:border-b-2 data-[state=active]:border-primary data-[state=active]:text-foreground data-[state=active]:shadow-none rounded-none bg-transparent text-lg font-semibold py-3 mr-4">Reviews</TabsTrigger>
+              <TabsTrigger value="questions" className="data-[state=active]:border-b-2 data-[state=active]:border-primary data-[state=active]:text-foreground data-[state=active]:shadow-none rounded-none bg-transparent text-lg font-semibold py-3 mr-4">Questions</TabsTrigger>
+              <TabsTrigger value="video" className="data-[state=active]:border-b-2 data-[state=active]:border-primary data-[state=active]:text-foreground data-[state=active]:shadow-none rounded-none bg-transparent text-lg font-semibold py-3 mr-4">Video</TabsTrigger>
             </TabsList>
             <TabsContent value="specification" className="mt-6">
               <Card>
@@ -185,6 +188,35 @@ export default function ProductDetailPage({ params }: { params: { id: string } }
             </TabsContent>
             <TabsContent value="reviews" className="mt-6">
               <Reviews productId={product.id} reviews={productReviews} averageRating={product.rating} />
+            </TabsContent>
+            <TabsContent value="questions" className="mt-6">
+              <Card>
+                <CardHeader>
+                  <CardTitle>Questions & Answers</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <p className="text-muted-foreground">No questions have been asked yet. Be the first!</p>
+                </CardContent>
+              </Card>
+            </TabsContent>
+            <TabsContent value="video" className="mt-6">
+              <Card>
+                <CardHeader>
+                  <CardTitle>Product Video</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="aspect-video">
+                    <iframe
+                      className="w-full h-full rounded-lg"
+                      src="https://www.youtube.com/embed/dQw4w9WgXcQ"
+                      title="Product Video"
+                      frameBorder="0"
+                      allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                      allowFullScreen
+                    ></iframe>
+                  </div>
+                </CardContent>
+              </Card>
             </TabsContent>
           </Tabs>
         </div>
