@@ -1,12 +1,18 @@
+"use client";
+
 import Image from 'next/image';
-import { products, reviews } from '@/lib/placeholder-data';
+import { products, reviews as allReviews } from '@/lib/placeholder-data';
 import { notFound } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Star, Heart, ShoppingCart, CheckCircle } from 'lucide-react';
-import { Separator } from '@/components/ui/separator';
+import { Star, Heart, ShieldCheck } from 'lucide-react';
 import { Reviews } from '@/components/reviews';
-import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from '@/components/ui/carousel';
+import { Breadcrumb } from '@/components/breadcrumb';
+import { useState } from 'react';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { Table, TableBody, TableCell, TableRow } from "@/components/ui/table"
+import Link from 'next/link';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 
 export default function ProductDetailPage({ params }: { params: { id: string } }) {
   const product = products.find(p => p.id === params.id);
@@ -15,82 +21,173 @@ export default function ProductDetailPage({ params }: { params: { id: string } }
     notFound();
   }
 
-  const productReviews = reviews.filter(r => r.productId === params.id);
+  const [selectedImage, setSelectedImage] = useState(product.images[0]);
+  const productReviews = allReviews.filter(r => r.productId === params.id);
 
   return (
-    <div className="container mx-auto px-4 py-8">
-      <div className="grid md:grid-cols-2 gap-8 lg:gap-12">
-        <div>
-          <Carousel className="w-full">
-            <CarouselContent>
-              {product.images.map((img, index) => (
-                <CarouselItem key={index}>
-                  <Image
-                    src={img}
-                    alt={`${product.name} image ${index + 1}`}
-                    width={600}
-                    height={600}
-                    className="w-full h-auto object-cover rounded-lg border"
-                    data-ai-hint={`${product.category} product`}
-                  />
-                </CarouselItem>
-              ))}
-            </CarouselContent>
-            <CarouselPrevious className="left-4" />
-            <CarouselNext className="right-4" />
-          </Carousel>
+    <div className="bg-background">
+      <div className="container mx-auto px-4 py-6">
+        <Breadcrumb
+          items={[
+            { label: 'Home', href: '/' },
+            { label: 'Products', href: '/products' },
+            { label: product.category, href: `/products?category=${product.category}` },
+            { label: product.name, href: `/products/${product.id}` },
+          ]}
+        />
+        
+        <div className="mt-6 grid grid-cols-1 lg:grid-cols-12 gap-8">
+          <div className="lg:col-span-9">
+            <div className="grid md:grid-cols-2 gap-8 bg-card p-6 rounded-lg border">
+              {/* Image Gallery */}
+              <div className="flex flex-col items-center">
+                  <div className="w-full max-w-md aspect-square relative">
+                    <Image
+                      src={selectedImage}
+                      alt={product.name}
+                      fill
+                      className="w-full h-full object-contain rounded-lg"
+                      data-ai-hint={`${product.category} product`}
+                    />
+                  </div>
+                  <div className="flex gap-2 mt-4">
+                    {product.images.map((img, index) => (
+                      <button
+                        key={index}
+                        onClick={() => setSelectedImage(img)}
+                        className={`w-16 h-16 rounded-md border-2 p-1 ${selectedImage === img ? 'border-primary' : 'border-transparent'}`}
+                      >
+                        <Image
+                          src={img}
+                          alt={`${product.name} thumbnail ${index + 1}`}
+                          width={60}
+                          height={60}
+                          className="w-full h-full object-contain"
+                          data-ai-hint={`${product.category} product`}
+                        />
+                      </button>
+                    ))}
+                  </div>
+              </div>
+              
+              {/* Product Info */}
+              <div className="flex flex-col">
+                <h1 className="font-headline text-2xl font-bold text-foreground">{product.name}</h1>
+                
+                <ul className="mt-4 space-y-2 text-sm text-foreground">
+                  {product.features.map((feature, index) => (
+                    <li key={index} className="flex items-center gap-2">
+                      <span className="text-primary">•</span>
+                      <span>{feature}</span>
+                    </li>
+                  ))}
+                   <li className="flex items-center gap-2 font-medium">
+                      <ShieldCheck className="h-4 w-4 text-primary" />
+                      <span>1 Year Brand Warranty</span>
+                    </li>
+                </ul>
+
+                <div className="mt-4 flex items-baseline gap-2">
+                  <p className="text-3xl font-bold text-primary">৳{product.price.toFixed(2)}</p>
+                  {product.originalPrice && (
+                     <p className="text-xl text-muted-foreground line-through">৳{product.originalPrice.toFixed(2)}</p>
+                  )}
+                  {product.discountPercentage && (
+                    <Badge variant="destructive">{product.discountPercentage}% OFF</Badge>
+                  )}
+                </div>
+
+                <div className="mt-2 flex items-center gap-4">
+                  <div className="flex items-center">
+                    {[...Array(5)].map((_, i) => (
+                      <Star
+                        key={i}
+                        className={`h-5 w-5 ${i < Math.round(product.rating) ? 'text-yellow-400 fill-yellow-400' : 'text-gray-300'}`}
+                      />
+                    ))}
+                  </div>
+                   <button className="text-muted-foreground hover:text-primary">
+                      <Heart className="h-6 w-6" />
+                   </button>
+                </div>
+
+                <div className="mt-6">
+                    <p className="text-sm font-medium mb-2">Color:</p>
+                    <div className="flex gap-2">
+                        <Button variant="outline" size="icon" className="h-8 w-8 rounded-full border-2 border-primary ring-1 ring-primary ring-offset-2">
+                            <div className="h-5 w-5 rounded-full bg-gray-800" />
+                        </Button>
+                         <Button variant="outline" size="icon" className="h-8 w-8 rounded-full">
+                            <div className="h-5 w-5 rounded-full bg-slate-400" />
+                        </Button>
+                    </div>
+                </div>
+                
+                <div className="mt-auto pt-6 flex flex-col sm:flex-row gap-4">
+                  <Button size="lg" className="flex-1 bg-green-600 hover:bg-green-700 text-primary-foreground">
+                    Add To Cart
+                  </Button>
+                  <Button size="lg" className="flex-1">
+                    Buy Now
+                  </Button>
+                </div>
+              </div>
+            </div>
+          </div>
+          
+          {/* Right Ad */}
+          <div className="lg:col-span-3 hidden lg:block">
+            <Link href="#">
+               <Image
+                  src="https://placehold.co/300x500.png"
+                  alt="Advertisement"
+                  width={300}
+                  height={500}
+                  className="w-full h-auto object-cover rounded-lg"
+                  data-ai-hint="product advertisement"
+                />
+            </Link>
+          </div>
         </div>
         
-        <div className="flex flex-col">
-          <Badge variant="outline" className="w-fit mb-2">{product.category}</Badge>
-          <h1 className="font-headline text-3xl lg:text-4xl font-bold text-foreground">{product.name}</h1>
-          <div className="flex items-center mt-4">
-            <div className="flex items-center">
-              {[...Array(5)].map((_, i) => (
-                <Star
-                  key={i}
-                  className={`h-5 w-5 ${i < Math.round(product.rating) ? 'text-yellow-400 fill-yellow-400' : 'text-gray-300'}`}
-                />
-              ))}
-            </div>
-            <a href="#reviews" className="ml-3 text-sm font-medium text-primary hover:text-primary/80">
-              {product.reviewCount} reviews
-            </a>
-          </div>
-          
-          <p className="mt-4 text-3xl font-bold text-primary">${product.price.toFixed(2)}</p>
-          
-          <p className="mt-6 text-muted-foreground">{product.description}</p>
-
-          <div className="mt-8">
-            <h3 className="text-lg font-semibold font-headline">Key Features</h3>
-            <ul className="mt-4 space-y-2">
-              {product.features.map((feature, index) => (
-                <li key={index} className="flex items-center gap-3">
-                  <CheckCircle className="h-5 w-5 text-green-500" />
-                  <span className="text-foreground">{feature}</span>
-                </li>
-              ))}
-            </ul>
-          </div>
-          
-          <div className="mt-auto pt-8 flex gap-4">
-            <Button size="lg" className="flex-1">
-              <ShoppingCart className="mr-2 h-5 w-5" />
-              Add to Cart
-            </Button>
-            <Button size="lg" variant="outline" className="flex-1">
-              <Heart className="mr-2 h-5 w-5" />
-              Add to Wishlist
-            </Button>
-          </div>
+        <div className="mt-12">
+          <Tabs defaultValue="specification" className="w-full">
+            <TabsList className="border-b-2 border-border rounded-none bg-transparent p-0 h-auto justify-start">
+              <TabsTrigger value="specification" className="data-[state=active]:border-b-2 data-[state=active]:border-primary data-[state=active]:text-foreground data-[state=active]:shadow-none rounded-none bg-transparent text-lg font-semibold py-3 mr-4">Specification</TabsTrigger>
+              <TabsTrigger value="description" className="data-[state=active]:border-b-2 data-[state=active]:border-primary data-[state=active]:text-foreground data-[state=active]:shadow-none rounded-none bg-transparent text-lg font-semibold py-3 mr-4">Description</TabsTrigger>
+              <TabsTrigger value="reviews" className="data-[state=active]:border-b-2 data-[state=active]:border-primary data-[state=active]:text-foreground data-[state=active]:shadow-none rounded-none bg-transparent text-lg font-semibold py-3 mr-4">Reviews</TabsTrigger>
+            </TabsList>
+            <TabsContent value="specification" className="mt-6">
+              <Card>
+                <CardHeader>
+                  <CardTitle>General Information</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <Table>
+                    <TableBody>
+                      {Object.entries(product.specifications).map(([key, value]) => (
+                        <TableRow key={key}>
+                          <TableCell className="font-medium w-1/3">{key}</TableCell>
+                          <TableCell>{value}</TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </CardContent>
+              </Card>
+            </TabsContent>
+            <TabsContent value="description" className="mt-6">
+               <Card>
+                <CardContent className="pt-6">
+                  <p className="text-muted-foreground">{product.description}</p>
+                </CardContent>
+              </Card>
+            </TabsContent>
+            <TabsContent value="reviews" className="mt-6">
+              <Reviews productId={product.id} reviews={productReviews} averageRating={product.rating} />
+            </TabsContent>
+          </Tabs>
         </div>
-      </div>
-      
-      <Separator className="my-12" />
-      
-      <div id="reviews">
-        <Reviews productId={product.id} reviews={productReviews} averageRating={product.rating} />
       </div>
     </div>
   );

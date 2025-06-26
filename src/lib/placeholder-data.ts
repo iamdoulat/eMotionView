@@ -11,6 +11,7 @@ export type Product = {
   reviewCount: number;
   images: string[];
   features: string[];
+  specifications: Record<string, string>;
 };
 
 export type Review = {
@@ -53,6 +54,14 @@ export const products: Product[] = [
     reviewCount: 256,
     images: ['https://placehold.co/600x600.png', 'https://placehold.co/600x600.png', 'https://placehold.co/600x600.png'],
     features: ['3ATM Water Resistance', 'Heart Rate Monitoring', 'Multiple Sports Modes', 'Call & Message Notifications', 'Long Battery Life'],
+    specifications: {
+      'Display': '1.5" IPS Screen',
+      'Water Resistance': '3ATM',
+      'Bluetooth': 'v5.2',
+      'Modes': 'Multiple Sports Modes',
+      'Features': 'Call & Message Notifications',
+      'Battery': 'Long Battery Life',
+    }
   },
   {
     id: '2',
@@ -65,6 +74,13 @@ export const products: Product[] = [
     reviewCount: 412,
     images: ['https://placehold.co/600x600.png', 'https://placehold.co/600x600.png', 'https://placehold.co/600x600.png'],
     features: ['28dB Active Noise Cancellation', 'Bluetooth 5.3', 'Low Latency Game Mode', 'Up to 30 Hours Playtime', 'Crystal Clear Calls'],
+    specifications: {
+      'Noise Cancellation': '28dB ANC',
+      'Bluetooth': 'v5.3',
+      'Game Mode': 'Low Latency',
+      'Playtime': 'Up to 30 Hours with charging case',
+      'Microphone': 'Crystal Clear Calls with ENC',
+    }
   },
   {
     id: '3',
@@ -79,6 +95,13 @@ export const products: Product[] = [
     reviewCount: 890,
     images: ['https://placehold.co/600x600.png', 'https://placehold.co/600x600.png', 'https://placehold.co/600x600.png'],
     features: ['Bluetooth Calling', '1.4" AMOLED Display', 'Heart Rate & SpO2 Monitoring', '2 ATM Water Resistance', '70 Sports Modes'],
+    specifications: {
+      'Display': '1.4" AMOLED Display',
+      'Calling': 'Bluetooth Calling',
+      'Health Monitoring': 'Heart Rate & SpO2',
+      'Water Resistance': '2 ATM',
+      'Sports Modes': '70+',
+    }
   },
   {
     id: '4',
@@ -91,6 +114,13 @@ export const products: Product[] = [
     reviewCount: 320,
     images: ['https://placehold.co/600x600.png', 'https://placehold.co/600x600.png', 'https://placehold.co/600x600.png'],
     features: ['Built-in GPS', 'Advanced Sleep Tracking', 'Stress Monitoring', '5 ATM Water Resistance', 'Long Battery Life'],
+    specifications: {
+      'GPS': 'Built-in high-precision GPS',
+      'Health': 'Advanced Sleep & Stress Tracking',
+      'Water Resistance': '5 ATM',
+      'Battery': 'Up to 14 days typical usage',
+      'Display': '1.39" HD AMOLED',
+    }
   },
   {
     id: '5',
@@ -103,6 +133,13 @@ export const products: Product[] = [
     reviewCount: 543,
     images: ['https://placehold.co/600x600.png', 'https://placehold.co/600x600.png', 'https://placehold.co/600x600.png'],
     features: ['AMOLED Display', 'Bluetooth Calling', '100+ Sports Modes', 'Always-On Display', 'SpO2 & Heart Rate Tracking'],
+    specifications: {
+      'Display': '1.43" AMOLED Display',
+      'Calling': 'Bluetooth Calling via watch',
+      'Sports Modes': '100+',
+      'Features': 'Always-On Display, SpO2 & Heart Rate Tracking',
+      'Material': 'Metal Bezel',
+    }
   },
   {
     id: '6',
@@ -117,6 +154,13 @@ export const products: Product[] = [
     reviewCount: 1204,
     images: ['https://placehold.co/600x600.png', 'https://placehold.co/600x600.png', 'https://placehold.co/600x600.png'],
     features: ['Military Grade Durability', 'Dual-band GPS', '5 ATM & IP69K Waterproof', 'Blood Oxygen Monitoring', 'Compass & Barometer'],
+    specifications: {
+      'Durability': 'MIL-STD-810H Military Grade',
+      'GPS': 'Dual-band & 6 Satellite Positioning Systems',
+      'Waterproof': '5 ATM & IP69K',
+      'Health': 'Blood Oxygen, Heart Rate, Blood Pressure',
+      'Sensors': 'Compass & Barometer',
+    }
   },
   {
     id: '7',
@@ -129,6 +173,13 @@ export const products: Product[] = [
     reviewCount: 2310,
     images: ['https://placehold.co/600x600.png', 'https://placehold.co/600x600.png', 'https://placehold.co/600x600.png'],
     features: ['20,000mAh Capacity', '45W Power Delivery', 'Charge 3 devices at once', 'Airline compliant', 'LED Display'],
+    specifications: {
+      'Capacity': '20,000mAh / 74Wh',
+      'Output': '45W Power Delivery (USB-C)',
+      'Ports': '2x USB-A, 1x USB-C',
+      'Compliance': 'Airline Carry-on Compliant',
+      'Display': 'Digital LED for battery percentage',
+    }
   },
   {
     id: '8',
@@ -141,6 +192,13 @@ export const products: Product[] = [
     reviewCount: 488,
     images: ['https://placehold.co/600x600.png', 'https://placehold.co/600x600.png', 'https://placehold.co/600x600.png'],
     features: ['Fingerprint & Keypad entry', 'Auto-lock feature', 'Remote access via app', 'Activity Log', 'Guest Access Codes'],
+    specifications: {
+      'Unlock Methods': 'Fingerprint, Keypad, App, Mechanical Key',
+      'Security': 'Auto-lock, Anti-peep keypad',
+      'Connectivity': 'WiFi (via gateway), Bluetooth',
+      'Power': '4x AA Batteries',
+      'Guest Access': 'Temporary codes and eKeys',
+    }
   },
 ];
 
