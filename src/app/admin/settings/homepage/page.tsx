@@ -29,6 +29,15 @@ interface FeaturedCategory {
     name: string;
     image: string;
 }
+interface PromoBanner {
+    id: string;
+    image: string;
+    link: string;
+}
+interface SingleBanner {
+    image: string;
+    link: string;
+}
 
 const initialFeaturedCategoriesData: FeaturedCategory[] = [
     { id: 'fc1', name: 'Smart Watches', image: 'https://placehold.co/128x128.png' },
@@ -38,16 +47,38 @@ const initialFeaturedCategoriesData: FeaturedCategory[] = [
     { id: 'fc5', name: 'Powerbanks', image: 'https://placehold.co/128x128.png' },
 ];
 
+const initialPromoBannersData: PromoBanner[] = [
+    { id: 'promo1', image: 'https://placehold.co/800x400.png', link: '#' },
+    { id: 'promo2', image: 'https://placehold.co/800x400.png', link: '#' },
+];
+const initialSmartWatchBannerData: SingleBanner = { image: 'https://placehold.co/1200x250.png', link: '/products?category=Wearables' };
+const initialHeadphonesBannerData: SingleBanner = { image: 'https://placehold.co/1200x250.png', link: '/products?category=Audio' };
+
 interface SortableSectionItemProps {
     id: string;
     name: string;
-    featuredCategories?: FeaturedCategory[];
-    onSaveFeaturedCategories?: (categories: FeaturedCategory[]) => void;
     onSaveSectionName?: (newName: string) => void;
     onDelete?: () => void;
+    featuredCategories?: FeaturedCategory[];
+    onSaveFeaturedCategories?: (categories: FeaturedCategory[]) => void;
+    promoBanners?: PromoBanner[];
+    onSavePromoBanners?: (banners: PromoBanner[]) => void;
+    singleBanner?: SingleBanner;
+    onSaveSingleBanner?: (banner: SingleBanner) => void;
 }
 
-function SortableSectionItem({ id, name, featuredCategories = [], onSaveFeaturedCategories, onSaveSectionName, onDelete }: SortableSectionItemProps) {
+function SortableSectionItem({ 
+    id, 
+    name, 
+    onSaveSectionName,
+    onDelete,
+    featuredCategories = [], 
+    onSaveFeaturedCategories,
+    promoBanners = [],
+    onSavePromoBanners,
+    singleBanner,
+    onSaveSingleBanner,
+}: SortableSectionItemProps) {
     const {
         attributes,
         listeners,
@@ -64,21 +95,37 @@ function SortableSectionItem({ id, name, featuredCategories = [], onSaveFeatured
     const [isDialogOpen, setIsDialogOpen] = useState(false);
     const [editedName, setEditedName] = useState(name);
     const [editedCategories, setEditedCategories] = useState<FeaturedCategory[]>([]);
+    const [editedPromoBanners, setEditedPromoBanners] = useState<PromoBanner[]>([]);
+    const [editedSingleBanner, setEditedSingleBanner] = useState<SingleBanner | undefined>(undefined);
     
     const handleOpenChange = (open: boolean) => {
         if (open) {
-            // Reset local state when dialog opens
             setEditedName(name);
-            setEditedCategories(JSON.parse(JSON.stringify(featuredCategories))); // Deep copy
+            setEditedCategories(JSON.parse(JSON.stringify(featuredCategories))); 
+            setEditedPromoBanners(JSON.parse(JSON.stringify(promoBanners)));
+            if (singleBanner) {
+                setEditedSingleBanner(JSON.parse(JSON.stringify(singleBanner)));
+            }
         }
         setIsDialogOpen(open);
     }
 
     const handleSave = () => {
-        if (id === 'feat-cat') {
-            onSaveFeaturedCategories?.(editedCategories);
-        } else {
-            onSaveSectionName?.(editedName);
+        switch(id) {
+            case 'feat-cat':
+                onSaveFeaturedCategories?.(editedCategories);
+                break;
+            case 'promo-ban':
+                onSavePromoBanners?.(editedPromoBanners);
+                break;
+            case 'smart-watch':
+            case 'headphones':
+                if (editedSingleBanner) {
+                    onSaveSingleBanner?.(editedSingleBanner);
+                }
+                break;
+            default:
+                onSaveSectionName?.(editedName);
         }
         setIsDialogOpen(false);
     }
@@ -97,36 +144,22 @@ function SortableSectionItem({ id, name, featuredCategories = [], onSaveFeatured
         setEditedCategories(editedCategories.filter(c => c.id !== categoryId));
     };
 
-    return (
-        <Dialog open={isDialogOpen} onOpenChange={handleOpenChange}>
-            <div ref={setNodeRef} style={style} {...attributes} className="flex items-center justify-between rounded-md border bg-background p-3 touch-none">
-                <div className="flex items-center gap-3">
-                    <Button variant="ghost" size="icon" className="cursor-grab" {...listeners}>
-                        <GripVertical className="h-5 w-5 text-muted-foreground" />
-                    </Button>
-                    <p className="font-medium">{name}</p>
-                </div>
-                <div className="flex items-center gap-2">
-                    <DialogTrigger asChild>
-                        <Button variant="outline" size="icon">
-                            <Pencil className="h-4 w-4" />
-                            <span className="sr-only">Edit</span>
-                        </Button>
-                    </DialogTrigger>
-                    <Button variant="destructive" size="icon" onClick={onDelete}>
-                        <Trash2 className="h-4 w-4" />
-                        <span className="sr-only">Delete</span>
-                    </Button>
-                </div>
-            </div>
-            <DialogContent className="sm:max-w-3xl">
-                <DialogHeader>
-                    <DialogTitle>Edit Section: {name}</DialogTitle>
-                    <DialogDescription>
-                        Make changes to this homepage section. Click save when you're done.
-                    </DialogDescription>
-                </DialogHeader>
-                {id === 'feat-cat' ? (
+    const handlePromoBannerChange = (index: number, field: 'link', value: string) => {
+        const newBanners = [...editedPromoBanners];
+        newBanners[index] = { ...newBanners[index], [field]: value };
+        setEditedPromoBanners(newBanners);
+    };
+
+    const handleSingleBannerChange = (field: 'link', value: string) => {
+        if (editedSingleBanner) {
+            setEditedSingleBanner({ ...editedSingleBanner, [field]: value });
+        }
+    };
+
+    const renderDialogContent = () => {
+        switch (id) {
+            case 'feat-cat':
+                return (
                     <div className="space-y-4 py-4">
                         <div className="max-h-[60vh] space-y-4 overflow-y-auto pr-2">
                             {editedCategories.map((category, index) => (
@@ -158,14 +191,97 @@ function SortableSectionItem({ id, name, featuredCategories = [], onSaveFeatured
                             Add New Category
                         </Button>
                     </div>
-                ) : (
+                );
+            case 'promo-ban':
+                return (
+                    <div className="space-y-4 py-4">
+                        <p className="text-sm text-muted-foreground">Recommended size: 800x400px</p>
+                        <div className="max-h-[60vh] space-y-4 overflow-y-auto pr-2">
+                            {editedPromoBanners.map((banner, index) => (
+                                <Card key={banner.id} className="p-4">
+                                     <CardTitle className="text-lg mb-4">Banner {index + 1}</CardTitle>
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 items-end">
+                                        <div className="space-y-2">
+                                            <Label>Current Image</Label>
+                                            <div className="flex items-center gap-4">
+                                                <Image src={banner.image} alt={`Banner ${index + 1}`} width={160} height={80} className="rounded-md border bg-secondary object-cover" data-ai-hint="promotional banner"/>
+                                                <Input id={`promo-image-${banner.id}`} type="file" className="max-w-xs"/>
+                                            </div>
+                                        </div>
+                                        <div className="space-y-2">
+                                            <Label htmlFor={`promo-link-${banner.id}`}>Link URL</Label>
+                                            <Input id={`promo-link-${banner.id}`} value={banner.link} onChange={(e) => handlePromoBannerChange(index, 'link', e.target.value)} />
+                                        </div>
+                                    </div>
+                                </Card>
+                            ))}
+                        </div>
+                    </div>
+                );
+            case 'smart-watch':
+            case 'headphones':
+                return (
+                    <div className="space-y-4 py-4">
+                        <p className="text-sm text-muted-foreground">Recommended size: 1200x250px</p>
+                        <Card className="p-4">
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 items-end">
+                                <div className="space-y-2">
+                                    <Label>Current Image</Label>
+                                    <div className="flex items-center gap-4">
+                                        <Image src={editedSingleBanner?.image || ''} alt={name} width={240} height={50} className="rounded-md border bg-secondary object-cover" data-ai-hint="advertisement banner"/>
+                                        <Input id={`single-banner-image-${id}`} type="file" className="max-w-xs"/>
+                                    </div>
+                                </div>
+                                <div className="space-y-2">
+                                    <Label htmlFor={`single-banner-link-${id}`}>Link URL</Label>
+                                    <Input id={`single-banner-link-${id}`} value={editedSingleBanner?.link || ''} onChange={(e) => handleSingleBannerChange('link', e.target.value)} />
+                                </div>
+                            </div>
+                        </Card>
+                    </div>
+                );
+            default:
+                return (
                     <div className="grid gap-4 py-4">
                         <div className="space-y-2">
                             <Label htmlFor="section-name">Section Title</Label>
                             <Input id="section-name" value={editedName} onChange={(e) => setEditedName(e.target.value)} />
                         </div>
                     </div>
-                )}
+                );
+        }
+    }
+
+    return (
+        <Dialog open={isDialogOpen} onOpenChange={handleOpenChange}>
+            <div ref={setNodeRef} style={style} {...attributes} className="flex items-center justify-between rounded-md border bg-background p-3 touch-none">
+                <div className="flex items-center gap-3">
+                    <Button variant="ghost" size="icon" className="cursor-grab" {...listeners}>
+                        <GripVertical className="h-5 w-5 text-muted-foreground" />
+                    </Button>
+                    <p className="font-medium">{name}</p>
+                </div>
+                <div className="flex items-center gap-2">
+                    <DialogTrigger asChild>
+                        <Button variant="outline" size="icon">
+                            <Pencil className="h-4 w-4" />
+                            <span className="sr-only">Edit</span>
+                        </Button>
+                    </DialogTrigger>
+                    <Button variant="destructive" size="icon" onClick={onDelete}>
+                        <Trash2 className="h-4 w-4" />
+                        <span className="sr-only">Delete</span>
+                    </Button>
+                </div>
+            </div>
+            <DialogContent className="sm:max-w-3xl">
+                <DialogHeader>
+                    <DialogTitle>Edit Section: {name}</DialogTitle>
+                    <DialogDescription>
+                        Make changes to this homepage section. Click save when you're done.
+                    </DialogDescription>
+                </DialogHeader>
+                {renderDialogContent()}
                 <DialogFooter>
                      <Button variant="ghost" onClick={() => setIsDialogOpen(false)}>Cancel</Button>
                     <Button onClick={handleSave}>Save Changes</Button>
@@ -178,6 +294,9 @@ function SortableSectionItem({ id, name, featuredCategories = [], onSaveFeatured
 export default function HomepageSettingsPage() {
   const [sections, setSections] = useState(initialSectionsData);
   const [featuredCategories, setFeaturedCategories] = useState(initialFeaturedCategoriesData);
+  const [promoBanners, setPromoBanners] = useState(initialPromoBannersData);
+  const [smartWatchBanner, setSmartWatchBanner] = useState(initialSmartWatchBannerData);
+  const [headphonesBanner, setHeadphonesBanner] = useState(initialHeadphonesBannerData);
   const heroBanners = Array.from({ length: 5 });
 
   const sensors = useSensors(
@@ -213,6 +332,33 @@ export default function HomepageSettingsPage() {
       name: "New Section",
     };
     setSections(prev => [...prev, newSection]);
+  };
+
+  const getSectionProps = (sectionId: string) => {
+    switch (sectionId) {
+      case 'feat-cat':
+        return {
+          featuredCategories: featuredCategories,
+          onSaveFeaturedCategories: setFeaturedCategories,
+        };
+      case 'promo-ban':
+        return {
+          promoBanners: promoBanners,
+          onSavePromoBanners: setPromoBanners,
+        };
+      case 'smart-watch':
+        return {
+          singleBanner: smartWatchBanner,
+          onSaveSingleBanner: setSmartWatchBanner,
+        };
+      case 'headphones':
+        return {
+          singleBanner: headphonesBanner,
+          onSaveSingleBanner: setHeadphonesBanner,
+        };
+      default:
+        return {};
+    }
   };
 
   return (
@@ -277,10 +423,9 @@ export default function HomepageSettingsPage() {
                     key={id} 
                     id={id} 
                     name={name}
-                    featuredCategories={featuredCategories}
-                    onSaveFeaturedCategories={setFeaturedCategories}
                     onSaveSectionName={(newName) => handleSaveSectionName(id, newName)}
                     onDelete={() => handleDeleteSection(id)}
+                    {...getSectionProps(id)}
                   />
                 ))}
               </div>
