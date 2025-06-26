@@ -44,10 +44,10 @@ export function Header() {
     <header className="sticky top-0 z-50 w-full bg-background/95 backdrop-blur-sm">
       {/* Top Bar (hides on scroll) */}
       <div className={cn(
-        "hidden md:block bg-secondary/50 text-xs text-black transition-all duration-300",
+        "hidden md:block bg-secondary/50 text-black transition-all duration-300",
         isScrolled ? 'h-0 opacity-0 overflow-hidden' : 'h-8'
       )}>
-        <div className="container mx-auto flex h-full items-center justify-between px-4">
+        <div className="container mx-auto flex h-full items-center justify-between px-4 text-xs">
           <div>
             <span>Biggest Smart Gadget & SmartPhone Collection</span>
           </div>
@@ -91,7 +91,7 @@ export function Header() {
             <Button variant="ghost" size="icon" asChild className="relative">
               <Link href="/cart" aria-label="Shopping Cart">
                 <ShoppingCart className="h-7 w-7" />
-                <Badge variant="destructive" className="absolute -top-1 -right-1 h-5 w-5 justify-center rounded-full p-0 text-xs">3</Badge>
+                <Badge className="absolute -top-1 -right-1 h-5 w-5 justify-center rounded-full p-0 text-xs bg-blue-600 text-primary-foreground hover:bg-blue-700 border-none">3</Badge>
               </Link>
             </Button>
           </div>
@@ -145,7 +145,7 @@ export function Header() {
                 <Button variant="ghost" size="icon" asChild className="relative">
                 <Link href="/cart" aria-label="Shopping Cart">
                     <ShoppingCart className="h-7 w-7" />
-                    <Badge variant="destructive" className="absolute -top-1 -right-1 h-5 w-5 justify-center rounded-full p-0 text-xs">3</Badge>
+                    <Badge className="absolute -top-1 -right-1 h-5 w-5 justify-center rounded-full p-0 text-xs bg-blue-600 text-primary-foreground hover:bg-blue-700 border-none">3</Badge>
                 </Link>
                 </Button>
                 <Button variant="ghost" size="icon" asChild>
@@ -190,7 +190,7 @@ export function Header() {
           <Button variant="ghost" size="icon" asChild className="relative">
             <Link href="/cart" aria-label="Shopping Cart">
               <ShoppingCart className="h-7 w-7" />
-              <Badge variant="destructive" className="absolute -top-1 -right-1 h-5 w-5 justify-center rounded-full p-0 text-xs">3</Badge>
+              <Badge className="absolute -top-1 -right-1 h-5 w-5 justify-center rounded-full p-0 text-xs bg-blue-600 text-primary-foreground hover:bg-blue-700 border-none">3</Badge>
             </Link>
           </Button>
         </div>
