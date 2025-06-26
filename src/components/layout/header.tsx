@@ -1,3 +1,4 @@
+
 "use client"
 
 import React, { useState, useEffect } from "react"
@@ -61,7 +62,7 @@ export function Header() {
               Login
             </Link>
              <span className="text-muted-foreground">|</span>
-             <Link href="/account/orders" className="flex items-center gap-1 hover:text-primary">
+             <Link href="/track-order" className="flex items-center gap-1 hover:text-primary">
                 <MapPin className="h-4 w-4" />
                 Order Track
             </Link>
