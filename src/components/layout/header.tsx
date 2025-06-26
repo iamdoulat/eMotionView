@@ -128,21 +128,20 @@ export function Header() {
       
        {/* Bottom Bar / Main Navigation */}
       <div className="hidden md:block border-t">
-        <div className="container mx-auto flex h-14 items-center justify-between px-4">
+        <div className="container mx-auto flex h-14 items-center justify-start gap-8 px-4">
             <Button asChild className="font-bold bg-primary hover:bg-primary/90">
                 <Link href="/products">
                     <LayoutGrid className="mr-2 h-5 w-5" />
                     All Categories
                 </Link>
             </Button>
-            <nav className="flex items-center gap-6 text-sm font-medium text-muted-foreground">
+            <nav className="flex items-center gap-6 text-sm font-medium text-foreground">
                 {mainNavLinks.map(link => (
                     <Link key={link.href} href={link.href} className="hover:text-primary transition-colors">
                         {link.label}
                     </Link>
                 ))}
             </nav>
-             <div className="w-[180px]"></div> {/* Spacer to balance the layout */}
         </div>
       </div>
 
