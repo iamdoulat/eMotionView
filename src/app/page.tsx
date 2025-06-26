@@ -13,6 +13,7 @@ export default function HomePage() {
   const newArrivals = products.slice(0, 6);
   const popularProducts = products.slice(0, 6);
   const smartWatches = products.filter(p => p.category === 'Wearables').slice(0, 6);
+  const headphones = products.filter(p => p.category === 'Audio').slice(0, 6);
 
   const mainNavLinks = [
     { href: "#", label: "Campaign" },
@@ -237,6 +238,33 @@ export default function HomePage() {
         </div>
         <div className="grid grid-cols-2 gap-x-4 gap-y-8 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 xl:gap-x-6">
           {smartWatches.map((product) => (
+            <ProductCard key={product.id} product={product} />
+          ))}
+        </div>
+      </section>
+
+      {/* Headphones Section */}
+      <section className="container mx-auto px-4 py-16">
+        <div className="mb-8">
+          <Link href="/products?category=Audio" className="block rounded-lg overflow-hidden group">
+            <Image
+              src="https://placehold.co/1200x250.png"
+              alt="Plug it, Listen to it, Feel it"
+              width={1200}
+              height={250}
+              className="w-full h-auto object-cover transition-transform duration-300 group-hover:scale-105"
+              data-ai-hint="headphones advertisement banner"
+            />
+          </Link>
+        </div>
+        <div className="flex justify-between items-center mb-8">
+          <h2 className="font-headline text-2xl font-bold tracking-tight text-foreground">Headphones</h2>
+          <Button asChild variant="link" className="text-primary">
+            <Link href="/products?category=Audio">See all</Link>
+          </Button>
+        </div>
+        <div className="grid grid-cols-2 gap-x-4 gap-y-8 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 xl:gap-x-6">
+          {headphones.map((product) => (
             <ProductCard key={product.id} product={product} />
           ))}
         </div>
