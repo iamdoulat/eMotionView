@@ -92,7 +92,7 @@ export default function HomePage() {
       {/* Three Banners Section */}
       <section className="container mx-auto px-4 py-4">
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          <Link href="#" className="block rounded-lg overflow-hidden group">
+          <Link href="#" className="block rounded-lg overflow-hidden group transition-all duration-300 ease-in-out hover:-translate-y-1 hover:shadow-xl">
             <Image
               src="https://placehold.co/400x200.png"
               alt="New Arrival Smartwatches"
@@ -102,7 +102,7 @@ export default function HomePage() {
               data-ai-hint="smartwatch sale"
             />
           </Link>
-          <Link href="#" className="block rounded-lg overflow-hidden group">
+          <Link href="#" className="block rounded-lg overflow-hidden group transition-all duration-300 ease-in-out hover:-translate-y-1 hover:shadow-xl">
             <Image
               src="https://placehold.co/400x200.png"
               alt="Power Banks"
@@ -112,7 +112,7 @@ export default function HomePage() {
               data-ai-hint="power bank"
             />
           </Link>
-          <Link href="#" className="block rounded-lg overflow-hidden group">
+          <Link href="#" className="block rounded-lg overflow-hidden group transition-all duration-300 ease-in-out hover:-translate-y-1 hover:shadow-xl">
             <Image
               src="https://placehold.co/400x200.png"
               alt="Samsung 25W Adapter"
