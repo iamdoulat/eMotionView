@@ -32,6 +32,8 @@ export type Order = {
   id: string;
   orderNumber: string;
   date: string;
+  customerName: string;
+  customerAvatar: string;
   status: 'Delivered' | 'Processing' | 'Shipped' | 'Cancelled';
   total: number;
   items: {
@@ -298,6 +300,8 @@ export const orders: Order[] = [
     id: '1',
     orderNumber: 'USA-123456789',
     date: '2024-05-20',
+    customerName: 'William Kim',
+    customerAvatar: 'https://placehold.co/40x40.png',
     status: 'Delivered',
     total: 829.98,
     items: [
@@ -314,6 +318,8 @@ export const orders: Order[] = [
     id: '2',
     orderNumber: 'USA-987654321',
     date: '2024-05-18',
+    customerName: 'Jackson Lee',
+    customerAvatar: 'https://placehold.co/40x40.png',
     status: 'Shipped',
     total: 249.50,
     items: [
@@ -330,6 +336,8 @@ export const orders: Order[] = [
     id: '3',
     orderNumber: 'USA-555555555',
     date: '2024-05-15',
+    customerName: 'Olivia Martin',
+    customerAvatar: 'https://placehold.co/40x40.png',
     status: 'Processing',
     total: 588.99,
     items: [
@@ -353,6 +361,8 @@ export const orders: Order[] = [
     id: '4',
     orderNumber: 'USA-112233445',
     date: '2024-04-10',
+    customerName: 'Isabella Nguyen',
+    customerAvatar: 'https://placehold.co/40x40.png',
     status: 'Cancelled',
     total: 1999.99,
     items: [
@@ -362,6 +372,24 @@ export const orders: Order[] = [
         image: 'https://placehold.co/100x100.png',
         quantity: 1,
         price: 1999.99,
+      },
+    ],
+  },
+  {
+    id: '5',
+    orderNumber: 'USA-667788990',
+    date: '2024-05-22',
+    customerName: 'Sofia Davis',
+    customerAvatar: 'https://placehold.co/40x40.png',
+    status: 'Processing',
+    total: 1499.00,
+    items: [
+      {
+        productId: '2',
+        name: 'HAYLOU HQ5 28dB ANC TWS Earbuds',
+        image: 'https://placehold.co/100x100.png',
+        quantity: 1,
+        price: 1499.00,
       },
     ],
   },
