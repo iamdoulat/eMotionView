@@ -48,6 +48,26 @@ export default function AdminSettingsPage() {
           </Button>
         </CardFooter>
       </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>Footer Settings</CardTitle>
+          <CardDescription>Manage the content and links in your website footer.</CardDescription>
+        </CardHeader>
+        <CardContent>
+            <p className="text-sm text-muted-foreground">
+                Update contact information, social media links, and other footer elements.
+            </p>
+        </CardContent>
+        <CardFooter>
+          <Button asChild>
+            <Link href="/admin/settings/footer">
+                Edit Footer
+                <ArrowRight className="ml-2 h-4 w-4" />
+            </Link>
+          </Button>
+        </CardFooter>
+      </Card>
     </div>
   );
 }
