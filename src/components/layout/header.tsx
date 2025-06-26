@@ -89,7 +89,7 @@ export function Header() {
           <div className="flex items-center justify-end">
             <Button variant="ghost" size="icon" asChild className="relative">
               <Link href="/cart" aria-label="Shopping Cart">
-                <ShoppingCart className="h-7 w-7" />
+                <ShoppingCart className="h-8 w-8" />
                 <Badge className="absolute -top-1 -right-1 h-5 w-5 justify-center rounded-full p-0 text-xs bg-blue-600 text-primary-foreground hover:bg-blue-700 border-none">3</Badge>
               </Link>
             </Button>
@@ -143,7 +143,7 @@ export function Header() {
                 </Button>
                 <Button variant="ghost" size="icon" asChild className="relative">
                 <Link href="/cart" aria-label="Shopping Cart">
-                    <ShoppingCart className="h-7 w-7" />
+                    <ShoppingCart className="h-8 w-8" />
                     <Badge className="absolute -top-1 -right-1 h-5 w-5 justify-center rounded-full p-0 text-xs bg-blue-600 text-primary-foreground hover:bg-blue-700 border-none">3</Badge>
                 </Link>
                 </Button>
@@ -188,7 +188,7 @@ export function Header() {
           </Link>
           <Button variant="ghost" size="icon" asChild className="relative">
             <Link href="/cart" aria-label="Shopping Cart">
-              <ShoppingCart className="h-7 w-7" />
+              <ShoppingCart className="h-8 w-8" />
               <Badge className="absolute -top-1 -right-1 h-5 w-5 justify-center rounded-full p-0 text-xs bg-blue-600 text-primary-foreground hover:bg-blue-700 border-none">3</Badge>
             </Link>
           </Button>
