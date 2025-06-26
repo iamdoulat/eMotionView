@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState } from "react";
@@ -206,6 +207,14 @@ export default function HomepageSettingsPage() {
     setSections(prev => prev.filter(s => s.id !== id));
   };
 
+  const handleAddNewSection = () => {
+    const newSection = {
+      id: `new-section-${Date.now()}`,
+      name: "New Section",
+    };
+    setSections(prev => [...prev, newSection]);
+  };
+
   return (
     <div className="space-y-8">
       <h1 className="text-3xl font-bold tracking-tight">Homepage Design</h1>
@@ -277,6 +286,12 @@ export default function HomepageSettingsPage() {
               </div>
             </SortableContext>
           </DndContext>
+          <div className="mt-4 border-t pt-4">
+            <Button variant="outline" onClick={handleAddNewSection}>
+              <Plus className="mr-2 h-4 w-4" />
+              Add New Section
+            </Button>
+          </div>
         </CardContent>
       </Card>
       
