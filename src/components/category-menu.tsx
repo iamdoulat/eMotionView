@@ -19,7 +19,7 @@ const categoryLinks = [
 
 export function CategoryMenu() {
     return (
-        <Card className="h-full mt-[2px]">
+        <Card className="h-full">
             <div className="px-3 pt-2 pb-3 border-b">
                  <Button className="w-full justify-start font-bold text-base bg-primary hover:bg-primary/90">
                     <LayoutGrid className="mr-3 h-5 w-5" />
