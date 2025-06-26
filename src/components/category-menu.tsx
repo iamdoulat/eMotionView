@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { Card } from "@/components/ui/card";
-import { ChevronRight } from "lucide-react";
+import { ChevronRight, LayoutGrid } from "lucide-react";
+import { Button } from "@/components/ui/button";
 
 const categoryLinks = [
     { name: 'Smart Watches', href: '/products?category=Wearables' },
@@ -20,6 +21,12 @@ const categoryLinks = [
 export function CategoryMenu() {
     return (
         <Card className="h-full">
+            <div className="p-3 border-b">
+                 <Button className="w-full justify-start font-bold text-base bg-primary hover:bg-primary/90">
+                    <LayoutGrid className="mr-3 h-5 w-5" />
+                    All Categories
+                </Button>
+            </div>
             <nav className="p-2">
                 <ul className="space-y-1">
                     {categoryLinks.map((link) => (
