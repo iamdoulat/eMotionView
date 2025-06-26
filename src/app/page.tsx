@@ -89,45 +89,6 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* Info Banners Section */}
-      <section className="container mx-auto px-4 py-12">
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-          <Card className="flex items-center p-4 bg-background">
-            <CardContent className="flex items-center gap-4 p-0">
-              <div className="bg-primary/10 p-3 rounded-full">
-                <Tag className="h-6 w-6 text-primary" />
-              </div>
-              <div>
-                <h3 className="font-semibold">Best Price & Offers</h3>
-                <p className="text-sm text-muted-foreground">Orders $50 or more</p>
-              </div>
-            </CardContent>
-          </Card>
-          <Card className="flex items-center p-4 bg-background">
-            <CardContent className="flex items-center gap-4 p-0">
-              <div className="bg-primary/10 p-3 rounded-full">
-                <Truck className="h-6 w-6 text-primary" />
-              </div>
-              <div>
-                <h3 className="font-semibold">Free Delivery</h3>
-                <p className="text-sm text-muted-foreground">24/7 amazing services</p>
-              </div>
-            </CardContent>
-          </Card>
-          <Card className="flex items-center p-4 bg-background">
-            <CardContent className="flex items-center gap-4 p-0">
-              <div className="bg-primary/10 p-3 rounded-full">
-                <Star className="h-6 w-6 text-primary" />
-              </div>
-              <div>
-                <h3 className="font-semibold">Official Product</h3>
-                <p className="text-sm text-muted-foreground">100% genuine</p>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-      </section>
-      
       {/* Three Banners Section */}
       <section className="container mx-auto px-4 py-8">
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
