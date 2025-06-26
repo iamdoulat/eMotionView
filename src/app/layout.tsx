@@ -26,7 +26,7 @@ export default function RootLayout({
     <html lang="en" className={cn("h-full", poppins.variable)}>
       <body className={cn("font-body antialiased min-h-screen flex flex-col")}>
         <Header />
-        <main className="flex-1 bg-gray-50 dark:bg-card">
+        <main className="flex-1 bg-secondary/50 dark:bg-card">
           {children}
         </main>
         <Footer />
