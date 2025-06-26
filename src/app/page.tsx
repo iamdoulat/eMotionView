@@ -49,11 +49,11 @@ export default function HomePage() {
                 </div>
 
                 {/* Right Column */}
-                <div className="lg:col-span-3 flex flex-col gap-6">
+                <div className="lg:col-span-3 flex flex-col">
                   {/* Main Nav */}
-                  <nav className="hidden md:flex items-center gap-6 text-sm font-medium text-foreground h-14 -mt-[1px]">
+                  <nav className="hidden md:flex items-center gap-6 text-sm font-medium text-foreground -mt-[1px] mb-3">
                     {mainNavLinks.map(link => (
-                      <Link key={link.href} href={link.href} className="hover:text-primary transition-colors h-full flex items-center">
+                      <Link key={link.href} href={link.href} className="hover:text-primary transition-colors flex items-center">
                         {link.label}
                       </Link>
                     ))}
@@ -162,7 +162,7 @@ export default function HomePage() {
       </section>
 
       {/* New Arrival Products */}
-      <section className="container mx-auto px-4 py-8">
+      <section className="container mx-auto px-4 py-4">
         <div className="flex justify-between items-center mb-8 border-b pb-4">
           <h2 className="font-headline text-2xl font-bold tracking-tight text-foreground">New Arrival</h2>
           <Button asChild variant="link" className="text-primary">
@@ -177,7 +177,7 @@ export default function HomePage() {
       </section>
 
       {/* Promotional Banners Section */}
-      <section className="container mx-auto px-4 py-8">
+      <section className="container mx-auto px-4 py-4">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <Link href="#" className="block rounded-lg overflow-hidden group">
             <Image
@@ -203,7 +203,7 @@ export default function HomePage() {
       </section>
 
       {/* Popular Products */}
-      <section className="container mx-auto px-4 py-8">
+      <section className="container mx-auto px-4 py-4">
         <div className="flex justify-between items-center mb-8 border-b pb-4">
           <h2 className="font-headline text-2xl font-bold tracking-tight text-foreground">Popular Products</h2>
           <Button asChild variant="link" className="text-primary">
@@ -218,7 +218,7 @@ export default function HomePage() {
       </section>
 
       {/* Smart Watches Section */}
-      <section className="container mx-auto px-4 py-8">
+      <section className="container mx-auto px-4 py-4">
         <div className="mb-8">
           <Link href="/products?category=Wearables" className="block rounded-lg overflow-hidden group">
             <Image
@@ -245,7 +245,7 @@ export default function HomePage() {
       </section>
 
       {/* Headphones Section */}
-      <section className="container mx-auto px-4 py-8">
+      <section className="container mx-auto px-4 py-4">
         <div className="mb-8">
           <Link href="/products?category=Audio" className="block rounded-lg overflow-hidden group">
             <Image
