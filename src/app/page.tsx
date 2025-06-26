@@ -123,22 +123,6 @@ export default function HomePage() {
         </div>
       </section>
 
-      <section className="bg-secondary/10 py-16">
-        <div className="container mx-auto px-4 grid grid-cols-1 md:grid-cols-2 gap-8 items-center">
-            <div className="relative h-80 rounded-lg overflow-hidden group">
-                <Image src="https://placehold.co/600x400.png" alt="New Arrival" fill style={{objectFit: 'cover'}} className="transition-transform duration-300 group-hover:scale-105" data-ai-hint="new arrival gadgets" />
-            </div>
-            <div className="grid grid-cols-2 gap-6">
-                <div className="relative h-40 rounded-lg overflow-hidden group">
-                     <Image src="https://placehold.co/300x200.png" alt="Power Banks" fill style={{objectFit: 'cover'}} className="transition-transform duration-300 group-hover:scale-105" data-ai-hint="power banks" />
-                </div>
-                 <div className="relative h-40 rounded-lg overflow-hidden group">
-                     <Image src="https://placehold.co/300x200.png" alt="25W Adapter" fill style={{objectFit: 'cover'}} className="transition-transform duration-300 group-hover:scale-105" data-ai-hint="phone adapter" />
-                </div>
-            </div>
-        </div>
-      </section>
-
       {/* Shop by Category Section */}
       <section className="container mx-auto px-4 py-16">
         <div className="text-center mb-12">
