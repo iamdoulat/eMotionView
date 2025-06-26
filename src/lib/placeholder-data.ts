@@ -40,6 +40,16 @@ export type Order = {
   }[];
 };
 
+export type User = {
+  id: string;
+  name: string;
+  email: string;
+  avatar: string;
+  registeredDate: string;
+  status: 'Active' | 'Inactive';
+  lastLogin: string;
+};
+
 export const products: Product[] = [
   {
     id: '1',
@@ -326,5 +336,53 @@ export const orders: Order[] = [
         price: 1999.99,
       },
     ],
+  },
+];
+
+export const users: User[] = [
+  {
+    id: '1',
+    name: 'Olivia Martin',
+    email: 'olivia.martin@email.com',
+    avatar: 'https://placehold.co/40x40.png',
+    registeredDate: '2024-05-01',
+    status: 'Active',
+    lastLogin: '2024-05-22T10:00:00Z',
+  },
+  {
+    id: '2',
+    name: 'Jackson Lee',
+    email: 'jackson.lee@email.com',
+    avatar: 'https://placehold.co/40x40.png',
+    registeredDate: '2024-04-15',
+    status: 'Active',
+    lastLogin: '2024-05-21T14:30:00Z',
+  },
+  {
+    id: '3',
+    name: 'Isabella Nguyen',
+    email: 'isabella.nguyen@email.com',
+    avatar: 'https://placehold.co/40x40.png',
+    registeredDate: '2024-03-20',
+    status: 'Inactive',
+    lastLogin: '2024-04-25T08:00:00Z',
+  },
+  {
+    id: '4',
+    name: 'William Kim',
+    email: 'will@email.com',
+    avatar: 'https://placehold.co/40x40.png',
+    registeredDate: '2024-02-10',
+    status: 'Active',
+    lastLogin: '2024-05-22T11:00:00Z',
+  },
+  {
+    id: '5',
+    name: 'Sofia Davis',
+    email: 'sofia.davis@email.com',
+    avatar: 'https://placehold.co/40x40.png',
+    registeredDate: '2024-01-05',
+    status: 'Active',
+    lastLogin: '2024-05-20T18:45:00Z',
   },
 ];
