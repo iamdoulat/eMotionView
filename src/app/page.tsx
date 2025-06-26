@@ -9,21 +9,6 @@ import { Card, CardContent } from '@/components/ui/card';
 export default function HomePage() {
   const featuredProducts = products.slice(0, 4);
 
-  const heroCategories = [
-    { name: 'Smart Watches', href: '/products?category=Wearables' },
-    { name: 'Smart Phones', href: '/products?category=Smartphones' },
-    { name: 'Headphones', href: '/products?category=Audio' },
-    { name: 'Smart TV & Accessories', href: '/products?category=Smart+Home' },
-    { name: 'Computer & Accessories', href: '/products?category=Laptops' },
-    { name: 'Wireless Speakers', href: '/products?category=Audio' },
-    { name: 'Security Cameras', href: '/products?category=Smart+Home' },
-    { name: 'Smart Home Appliances', href: '/products?category=Smart+Home' },
-    { name: 'Charger & Cables', href: '/products?category=Accessories' },
-    { name: 'Powerbanks', href: '/products?category=Accessories' },
-    { name: 'Network Components', href: '/products?category=Accessories' },
-    { name: 'Health & Outdoors', href: '/products?category=Accessories' },
-  ];
-
   const categoryItems = [
     { name: 'Smart Watch', href: '/products?category=Wearables', image: 'https://placehold.co/100x100.png', hint: 'smartwatch' },
     { name: 'Smart Phone', href: '/products?category=Smartphones', image: 'https://placehold.co/100x100.png', hint: 'smartphone' },
@@ -42,18 +27,6 @@ export default function HomePage() {
       {/* Hero Section */}
       <section className="bg-background">
         <div className="container mx-auto px-4 py-6 flex flex-col gap-6">
-            {/* Horizontal Category List */}
-            <div className="w-full">
-                <ul className="flex flex-wrap items-center gap-x-8 gap-y-2 text-sm font-medium">
-                    {heroCategories.map((category) => (
-                        <li key={category.name}>
-                            <Link href={category.href} className="text-foreground hover:text-primary transition-colors">
-                                {category.name}
-                            </Link>
-                        </li>
-                    ))}
-                </ul>
-            </div>
             
             {/* Hero Banner */}
             <div className="w-full">
