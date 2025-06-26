@@ -1,10 +1,10 @@
 
 "use client";
 
-import { useForm, useFieldArray, SubmitHandler } from "react-hook-form";
+import { useForm, useFieldArray, type SubmitHandler } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { Product } from "@/lib/placeholder-data";
+import type { Product } from "@/lib/placeholder-data";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
@@ -14,7 +14,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { DialogFooter } from "@/components/ui/dialog";
 import Image from "next/image";
 
-export const productSchema = z.object({
+const productSchema = z.object({
     id: z.string().optional(),
     name: z.string().min(1, "Product name is required"),
     description: z.string().min(1, "Description is required"),
@@ -33,9 +33,15 @@ export const productSchema = z.object({
     images: z.array(z.string()).optional(),
 });
 
-export type ProductFormData = z.infer<typeof productSchema>;
+type ProductFormData = z.infer<typeof productSchema>;
 
-export const ProductForm = ({ product, onSave, onCancel }: { product?: Product, onSave: (data: Product) => void, onCancel: () => void }) => {
+interface ProductFormProps {
+    product?: Product | null;
+    onSave: (data: Product) => void;
+    onCancel: () => void;
+}
+
+export const ProductForm = ({ product, onSave, onCancel }: ProductFormProps) => {
     const { register, handleSubmit, control, formState: { errors } } = useForm<ProductFormData>({
         resolver: zodResolver(productSchema),
         defaultValues: product ? {
@@ -46,6 +52,7 @@ export const ProductForm = ({ product, onSave, onCancel }: { product?: Product, 
             name: "",
             description: "",
             price: 0,
+            originalPrice: undefined,
             category: "",
             brand: "",
             sku: "",
@@ -53,6 +60,7 @@ export const ProductForm = ({ product, onSave, onCancel }: { product?: Product, 
             supplier: "",
             features: [{ value: "" }],
             specifications: [{ key: "", value: "" }],
+            images: [],
         },
     });
 
@@ -67,18 +75,22 @@ export const ProductForm = ({ product, onSave, onCancel }: { product?: Product, 
     });
 
     const onSubmit: SubmitHandler<ProductFormData> = (data) => {
+        const specObject: Record<string, string> = {};
+        data.specifications.forEach(spec => {
+            if (spec.key) {
+                specObject[spec.key] = spec.value;
+            }
+        });
+
         const transformedData: Product = {
             ...data,
-            id: product?.id || `prod-${Date.now()}`,
-            features: data.features.map(f => f.value),
-            discountPercentage: data.originalPrice && data.price < data.originalPrice ? Math.round(((data.originalPrice - data.price) / data.originalPrice) * 100) : undefined,
-            rating: product ? product.rating : 0,
-            reviewCount: product ? product.reviewCount : 0,
+            id: product?.id || "",
+            rating: product?.rating || 0,
+            reviewCount: product?.reviewCount || 0,
             images: product?.images || ['https://placehold.co/600x600.png'],
-            specifications: data.specifications.reduce((acc, { key, value }) => {
-                if (key) acc[key] = value;
-                return acc;
-            }, {} as Record<string, string>),
+            features: data.features.map(f => f.value),
+            specifications: specObject,
+            discountPercentage: data.originalPrice && data.price < data.originalPrice ? Math.round(((data.originalPrice - data.price) / data.originalPrice) * 100) : undefined,
         };
         onSave(transformedData);
     };
@@ -143,7 +155,7 @@ export const ProductForm = ({ product, onSave, onCancel }: { product?: Product, 
                     <div className="space-y-2">
                         <Label>Images</Label>
                          <div className="grid grid-cols-3 gap-2">
-                            {product?.images?.map((img, index) => <Image key={index} src={img} alt="product" width={100} height={100} className="rounded-md" />)}
+                            {product?.images?.map((img, index) => <Image key={index} src={img} alt="product" width={100} height={100} className="rounded-md" data-ai-hint="product image" />)}
                          </div>
                         <Input type="file" multiple />
                          <p className="text-sm text-muted-foreground">Image upload is for demonstration only.</p>
@@ -153,7 +165,7 @@ export const ProductForm = ({ product, onSave, onCancel }: { product?: Product, 
                         <Label>Features</Label>
                         {featureFields.map((field, index) => (
                              <div key={field.id} className="flex gap-2 items-center">
-                                <Input {...register(`features.${index}.value` as const)} placeholder="e.g. 3ATM Water Resistance" />
+                                <Input {...register(`features.${index}.value`)} placeholder="e.g. 3ATM Water Resistance" />
                                 <Button type="button" variant="destructive" size="icon" onClick={() => removeFeature(index)}>
                                     <Trash2 className="h-4 w-4" />
                                 </Button>
@@ -166,8 +178,8 @@ export const ProductForm = ({ product, onSave, onCancel }: { product?: Product, 
                         <Label>Specifications</Label>
                         {specFields.map((field, index) => (
                              <div key={field.id} className="flex gap-2 items-center">
-                                <Input {...register(`specifications.${index}.key` as const)} placeholder="Key (e.g. Display)" />
-                                <Input {...register(`specifications.${index}.value` as const)} placeholder='Value (e.g. 1.5" IPS Screen)' />
+                                <Input {...register(`specifications.${index}.key`)} placeholder="Key (e.g. Display)" />
+                                <Input {...register(`specifications.${index}.value`)} placeholder='Value (e.g. 1.5" IPS Screen)' />
                                 <Button type="button" variant="destructive" size="icon" onClick={() => removeSpec(index)}>
                                     <Trash2 className="h-4 w-4" />
                                 </Button>

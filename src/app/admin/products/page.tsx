@@ -1,9 +1,8 @@
 
 "use client";
 
-import * as React from "react";
 import { useState } from "react";
-import { products as initialProducts, Product } from "@/lib/placeholder-data";
+import { products as initialProducts, type Product } from "@/lib/placeholder-data";
 import Image from "next/image";
 import {
   Card,
@@ -72,7 +71,8 @@ export default function AdminProductsPage() {
     if (productToEdit) {
       setProducts(products.map(p => p.id === productData.id ? productData : p));
     } else {
-      setProducts([...products, productData]);
+      const newProductWithId = { ...productData, id: `prod-${Date.now()}`};
+      setProducts([...products, newProductWithId]);
     }
     handleCloseForm();
   };
@@ -177,7 +177,7 @@ export default function AdminProductsPage() {
                   </DialogDescription>
               </DialogHeader>
               <ProductForm
-                  product={productToEdit || undefined}
+                  product={productToEdit}
                   onSave={handleSaveProduct}
                   onCancel={handleCloseForm}
               />
