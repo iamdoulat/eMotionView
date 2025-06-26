@@ -11,6 +11,7 @@ import {
 } from "@/components/ui/card"
 import { DollarSign, Users, CreditCard, Activity } from "lucide-react"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
+import { Skeleton } from "@/components/ui/skeleton"
 
 const initialData = [
   { name: "Jan", total: 0 },
@@ -29,23 +30,29 @@ const initialData = [
 
 export default function AdminDashboardPage() {
   const [chartData, setChartData] = useState(initialData);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const data = [
-      { name: "Jan", total: Math.floor(Math.random() * 5000) + 1000 },
-      { name: "Feb", total: Math.floor(Math.random() * 5000) + 1000 },
-      { name: "Mar", total: Math.floor(Math.random() * 5000) + 1000 },
-      { name: "Apr", total: Math.floor(Math.random() * 5000) + 1000 },
-      { name: "May", total: Math.floor(Math.random() * 5000) + 1000 },
-      { name: "Jun", total: Math.floor(Math.random() * 5000) + 1000 },
-      { name: "Jul", total: Math.floor(Math.random() * 5000) + 1000 },
-      { name: "Aug", total: Math.floor(Math.random() * 5000) + 1000 },
-      { name: "Sep", total: Math.floor(Math.random() * 5000) + 1000 },
-      { name: "Oct", total: Math.floor(Math.random() * 5000) + 1000 },
-      { name: "Nov", total: Math.floor(Math.random() * 5000) + 1000 },
-      { name: "Dec", total: Math.floor(Math.random() * 5000) + 1000 },
-    ]
-    setChartData(data)
+    const timer = setTimeout(() => {
+        const data = [
+        { name: "Jan", total: Math.floor(Math.random() * 5000) + 1000 },
+        { name: "Feb", total: Math.floor(Math.random() * 5000) + 1000 },
+        { name: "Mar", total: Math.floor(Math.random() * 5000) + 1000 },
+        { name: "Apr", total: Math.floor(Math.random() * 5000) + 1000 },
+        { name: "May", total: Math.floor(Math.random() * 5000) + 1000 },
+        { name: "Jun", total: Math.floor(Math.random() * 5000) + 1000 },
+        { name: "Jul", total: Math.floor(Math.random() * 5000) + 1000 },
+        { name: "Aug", total: Math.floor(Math.random() * 5000) + 1000 },
+        { name: "Sep", total: Math.floor(Math.random() * 5000) + 1000 },
+        { name: "Oct", total: Math.floor(Math.random() * 5000) + 1000 },
+        { name: "Nov", total: Math.floor(Math.random() * 5000) + 1000 },
+        { name: "Dec", total: Math.floor(Math.random() * 5000) + 1000 },
+        ]
+        setChartData(data)
+        setLoading(false);
+    }, 1500)
+    
+    return () => clearTimeout(timer);
   }, [])
 
   return (
@@ -60,10 +67,19 @@ export default function AdminDashboardPage() {
             <DollarSign className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">$45,231.89</div>
-            <p className="text-xs text-muted-foreground">
-              +20.1% from last month
-            </p>
+            {loading ? (
+                <div className="space-y-2">
+                    <Skeleton className="h-7 w-3/4" />
+                    <Skeleton className="h-4 w-full" />
+                </div>
+            ) : (
+                <>
+                    <div className="text-2xl font-bold">$45,231.89</div>
+                    <p className="text-xs text-muted-foreground">
+                      +20.1% from last month
+                    </p>
+                </>
+            )}
           </CardContent>
         </Card>
         <Card>
@@ -74,10 +90,19 @@ export default function AdminDashboardPage() {
             <Users className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">+2350</div>
-            <p className="text-xs text-muted-foreground">
-              +180.1% from last month
-            </p>
+             {loading ? (
+                <div className="space-y-2">
+                    <Skeleton className="h-7 w-3/4" />
+                    <Skeleton className="h-4 w-full" />
+                </div>
+            ) : (
+                <>
+                    <div className="text-2xl font-bold">+2350</div>
+                    <p className="text-xs text-muted-foreground">
+                      +180.1% from last month
+                    </p>
+                </>
+            )}
           </CardContent>
         </Card>
         <Card>
@@ -86,10 +111,19 @@ export default function AdminDashboardPage() {
             <CreditCard className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">+12,234</div>
-            <p className="text-xs text-muted-foreground">
-              +19% from last month
-            </p>
+            {loading ? (
+                <div className="space-y-2">
+                    <Skeleton className="h-7 w-3/4" />
+                    <Skeleton className="h-4 w-full" />
+                </div>
+            ) : (
+                <>
+                    <div className="text-2xl font-bold">+12,234</div>
+                    <p className="text-xs text-muted-foreground">
+                      +19% from last month
+                    </p>
+                </>
+            )}
           </CardContent>
         </Card>
         <Card>
@@ -98,10 +132,19 @@ export default function AdminDashboardPage() {
             <Activity className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">+573</div>
-            <p className="text-xs text-muted-foreground">
-              +201 since last hour
-            </p>
+            {loading ? (
+                <div className="space-y-2">
+                    <Skeleton className="h-7 w-3/4" />
+                    <Skeleton className="h-4 w-full" />
+                </div>
+            ) : (
+                <>
+                    <div className="text-2xl font-bold">+573</div>
+                    <p className="text-xs text-muted-foreground">
+                      +201 since last hour
+                    </p>
+                </>
+            )}
           </CardContent>
         </Card>
       </div>
@@ -111,25 +154,27 @@ export default function AdminDashboardPage() {
             <CardTitle>Overview</CardTitle>
           </CardHeader>
           <CardContent className="pl-2">
-            <ResponsiveContainer width="100%" height={350}>
-              <BarChart data={chartData}>
-                <XAxis
-                  dataKey="name"
-                  stroke="#888888"
-                  fontSize={12}
-                  tickLine={false}
-                  axisLine={false}
-                />
-                <YAxis
-                  stroke="#888888"
-                  fontSize={12}
-                  tickLine={false}
-                  axisLine={false}
-                  tickFormatter={(value) => `$${value}`}
-                />
-                <Bar dataKey="total" fill="currentColor" radius={[4, 4, 0, 0]} className="fill-primary" />
-              </BarChart>
-            </ResponsiveContainer>
+            {loading ? <Skeleton className="w-full h-[350px]" /> : (
+                <ResponsiveContainer width="100%" height={350}>
+                <BarChart data={chartData}>
+                    <XAxis
+                    dataKey="name"
+                    stroke="#888888"
+                    fontSize={12}
+                    tickLine={false}
+                    axisLine={false}
+                    />
+                    <YAxis
+                    stroke="#888888"
+                    fontSize={12}
+                    tickLine={false}
+                    axisLine={false}
+                    tickFormatter={(value) => `$${value}`}
+                    />
+                    <Bar dataKey="total" fill="currentColor" radius={[4, 4, 0, 0]} className="fill-primary" />
+                </BarChart>
+                </ResponsiveContainer>
+            )}
           </CardContent>
         </Card>
         <Card className="col-span-3">
@@ -140,7 +185,21 @@ export default function AdminDashboardPage() {
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <div className="space-y-8">
+            {loading ? (
+                <div className="space-y-8">
+                    {[...Array(5)].map((_, i) => (
+                    <div className="flex items-center" key={i}>
+                        <Skeleton className="h-9 w-9 rounded-full" />
+                        <div className="ml-4 space-y-2">
+                        <Skeleton className="h-4 w-[100px]" />
+                        <Skeleton className="h-4 w-[150px]" />
+                        </div>
+                        <Skeleton className="ml-auto h-4 w-[60px]" />
+                    </div>
+                    ))}
+                </div>
+            ) : (
+                <div className="space-y-8">
               <div className="flex items-center">
                 <Avatar className="h-9 w-9">
                   <AvatarImage src="https://placehold.co/40x40.png" alt="Avatar" data-ai-hint="person face" />
@@ -201,6 +260,7 @@ export default function AdminDashboardPage() {
                 <div className="ml-auto font-medium">+$39.00</div>
               </div>
             </div>
+            )}
           </CardContent>
         </Card>
       </div>
