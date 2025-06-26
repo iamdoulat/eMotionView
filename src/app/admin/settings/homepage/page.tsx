@@ -1,8 +1,8 @@
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Separator } from "@/components/ui/separator";
 import { Textarea } from "@/components/ui/textarea";
 import { Move } from "lucide-react";
 
@@ -16,33 +16,46 @@ export default function HomepageSettingsPage() {
     "Headphones",
   ];
 
+  const heroBanners = Array.from({ length: 5 });
+
   return (
     <div className="space-y-8">
       <h1 className="text-3xl font-bold tracking-tight">Homepage Design</h1>
       
       <Card>
         <CardHeader>
-          <CardTitle>Hero Banner</CardTitle>
-          <CardDescription>Update the main banner at the top of your homepage.</CardDescription>
+          <CardTitle>Hero Banners</CardTitle>
+          <CardDescription>Manage the rotating banners at the top of your homepage. Configure up to 5.</CardDescription>
         </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="space-y-2">
-            <Label htmlFor="hero-image">Banner Image</Label>
-            <Input id="hero-image" type="file" />
-            <p className="text-sm text-muted-foreground">Recommended size: 900x440px</p>
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="hero-headline">Headline</Label>
-            <Input id="hero-headline" defaultValue="GADGET FEST" />
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="hero-subheadline">Sub-headline</Label>
-            <Textarea id="hero-subheadline" defaultValue="Up to 60% off on your favorite gadgets." />
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="hero-button-text">Button Text</Label>
-            <Input id="hero-button-text" defaultValue="Shop Now" />
-          </div>
+        <CardContent>
+          <Accordion type="single" collapsible className="w-full" defaultValue="item-1">
+            {heroBanners.map((_, index) => (
+              <AccordionItem value={`item-${index + 1}`} key={index}>
+                <AccordionTrigger>Hero Banner {index + 1}</AccordionTrigger>
+                <AccordionContent>
+                    <div className="grid gap-4 pt-4">
+                      <div className="space-y-2">
+                        <Label htmlFor={`hero-image-${index + 1}`}>Banner Image</Label>
+                        <Input id={`hero-image-${index + 1}`} type="file" />
+                        <p className="text-sm text-muted-foreground">Recommended size: 900x440px</p>
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor={`hero-headline-${index + 1}`}>Headline</Label>
+                        <Input id={`hero-headline-${index + 1}`} placeholder="e.g. GADGET FEST" defaultValue={index === 0 ? "GADGET FEST" : ""} />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor={`hero-subheadline-${index + 1}`}>Sub-headline</Label>
+                        <Textarea id={`hero-subheadline-${index + 1}`} placeholder="e.g. Up to 60% off..." defaultValue={index === 0 ? "Up to 60% off on your favorite gadgets." : ""} />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor={`hero-button-text-${index + 1}`}>Button Text</Label>
+                        <Input id={`hero-button-text-${index + 1}`} placeholder="e.g. Shop Now" defaultValue={index === 0 ? "Shop Now" : ""} />
+                      </div>
+                    </div>
+                </AccordionContent>
+              </AccordionItem>
+            ))}
+          </Accordion>
         </CardContent>
       </Card>
 
