@@ -15,15 +15,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { GripVertical, Pencil, Plus, Trash2 } from "lucide-react";
 
-const initialSectionsData = [
-    { id: 'feat-cat', name: "Featured Categories" },
-    { id: 'new-arr', name: "New Arrivals" },
-    { id: 'promo-ban', name: "Promotional Banners" },
-    { id: 'pop-prod', name: "Popular Products" },
-    { id: 'smart-watch', name: "Smart Watches" },
-    { id: 'headphones', name: "Headphones" },
-];
-
+// Data Structures
 interface FeaturedCategory {
     id: string;
     name: string;
@@ -38,7 +30,17 @@ interface SingleBanner {
     image: string;
     link: string;
 }
+type SectionType = 'featured-categories' | 'product-grid' | 'promo-banner-pair' | 'single-banner-large';
 
+interface Section {
+    id: string;
+    name: string;
+    type: SectionType;
+    content: any;
+}
+
+
+// Initial Data
 const initialFeaturedCategoriesData: FeaturedCategory[] = [
     { id: 'fc1', name: 'Smart Watches', image: 'https://placehold.co/128x128.png' },
     { id: 'fc2', name: 'Headphones', image: 'https://placehold.co/128x128.png' },
@@ -46,7 +48,6 @@ const initialFeaturedCategoriesData: FeaturedCategory[] = [
     { id: 'fc4', name: 'Charger & Cables', image: 'https://placehold.co/128x128.png' },
     { id: 'fc5', name: 'Powerbanks', image: 'https://placehold.co/128x128.png' },
 ];
-
 const initialPromoBannersData: PromoBanner[] = [
     { id: 'promo1', image: 'https://placehold.co/800x400.png', link: '#' },
     { id: 'promo2', image: 'https://placehold.co/800x400.png', link: '#' },
@@ -54,38 +55,32 @@ const initialPromoBannersData: PromoBanner[] = [
 const initialSmartWatchBannerData: SingleBanner = { image: 'https://placehold.co/1200x250.png', link: '/products?category=Wearables' };
 const initialHeadphonesBannerData: SingleBanner = { image: 'https://placehold.co/1200x250.png', link: '/products?category=Audio' };
 
-interface SortableSectionItemProps {
-    id: string;
-    name: string;
-    onSaveSectionName?: (newName: string) => void;
-    onDelete?: () => void;
-    featuredCategories?: FeaturedCategory[];
-    onSaveFeaturedCategories?: (categories: FeaturedCategory[]) => void;
-    promoBanners?: PromoBanner[];
-    onSavePromoBanners?: (banners: PromoBanner[]) => void;
-    singleBanner?: SingleBanner;
-    onSaveSingleBanner?: (banner: SingleBanner) => void;
-}
+const initialSectionsData: Section[] = [
+    { id: 'feat-cat', name: "Featured Categories", type: 'featured-categories', content: initialFeaturedCategoriesData },
+    { id: 'new-arr', name: "New Arrivals", type: 'product-grid', content: null },
+    { id: 'promo-ban', name: "Promotional Banners", type: 'promo-banner-pair', content: initialPromoBannersData },
+    { id: 'pop-prod', name: "Popular Products", type: 'product-grid', content: null },
+    { id: 'smart-watch', name: "Smart Watches", type: 'single-banner-large', content: initialSmartWatchBannerData },
+    { id: 'headphones', name: "Headphones", type: 'single-banner-large', content: initialHeadphonesBannerData },
+];
+
 
 function SortableSectionItem({ 
-    id, 
-    name, 
-    onSaveSectionName,
+    section,
+    onSave,
     onDelete,
-    featuredCategories = [], 
-    onSaveFeaturedCategories,
-    promoBanners = [],
-    onSavePromoBanners,
-    singleBanner,
-    onSaveSingleBanner,
-}: SortableSectionItemProps) {
+}: {
+    section: Section;
+    onSave: (updatedSection: Section) => void;
+    onDelete: () => void;
+}) {
     const {
         attributes,
         listeners,
         setNodeRef,
         transform,
         transition,
-    } = useSortable({ id });
+    } = useSortable({ id: section.id });
 
     const style = {
         transform: CSS.Transform.toString(transform),
@@ -93,76 +88,58 @@ function SortableSectionItem({
     };
     
     const [isDialogOpen, setIsDialogOpen] = useState(false);
-    const [editedName, setEditedName] = useState(name);
-    const [editedCategories, setEditedCategories] = useState<FeaturedCategory[]>([]);
-    const [editedPromoBanners, setEditedPromoBanners] = useState<PromoBanner[]>([]);
-    const [editedSingleBanner, setEditedSingleBanner] = useState<SingleBanner | undefined>(undefined);
+    const [editedSection, setEditedSection] = useState<Section>(section);
     
     const handleOpenChange = (open: boolean) => {
         if (open) {
-            setEditedName(name);
-            setEditedCategories(JSON.parse(JSON.stringify(featuredCategories))); 
-            setEditedPromoBanners(JSON.parse(JSON.stringify(promoBanners)));
-            if (singleBanner) {
-                setEditedSingleBanner(JSON.parse(JSON.stringify(singleBanner)));
-            }
+            setEditedSection(JSON.parse(JSON.stringify(section))); 
         }
         setIsDialogOpen(open);
     }
 
     const handleSave = () => {
-        switch(id) {
-            case 'feat-cat':
-                onSaveFeaturedCategories?.(editedCategories);
-                break;
-            case 'promo-ban':
-                onSavePromoBanners?.(editedPromoBanners);
-                break;
-            case 'smart-watch':
-            case 'headphones':
-                if (editedSingleBanner) {
-                    onSaveSingleBanner?.(editedSingleBanner);
-                }
-                break;
-            default:
-                onSaveSectionName?.(editedName);
-        }
+        onSave(editedSection);
         setIsDialogOpen(false);
     }
     
+    const handleNameChange = (newName: string) => {
+        setEditedSection(prev => ({ ...prev, name: newName }));
+    };
+
     const handleCategoryChange = (index: number, field: 'name', value: string) => {
-        const newCategories = [...editedCategories];
-        newCategories[index] = { ...newCategories[index], [field]: value };
-        setEditedCategories(newCategories);
+        const newContent = [...(editedSection.content as FeaturedCategory[])];
+        newContent[index] = { ...newContent[index], [field]: value };
+        setEditedSection(prev => ({ ...prev, content: newContent }));
     };
 
     const handleAddCategory = () => {
-        setEditedCategories([...editedCategories, { id: `new-${Date.now()}`, name: 'New Category', image: 'https://placehold.co/128x128.png' }]);
+        const newContent = [...(editedSection.content as FeaturedCategory[]), { id: `new-${Date.now()}`, name: 'New Category', image: 'https://placehold.co/128x128.png' }];
+        setEditedSection(prev => ({...prev, content: newContent}));
     };
     
     const handleRemoveCategory = (categoryId: string) => {
-        setEditedCategories(editedCategories.filter(c => c.id !== categoryId));
+        const newContent = (editedSection.content as FeaturedCategory[]).filter(c => c.id !== categoryId);
+        setEditedSection(prev => ({...prev, content: newContent}));
     };
 
     const handlePromoBannerChange = (index: number, field: 'link', value: string) => {
-        const newBanners = [...editedPromoBanners];
-        newBanners[index] = { ...newBanners[index], [field]: value };
-        setEditedPromoBanners(newBanners);
+        const newContent = [...(editedSection.content as PromoBanner[])];
+        newContent[index] = { ...newContent[index], [field]: value };
+        setEditedSection(prev => ({...prev, content: newContent}));
     };
 
     const handleSingleBannerChange = (field: 'link', value: string) => {
-        if (editedSingleBanner) {
-            setEditedSingleBanner({ ...editedSingleBanner, [field]: value });
-        }
+        const newContent = { ...(editedSection.content as SingleBanner), [field]: value };
+        setEditedSection(prev => ({ ...prev, content: newContent }));
     };
 
     const renderDialogContent = () => {
-        switch (id) {
-            case 'feat-cat':
+        switch (section.type) {
+            case 'featured-categories':
                 return (
                     <div className="space-y-4 py-4">
                         <div className="max-h-[60vh] space-y-4 overflow-y-auto pr-2">
-                            {editedCategories.map((category, index) => (
+                            {(editedSection.content as FeaturedCategory[]).map((category, index) => (
                                 <Card key={category.id} className="p-4">
                                     <div className="grid grid-cols-1 md:grid-cols-3 gap-4 items-end">
                                         <div className="space-y-2">
@@ -192,12 +169,12 @@ function SortableSectionItem({
                         </Button>
                     </div>
                 );
-            case 'promo-ban':
+            case 'promo-banner-pair':
                 return (
                     <div className="space-y-4 py-4">
                         <p className="text-sm text-muted-foreground">Recommended size: 800x400px</p>
                         <div className="max-h-[60vh] space-y-4 overflow-y-auto pr-2">
-                            {editedPromoBanners.map((banner, index) => (
+                            {(editedSection.content as PromoBanner[]).map((banner, index) => (
                                 <Card key={banner.id} className="p-4">
                                      <CardTitle className="text-lg mb-4">Banner {index + 1}</CardTitle>
                                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4 items-end">
@@ -218,8 +195,7 @@ function SortableSectionItem({
                         </div>
                     </div>
                 );
-            case 'smart-watch':
-            case 'headphones':
+            case 'single-banner-large':
                 return (
                     <div className="space-y-4 py-4">
                         <p className="text-sm text-muted-foreground">Recommended size: 1200x250px</p>
@@ -228,24 +204,25 @@ function SortableSectionItem({
                                 <div className="space-y-2">
                                     <Label>Current Image</Label>
                                     <div className="flex items-center gap-4">
-                                        <Image src={editedSingleBanner?.image || ''} alt={name} width={240} height={50} className="rounded-md border bg-secondary object-cover" data-ai-hint="advertisement banner"/>
-                                        <Input id={`single-banner-image-${id}`} type="file" className="max-w-xs"/>
+                                        <Image src={(editedSection.content as SingleBanner)?.image || ''} alt={section.name} width={240} height={50} className="rounded-md border bg-secondary object-cover" data-ai-hint="advertisement banner"/>
+                                        <Input id={`single-banner-image-${section.id}`} type="file" className="max-w-xs"/>
                                     </div>
                                 </div>
                                 <div className="space-y-2">
-                                    <Label htmlFor={`single-banner-link-${id}`}>Link URL</Label>
-                                    <Input id={`single-banner-link-${id}`} value={editedSingleBanner?.link || ''} onChange={(e) => handleSingleBannerChange('link', e.target.value)} />
+                                    <Label htmlFor={`single-banner-link-${section.id}`}>Link URL</Label>
+                                    <Input id={`single-banner-link-${section.id}`} value={(editedSection.content as SingleBanner)?.link || ''} onChange={(e) => handleSingleBannerChange('link', e.target.value)} />
                                 </div>
                             </div>
                         </Card>
                     </div>
                 );
+            case 'product-grid':
             default:
                 return (
                     <div className="grid gap-4 py-4">
                         <div className="space-y-2">
                             <Label htmlFor="section-name">Section Title</Label>
-                            <Input id="section-name" value={editedName} onChange={(e) => setEditedName(e.target.value)} />
+                            <Input id="section-name" value={editedSection.name} onChange={(e) => handleNameChange(e.target.value)} />
                         </div>
                     </div>
                 );
@@ -259,7 +236,7 @@ function SortableSectionItem({
                     <Button variant="ghost" size="icon" className="cursor-grab" {...listeners}>
                         <GripVertical className="h-5 w-5 text-muted-foreground" />
                     </Button>
-                    <p className="font-medium">{name}</p>
+                    <p className="font-medium">{section.name}</p>
                 </div>
                 <div className="flex items-center gap-2">
                     <DialogTrigger asChild>
@@ -276,7 +253,7 @@ function SortableSectionItem({
             </div>
             <DialogContent className="sm:max-w-3xl">
                 <DialogHeader>
-                    <DialogTitle>Edit Section: {name}</DialogTitle>
+                    <DialogTitle>Edit Section: {section.name}</DialogTitle>
                     <DialogDescription>
                         Make changes to this homepage section. Click save when you're done.
                     </DialogDescription>
@@ -292,11 +269,7 @@ function SortableSectionItem({
 }
 
 export default function HomepageSettingsPage() {
-  const [sections, setSections] = useState(initialSectionsData);
-  const [featuredCategories, setFeaturedCategories] = useState(initialFeaturedCategoriesData);
-  const [promoBanners, setPromoBanners] = useState(initialPromoBannersData);
-  const [smartWatchBanner, setSmartWatchBanner] = useState(initialSmartWatchBannerData);
-  const [headphonesBanner, setHeadphonesBanner] = useState(initialHeadphonesBannerData);
+  const [sections, setSections] = useState<Section[]>(initialSectionsData);
   const heroBanners = Array.from({ length: 5 });
 
   const sensors = useSensors(
@@ -318,48 +291,58 @@ export default function HomepageSettingsPage() {
     }
   }
 
-  const handleSaveSectionName = (id: string, newName: string) => {
-    setSections(prev => prev.map(s => s.id === id ? { ...s, name: newName } : s));
+  const handleSaveSection = (updatedSection: Section) => {
+    setSections(prev => prev.map(s => s.id === updatedSection.id ? updatedSection : s));
   };
   
   const handleDeleteSection = (id: string) => {
     setSections(prev => prev.filter(s => s.id !== id));
   };
 
-  const handleAddNewSection = () => {
-    const newSection = {
-      id: `new-section-${Date.now()}`,
-      name: "New Section",
-    };
+  const handleAddNewSection = (type: SectionType) => {
+    let newSection: Section;
+    const id = `section-${Date.now()}`;
+    switch (type) {
+        case 'promo-banner-pair':
+            newSection = {
+                id,
+                name: "New Promotional Banners",
+                type: 'promo-banner-pair',
+                content: [
+                    { id: `promo1-${id}`, image: 'https://placehold.co/800x400.png', link: '#' },
+                    { id: `promo2-${id}`, image: 'https://placehold.co/800x400.png', link: '#' },
+                ]
+            };
+            break;
+        case 'single-banner-large':
+            newSection = {
+                id,
+                name: "New Large Banner",
+                type: 'single-banner-large',
+                content: { image: 'https://placehold.co/1200x250.png', link: '#' }
+            };
+            break;
+        case 'featured-categories':
+             newSection = {
+                id,
+                name: "New Featured Categories",
+                type: 'featured-categories',
+                content: []
+            };
+            break;
+        case 'product-grid':
+        default:
+            newSection = {
+                id,
+                name: "New Content Section",
+                type: 'product-grid',
+                content: null
+            };
+            break;
+    }
     setSections(prev => [...prev, newSection]);
   };
 
-  const getSectionProps = (sectionId: string) => {
-    switch (sectionId) {
-      case 'feat-cat':
-        return {
-          featuredCategories: featuredCategories,
-          onSaveFeaturedCategories: setFeaturedCategories,
-        };
-      case 'promo-ban':
-        return {
-          promoBanners: promoBanners,
-          onSavePromoBanners: setPromoBanners,
-        };
-      case 'smart-watch':
-        return {
-          singleBanner: smartWatchBanner,
-          onSaveSingleBanner: setSmartWatchBanner,
-        };
-      case 'headphones':
-        return {
-          singleBanner: headphonesBanner,
-          onSaveSingleBanner: setHeadphonesBanner,
-        };
-      default:
-        return {};
-    }
-  };
 
   return (
     <div className="space-y-8">
@@ -418,23 +401,29 @@ export default function HomepageSettingsPage() {
               strategy={verticalListSortingStrategy}
             >
               <div className="space-y-2">
-                {sections.map(({id, name}) => (
+                {sections.map((section) => (
                   <SortableSectionItem 
-                    key={id} 
-                    id={id} 
-                    name={name}
-                    onSaveSectionName={(newName) => handleSaveSectionName(id, newName)}
-                    onDelete={() => handleDeleteSection(id)}
-                    {...getSectionProps(id)}
+                    key={section.id} 
+                    section={section}
+                    onSave={handleSaveSection}
+                    onDelete={() => handleDeleteSection(section.id)}
                   />
                 ))}
               </div>
             </SortableContext>
           </DndContext>
-          <div className="mt-4 border-t pt-4">
-            <Button variant="outline" onClick={handleAddNewSection}>
+          <div className="mt-4 border-t pt-4 flex flex-wrap gap-2">
+            <Button variant="outline" onClick={() => handleAddNewSection('product-grid')}>
               <Plus className="mr-2 h-4 w-4" />
-              Add New Section
+              Add Content Section
+            </Button>
+            <Button variant="outline" onClick={() => handleAddNewSection('promo-banner-pair')}>
+              <Plus className="mr-2 h-4 w-4" />
+              Add Promo Banners (800x400)
+            </Button>
+            <Button variant="outline" onClick={() => handleAddNewSection('single-banner-large')}>
+              <Plus className="mr-2 h-4 w-4" />
+              Add Large Banner (1200x250)
             </Button>
           </div>
         </CardContent>
