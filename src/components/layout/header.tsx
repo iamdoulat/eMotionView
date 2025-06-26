@@ -81,7 +81,7 @@ export function Header() {
             <form className="w-full max-w-2xl">
               <div className="relative">
                 <Input type="search" placeholder="Search the product" className="h-12 pr-14 rounded-full border-2 border-primary/30 focus:border-primary focus:ring-primary/20" />
-                <Button type="submit" size="icon" className="absolute right-1 top-1/2 -translate-y-1/2 h-10 w-10 rounded-full bg-accent text-accent-foreground hover:bg-accent/90">
+                <Button type="submit" size="icon" className="absolute right-1 top-1/2 -translate-y-1/2 h-10 w-10 rounded-full bg-primary text-primary-foreground hover:bg-primary/90">
                   <Search className="h-5 w-5" />
                 </Button>
               </div>
@@ -128,7 +128,7 @@ export function Header() {
                  <form className="w-full max-w-lg">
                     <div className="relative">
                         <Input type="search" placeholder="Search the product..." className="h-10 pr-12 rounded-full" />
-                        <Button type="submit" size="icon" className="absolute right-1 top-1/2 -translate-y-1/2 h-8 w-8 rounded-full bg-accent text-accent-foreground hover:bg-accent/90">
+                        <Button type="submit" size="icon" className="absolute right-1 top-1/2 -translate-y-1/2 h-8 w-8 rounded-full bg-primary text-primary-foreground hover:bg-primary/90">
                         <Search className="h-5 w-5" />
                         </Button>
                     </div>
@@ -198,7 +198,7 @@ export function Header() {
           <form>
             <div className="relative">
               <Input type="search" placeholder="Search..." className="h-10 pr-11 rounded-full" />
-              <Button type="submit" size="icon" className="absolute right-0 top-0 h-10 w-10 rounded-full bg-primary text-primary-foreground">
+              <Button type="submit" size="icon" className="absolute right-0 top-0 h-10 w-10 rounded-full bg-primary text-primary-foreground hover:bg-primary/90">
                 <Search className="h-5 w-5" />
               </Button>
             </div>
