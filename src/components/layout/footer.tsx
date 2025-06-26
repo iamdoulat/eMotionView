@@ -1,62 +1,146 @@
 import Link from "next/link";
-import { Input } from "@/components/ui/input";
-import { Button } from "@/components/ui/button";
-import { Facebook, Twitter, Instagram, Youtube, Send } from "lucide-react";
+import Image from "next/image";
+import { 
+  Facebook, 
+  Twitter, 
+  Instagram, 
+  Youtube, 
+  Linkedin,
+  Headset,
+  CreditCard,
+  ShieldCheck,
+  Truck,
+  Phone,
+  Mail,
+  MapPin
+} from "lucide-react";
+
+const infoItems = [
+    { icon: Headset, title: 'SUPPORT 24/7', text: 'We Support Online 24 Hours' },
+    { icon: CreditCard, title: 'Online Payment', text: 'Make payments hands free very easily' },
+    { icon: ShieldCheck, title: 'Authentic Product', text: 'Guaranteed 100% authentic product' },
+    { icon: Truck, title: 'Fast Delivery', text: 'Fast Delivery is our first moto' },
+];
+
+const companyLinks = [
+    { href: "/privacy", label: "Privacy Policy" },
+    { href: "#", label: "Terms and conditions" },
+    { href: "#", label: "Return and Refund Policy" },
+    { href: "#", label: "EMI" },
+    { href: "#", label: "Warranty" },
+    { href: "#", label: "Delivery Policy" },
+    { href: "#", label: "Support Center" },
+    { href: "/contact", label: "Contact Us" },
+];
+
+const paymentLogos = Array(22).fill(0);
 
 export function Footer() {
   const currentYear = new Date().getFullYear();
 
   return (
-    <footer className="bg-card border-t">
-      <div className="container mx-auto px-4 pt-16 pb-8">
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8 mb-8">
-          
-          <div className="space-y-4">
-            <h4 className="font-headline font-semibold text-lg text-primary">eMotionView</h4>
-            <p className="text-muted-foreground text-sm">
-              Your one-stop shop for the latest tech gadgets. We provide AI-powered recommendations to help you find the perfect product.
-            </p>
-             <div className="flex space-x-4 pt-2">
-              <Link href="#"><Facebook className="h-5 w-5 text-muted-foreground hover:text-primary" /></Link>
-              <Link href="#"><Twitter className="h-5 w-5 text-muted-foreground hover:text-primary" /></Link>
-              <Link href="#"><Instagram className="h-5 w-5 text-muted-foreground hover:text-primary" /></Link>
-              <Link href="#"><Youtube className="h-5 w-5 text-muted-foreground hover:text-primary" /></Link>
-            </div>
-          </div>
-          
-          <div className="space-y-4">
-            <h4 className="font-headline font-semibold text-lg">Quick Links</h4>
-            <ul className="space-y-2 text-sm">
-              <li><Link href="/about" className="text-muted-foreground hover:text-primary">About Us</Link></li>
-              <li><Link href="/contact" className="text-muted-foreground hover:text-primary">Contact Us</Link></li>
-              <li><Link href="/products" className="text-muted-foreground hover:text-primary">All Products</Link></li>
-              <li><Link href="#" className="text-muted-foreground hover:text-primary">Blogs</Link></li>
-            </ul>
-          </div>
-
-          <div className="space-y-4">
-            <h4 className="font-headline font-semibold text-lg">Support</h4>
-            <ul className="space-y-2 text-sm">
-              <li><Link href="#" className="text-muted-foreground hover:text-primary">FAQ</Link></li>
-              <li><Link href="/privacy" className="text-muted-foreground hover:text-primary">Privacy Policy</Link></li>
-              <li><Link href="#" className="text-muted-foreground hover:text-primary">Terms & Conditions</Link></li>
-            </ul>
-          </div>
-
-          <div className="space-y-4">
-            <h4 className="font-headline font-semibold text-lg">Stay Connected</h4>
-            <p className="text-muted-foreground text-sm">Subscribe for the latest deals and offers.</p>
-            <form className="flex w-full max-w-sm items-center space-x-2">
-              <Input type="email" placeholder="Your Email" className="bg-secondary/50" />
-              <Button type="submit" size="icon"><Send className="h-4 w-4"/></Button>
-            </form>
+    <footer className="border-t">
+      {/* Pre-footer info section */}
+      <div className="bg-background">
+        <div className="container mx-auto px-4 py-12">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8 text-center">
+            {infoItems.map((item, index) => (
+              <div key={index} className="flex flex-col items-center">
+                <item.icon className="h-10 w-10 text-primary mb-4" />
+                <h3 className="font-semibold text-lg">{item.title}</h3>
+                <p className="text-sm text-muted-foreground mt-1">{item.text}</p>
+              </div>
+            ))}
           </div>
         </div>
+      </div>
 
-        <div className="border-t pt-8 flex flex-col items-center justify-center gap-4 text-center">
-          <p className="text-sm text-muted-foreground">
-            &copy; {currentYear} eMotionView. All rights reserved.
-          </p>
+      {/* Main Footer */}
+      <div className="bg-[#1e2128] text-gray-300">
+        <div className="container mx-auto px-4 pt-16 pb-8">
+          <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-12 mb-8">
+            
+            <div className="space-y-4 lg:col-span-2">
+              <Link href="/" className="flex items-center gap-2 mb-4">
+                <Image src="https://placehold.co/50x50/FFFFFF/1e2128.png" alt="eMotionView Logo" width={40} height={40} data-ai-hint="logo globe white"/>
+                <span className="font-bold font-headline text-2xl text-white">eMotionView</span>
+              </Link>
+              <p className="text-sm max-w-md">
+                Motion View is the largest Eco Product importer and Distributor in Bangladesh and now holds the leading position in the ecosystem industry.
+              </p>
+              <div className="flex flex-wrap gap-4 pt-4">
+                <Link href="#">
+                  <Image src="https://placehold.co/135x40.png" alt="Download on the App Store" width={135} height={40} data-ai-hint="app store badge" />
+                </Link>
+                <Link href="#">
+                  <Image src="https://placehold.co/135x40.png" alt="Get it on Google Play" width={135} height={40} data-ai-hint="google play badge" />
+                </Link>
+              </div>
+              <div className="flex space-x-4 pt-4">
+                <Link href="#"><Facebook className="h-5 w-5 text-gray-400 hover:text-white" /></Link>
+                <Link href="#"><Twitter className="h-5 w-5 text-gray-400 hover:text-white" /></Link>
+                <Link href="#"><Instagram className="h-5 w-5 text-gray-400 hover:text-white" /></Link>
+                <Link href="#"><Linkedin className="h-5 w-5 text-gray-400 hover:text-white" /></Link>
+                <Link href="#"><Youtube className="h-5 w-5 text-gray-400 hover:text-white" /></Link>
+              </div>
+            </div>
+            
+            <div className="space-y-4">
+              <h4 className="font-headline font-semibold text-lg text-white">COMPANY</h4>
+              <ul className="space-y-2 text-sm">
+                {companyLinks.map(link => (
+                    <li key={link.label}><Link href={link.href} className="text-gray-400 hover:text-white">{link.label}</Link></li>
+                ))}
+              </ul>
+            </div>
+
+            <div className="space-y-4">
+              <h4 className="font-headline font-semibold text-lg text-white">Address</h4>
+              <ul className="space-y-3 text-sm">
+                <li className="flex gap-3">
+                    <MapPin className="h-5 w-5 mt-1 shrink-0" />
+                    <span>10/25 (9th Commercial Floor), Eastern Plaza, 70 Bir Uttam C.R Datta Road, Hatirpool, Dhaka-1205</span>
+                </li>
+                <li className="flex gap-3">
+                    <Phone className="h-5 w-5 shrink-0" />
+                    <span>09677460460</span>
+                </li>
+                <li className="flex gap-3">
+                    <Mail className="h-5 w-5 shrink-0" />
+                    <span>motionview22@gmail.com.bd</span>
+                </li>
+              </ul>
+              <h4 className="font-headline font-semibold text-lg text-white pt-4">Member of:</h4>
+              <div className="flex gap-4">
+                <Image src="https://placehold.co/100x40.png" alt="BASIS Member" width={100} height={40} data-ai-hint="membership badge" />
+                <Image src="https://placehold.co/100x40.png" alt="e-Cab Member" width={100} height={40} data-ai-hint="membership badge" />
+              </div>
+            </div>
+
+          </div>
+
+          <div className="border-t border-gray-700 pt-8">
+            <div className="flex flex-col md:flex-row gap-4 items-start">
+                <span className="text-sm font-semibold shrink-0 pt-2">Pay With</span>
+                <div className="grid grid-cols-6 sm:grid-cols-8 md:grid-cols-10 lg:grid-cols-12 xl:grid-cols-15 gap-2">
+                    {paymentLogos.map((_, index) => (
+                        <div key={index} className="bg-white rounded-md p-1 flex items-center justify-center h-10">
+                            <Image src="https://placehold.co/50x30.png" alt="Payment Method" width={50} height={30} data-ai-hint="payment method logo" />
+                        </div>
+                    ))}
+                </div>
+            </div>
+          </div>
+
+          <div className="border-t border-gray-700 mt-8 pt-8 flex flex-col md:flex-row items-center justify-between gap-4 text-center">
+            <p className="text-sm text-gray-400">
+              &copy; {currentYear} eMotionView. All Rights Reserved by Motion View
+            </p>
+            <div className="flex gap-4 items-center">
+                <Image src="https://placehold.co/100x30.png" alt="SSL Commerz" width={100} height={30} data-ai-hint="security badge" />
+                <Image src="https://placehold.co/100x30.png" alt="DMCA Protected" width={100} height={30} data-ai-hint="security badge" />
+            </div>
+          </div>
         </div>
       </div>
     </footer>
