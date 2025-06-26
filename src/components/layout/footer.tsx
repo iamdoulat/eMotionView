@@ -45,7 +45,7 @@ export function Footer() {
         <div className="container mx-auto px-4 py-12">
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-8 text-center">
             {infoItems.map((item, index) => (
-              <div key={index} className="flex flex-col items-center">
+              <div key={index} className="flex flex-col items-center p-6 rounded-lg transition-all duration-300 ease-in-out hover:-translate-y-2 hover:shadow-xl cursor-pointer">
                 <item.icon className="h-10 w-10 text-primary mb-4" />
                 <h3 className="font-semibold text-lg">{item.title}</h3>
                 <p className="text-sm text-muted-foreground mt-1">{item.text}</p>
