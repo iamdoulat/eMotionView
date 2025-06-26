@@ -6,7 +6,7 @@ import { products } from '@/lib/placeholder-data';
 import { Card } from '@/components/ui/card';
 import { ArrowRight, Rocket, Glasses, Watch, Laptop, Headphones, Cable, Home, Bot } from 'lucide-react';
 
-export default function Home() {
+export default function HomePage() {
   const featuredProducts = products.slice(0, 4);
 
   const categories = [
