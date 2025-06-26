@@ -165,10 +165,10 @@ export default function HomePage() {
 
       {/* New Arrival Products */}
       <section className="container mx-auto px-4 py-16">
-        <div className="flex justify-between items-center mb-8">
+        <div className="flex justify-between items-center mb-8 border-b pb-4">
           <h2 className="font-headline text-2xl font-bold tracking-tight text-foreground">New Arrival</h2>
           <Button asChild variant="link" className="text-primary">
-            <Link href="/products?sort=newest">View All <ArrowRight className="ml-1 h-4 w-4" /></Link>
+            <Link href="/products?sort=newest">See all</Link>
           </Button>
         </div>
         <div className="grid grid-cols-2 gap-x-4 gap-y-8 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 xl:gap-x-6">
@@ -206,8 +206,11 @@ export default function HomePage() {
 
       {/* Popular Products */}
       <section className="container mx-auto px-4 py-16">
-        <div className="mb-8">
+        <div className="flex justify-between items-center mb-8 border-b pb-4">
           <h2 className="font-headline text-2xl font-bold tracking-tight text-foreground">Popular Products</h2>
+          <Button asChild variant="link" className="text-primary">
+            <Link href="/products">See all</Link>
+          </Button>
         </div>
         <div className="grid grid-cols-2 gap-x-4 gap-y-8 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 xl:gap-x-6">
           {popularProducts.map((product) => (
@@ -230,7 +233,7 @@ export default function HomePage() {
             />
           </Link>
         </div>
-        <div className="flex justify-between items-center mb-8">
+        <div className="flex justify-between items-center mb-8 border-b pb-4">
           <h2 className="font-headline text-2xl font-bold tracking-tight text-foreground">Smart Watches</h2>
           <Button asChild variant="link" className="text-primary">
             <Link href="/products?category=Wearables">See all</Link>
@@ -257,7 +260,7 @@ export default function HomePage() {
             />
           </Link>
         </div>
-        <div className="flex justify-between items-center mb-8">
+        <div className="flex justify-between items-center mb-8 border-b pb-4">
           <h2 className="font-headline text-2xl font-bold tracking-tight text-foreground">Headphones</h2>
           <Button asChild variant="link" className="text-primary">
             <Link href="/products?category=Audio">See all</Link>
