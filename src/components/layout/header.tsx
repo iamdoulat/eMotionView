@@ -73,7 +73,7 @@ export function Header() {
       
       {/* Normal Header (Unscrolled) */}
       <div className={cn("border-b", isScrolled ? 'hidden' : 'block')}>
-        <div className="container mx-auto flex h-20 items-center justify-between gap-4 px-4">
+        <div className="container mx-auto hidden h-20 items-center justify-between gap-4 px-4 md:flex">
           <Link href="/" className="flex items-center gap-2 flex-shrink-0">
             <Image src="https://placehold.co/50x50/FFFFFF/000000.png" alt="eMotionView Logo" width={40} height={40} data-ai-hint="logo globe"/>
             <span className="font-bold font-headline text-2xl text-foreground">eMotionView</span>
@@ -101,7 +101,7 @@ export function Header() {
 
       {/* Sticky Header (Scrolled) - Re-designed to match reference image */}
       <div className={cn("border-b shadow-md", isScrolled ? 'block' : 'hidden')}>
-        <div className="container mx-auto flex h-16 items-center justify-between gap-4 px-4">
+        <div className="container mx-auto hidden h-16 items-center justify-between gap-4 px-4 md:flex">
             <Link href="/" className="flex items-center gap-2 flex-shrink-0">
                 <Image src="https://placehold.co/50x50/FFFFFF/000000.png" alt="eMotionView Logo" width={32} height={32} data-ai-hint="logo globe"/>
                 <span className="font-bold font-headline text-xl text-foreground">eMotionView</span>
