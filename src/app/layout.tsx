@@ -1,9 +1,16 @@
 import type {Metadata} from 'next';
+import { Poppins } from 'next/font/google';
 import './globals.css';
 import { cn } from '@/lib/utils';
 import { Header } from '@/components/layout/header';
 import { Footer } from '@/components/layout/footer';
 import { Toaster } from "@/components/ui/toaster"
+
+const poppins = Poppins({
+  subsets: ['latin'],
+  weight: ['300', '400', '500', '600', '700', '800'],
+  variable: '--font-poppins',
+})
 
 export const metadata: Metadata = {
   title: 'eMotionView',
@@ -16,15 +23,10 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" className="h-full">
-      <head>
-        <link rel="preconnect" href="https://fonts.googleapis.com" />
-        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
-        <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&family=Space+Grotesk:wght@400;500;700&display=swap" rel="stylesheet" />
-      </head>
+    <html lang="en" className={cn("h-full", poppins.variable)}>
       <body className={cn("font-body antialiased min-h-screen flex flex-col")}>
         <Header />
-        <main className="flex-1">
+        <main className="flex-1 bg-gray-50 dark:bg-card">
           {children}
         </main>
         <Footer />
