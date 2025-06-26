@@ -43,7 +43,7 @@ export function Footer() {
       {/* Pre-footer info section */}
       <div className="bg-background">
         <div className="container mx-auto px-4 py-12">
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8 text-center">
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-8 text-center">
             {infoItems.map((item, index) => (
               <div key={index} className="flex flex-col items-center">
                 <item.icon className="h-10 w-10 text-primary mb-4" />
