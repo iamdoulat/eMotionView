@@ -11,7 +11,7 @@ import { Carousel, CarouselContent, CarouselItem } from '@/components/ui/carouse
 
 export default function HomePage() {
   const newArrivals = products.slice(0, 6);
-  const featuredProducts = products.slice(0, 4);
+  const popularProducts = products.slice(0, 6);
 
   const mainNavLinks = [
     { href: "#", label: "Campaign" },
@@ -176,16 +176,39 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* Featured Products */}
+      {/* Promotional Banners Section */}
       <section className="container mx-auto px-4 py-16">
-        <div className="flex justify-between items-center mb-8">
-          <h2 className="font-headline text-3xl font-bold tracking-tight text-foreground">Featured Products</h2>
-          <Button asChild variant="link" className="text-primary">
-            <Link href="/products">View All <ArrowRight className="ml-1 h-4 w-4" /></Link>
-          </Button>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <Link href="#" className="block rounded-lg overflow-hidden group">
+            <Image
+              src="https://placehold.co/800x400.png"
+              alt="Kospet Smartwatch Deals"
+              width={800}
+              height={400}
+              className="w-full h-auto object-cover transition-transform duration-300 group-hover:scale-105"
+              data-ai-hint="smartwatch advertisement"
+            />
+          </Link>
+          <Link href="#" className="block rounded-lg overflow-hidden group">
+            <Image
+              src="https://placehold.co/800x400.png"
+              alt="Xiaomi Home Appliance"
+              width={800}
+              height={400}
+              className="w-full h-auto object-cover transition-transform duration-300 group-hover:scale-105"
+              data-ai-hint="smart home appliances"
+            />
+          </Link>
         </div>
-        <div className="grid grid-cols-1 gap-x-6 gap-y-10 sm:grid-cols-2 lg:grid-cols-4 xl:gap-x-8">
-          {featuredProducts.map((product) => (
+      </section>
+
+      {/* Popular Products */}
+      <section className="container mx-auto px-4 py-16">
+        <div className="mb-8">
+          <h2 className="font-headline text-2xl font-bold tracking-tight text-foreground">Popular Products</h2>
+        </div>
+        <div className="grid grid-cols-2 gap-x-4 gap-y-8 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 xl:gap-x-6">
+          {popularProducts.map((product) => (
             <ProductCard key={product.id} product={product} />
           ))}
         </div>
