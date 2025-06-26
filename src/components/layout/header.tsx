@@ -87,7 +87,7 @@ export function Header() {
             </form>
           </div>
           <div className="flex items-center justify-end">
-            <Button variant="ghost" size="icon" asChild className="relative">
+            <Button variant="ghost" size="icon" asChild className="relative border border-black">
               <Link href="/cart" aria-label="Shopping Cart">
                 <ShoppingCart className="h-8 w-8" />
                 <Badge className="absolute -top-1 -right-1 h-5 w-5 justify-center rounded-full p-0 text-xs bg-blue-600 text-primary-foreground hover:bg-blue-700 border-none">3</Badge>
@@ -141,7 +141,7 @@ export function Header() {
                         <span className="sr-only">Wishlist</span>
                     </Link>
                 </Button>
-                <Button variant="ghost" size="icon" asChild className="relative">
+                <Button variant="ghost" size="icon" asChild className="relative border border-black">
                 <Link href="/cart" aria-label="Shopping Cart">
                     <ShoppingCart className="h-8 w-8" />
                     <Badge className="absolute -top-1 -right-1 h-5 w-5 justify-center rounded-full p-0 text-xs bg-blue-600 text-primary-foreground hover:bg-blue-700 border-none">3</Badge>
@@ -186,7 +186,7 @@ export function Header() {
           <Link href="/" className="flex items-center gap-2">
             <span className="font-bold font-headline text-xl text-foreground">eMotionView</span>
           </Link>
-          <Button variant="ghost" size="icon" asChild className="relative">
+          <Button variant="ghost" size="icon" asChild className="relative border border-black">
             <Link href="/cart" aria-label="Shopping Cart">
               <ShoppingCart className="h-8 w-8" />
               <Badge className="absolute -top-1 -right-1 h-5 w-5 justify-center rounded-full p-0 text-xs bg-blue-600 text-primary-foreground hover:bg-blue-700 border-none">3</Badge>
