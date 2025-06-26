@@ -179,7 +179,7 @@ export default function HomePage() {
       {/* Promotional Banners Section */}
       <section className="container mx-auto px-4 py-4">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <Link href="#" className="block rounded-lg overflow-hidden group">
+          <Link href="#" className="block rounded-lg overflow-hidden group transition-all duration-300 ease-in-out hover:-translate-y-1 hover:shadow-xl">
             <Image
               src="https://placehold.co/800x400.png"
               alt="Kospet Smartwatch Deals"
@@ -189,7 +189,7 @@ export default function HomePage() {
               data-ai-hint="smartwatch advertisement"
             />
           </Link>
-          <Link href="#" className="block rounded-lg overflow-hidden group">
+          <Link href="#" className="block rounded-lg overflow-hidden group transition-all duration-300 ease-in-out hover:-translate-y-1 hover:shadow-xl">
             <Image
               src="https://placehold.co/800x400.png"
               alt="Xiaomi Home Appliance"
