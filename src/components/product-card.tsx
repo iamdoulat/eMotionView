@@ -1,10 +1,13 @@
+"use client"
+
 import Image from 'next/image';
 import Link from 'next/link';
 import type { Product } from '@/lib/placeholder-data';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Star, ShoppingCart } from 'lucide-react';
+import { Star, ShoppingCart, CheckCircle } from 'lucide-react';
+import { Dialog, DialogContent, DialogTrigger } from "@/components/ui/dialog";
 
 interface ProductCardProps {
   product: Product;
@@ -12,50 +15,111 @@ interface ProductCardProps {
 
 export function ProductCard({ product }: ProductCardProps) {
   return (
-    <Card className="group overflow-hidden rounded-lg shadow-sm hover:shadow-lg transition-shadow duration-300 flex flex-col h-full bg-background">
-      <CardHeader className="p-0 relative border-b">
-        <Link href={`/products/${product.id}`} className="block aspect-square bg-secondary/30">
-          <Image
-            src={product.images[0]}
-            alt={product.name}
-            width={300}
-            height={300}
-            className="w-full h-full object-contain p-4 group-hover:scale-105 transition-transform duration-300"
-            data-ai-hint={`${product.category} product`}
-          />
-        </Link>
-        {product.discountPercentage && (
-          <Badge className="absolute top-3 left-3 bg-blue-600 hover:bg-blue-700 text-primary-foreground border-none">
-            {product.discountPercentage}%
-          </Badge>
-        )}
-      </CardHeader>
-      <CardContent className="p-3 flex-grow flex flex-col">
-        <h3 className="text-sm font-medium h-10 line-clamp-2">
-          <Link href={`/products/${product.id}`} className="hover:text-primary">
-            {product.name}
-          </Link>
-        </h3>
-        
-        <div className="mt-auto">
-            <div className="flex items-baseline gap-2 mt-2">
-                <p className="text-lg font-bold text-primary">৳{product.price.toLocaleString()}</p>
-                {product.originalPrice && (
-                    <p className="text-sm text-muted-foreground line-through">৳{product.originalPrice.toLocaleString()}</p>
-                )}
+    <Dialog>
+      <Card className="group overflow-hidden rounded-lg shadow-sm hover:shadow-lg transition-shadow duration-300 flex flex-col h-full bg-background">
+        <CardHeader className="p-0 relative border-b">
+          <DialogTrigger asChild>
+            <div className="block aspect-square bg-secondary/30 cursor-pointer">
+              <Image
+                src={product.images[0]}
+                alt={product.name}
+                width={300}
+                height={300}
+                className="w-full h-full object-contain p-4 group-hover:scale-105 transition-transform duration-300"
+                data-ai-hint={`${product.category} product`}
+              />
             </div>
-            <div className="flex items-center justify-between mt-1">
-                <div className="flex items-center">
-                    {[...Array(5)].map((_, i) => (
-                    <Star key={i} className={`h-4 w-4 ${i < Math.round(product.rating) ? 'text-yellow-400 fill-yellow-400' : 'text-gray-300'}`} />
-                    ))}
-                </div>
-                <Button size="icon" variant="ghost" className="w-8 h-8 text-muted-foreground hover:text-primary rounded-full hover:bg-primary/10">
-                    <ShoppingCart className="h-5 w-5" />
-                </Button>
+          </DialogTrigger>
+          {product.discountPercentage && (
+            <Badge className="absolute top-3 left-3 bg-blue-600 hover:bg-blue-700 text-primary-foreground border-none">
+              {product.discountPercentage}%
+            </Badge>
+          )}
+        </CardHeader>
+        <CardContent className="p-3 flex-grow flex flex-col">
+          <h3 className="text-sm font-medium h-10 line-clamp-2">
+            <Link href={`/products/${product.id}`} className="hover:text-primary">
+              {product.name}
+            </Link>
+          </h3>
+          
+          <div className="mt-auto">
+              <div className="flex items-baseline gap-2 mt-2">
+                  <p className="text-lg font-bold text-primary">৳{product.price.toLocaleString()}</p>
+                  {product.originalPrice && (
+                      <p className="text-sm text-muted-foreground line-through">৳{product.originalPrice.toLocaleString()}</p>
+                  )}
+              </div>
+              <div className="flex items-center justify-between mt-1">
+                  <div className="flex items-center">
+                      {[...Array(5)].map((_, i) => (
+                      <Star key={i} className={`h-4 w-4 ${i < Math.round(product.rating) ? 'text-yellow-400 fill-yellow-400' : 'text-gray-300'}`} />
+                      ))}
+                  </div>
+                  <Button size="icon" variant="ghost" className="w-8 h-8 text-muted-foreground hover:text-primary rounded-full hover:bg-primary/10">
+                      <ShoppingCart className="h-5 w-5" />
+                  </Button>
+              </div>
+          </div>
+        </CardContent>
+      </Card>
+
+      <DialogContent className="sm:max-w-4xl p-8">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-8 items-start">
+          <div className="flex items-center justify-center bg-secondary/30 rounded-lg p-4">
+            <Image
+              src={product.images[0]}
+              alt={product.name}
+              width={400}
+              height={400}
+              className="w-full max-w-sm h-auto object-contain rounded-lg"
+              data-ai-hint={`${product.category} product`}
+            />
+          </div>
+          <div className="flex flex-col h-full">
+            <h2 className="text-2xl font-bold font-headline mb-2">{product.name}</h2>
+            
+            <div className="flex items-center mb-4">
+              {[...Array(5)].map((_, i) => (
+                <Star
+                  key={i}
+                  className={`h-5 w-5 ${i < Math.round(product.rating) ? 'text-yellow-400 fill-yellow-400' : 'text-gray-300'}`}
+                />
+              ))}
+              <a href={`/products/${product.id}#reviews`} className="ml-2 text-sm text-muted-foreground hover:text-primary">({product.reviewCount} reviews)</a>
             </div>
+
+            <p className="text-3xl font-bold text-primary mb-4">৳{product.price.toLocaleString()}</p>
+
+            <ul className="space-y-2 text-sm text-foreground mb-6">
+                {product.features.slice(0, 4).map((feature, index) => (
+                    <li key={index} className="flex items-center gap-2">
+                        <CheckCircle className="h-4 w-4 text-primary" />
+                        <span>{feature}</span>
+                    </li>
+                ))}
+                <li className="flex items-center gap-2">
+                    <CheckCircle className="h-4 w-4 text-primary" />
+                    <span>3 Months Brand Warranty</span>
+                </li>
+            </ul>
+
+            <div className="mb-6">
+              <p className="text-sm font-medium mb-2">Color:</p>
+              <div className="flex gap-2">
+                  <Button variant="outline" size="icon" className="h-8 w-8 rounded-full border-2 border-primary ring-1 ring-primary ring-offset-2">
+                      <div className="h-5 w-5 rounded-full bg-black" />
+                  </Button>
+              </div>
+            </div>
+
+            <div className="flex flex-col sm:flex-row gap-4 mt-auto">
+              <Button size="lg" className="flex-1">Add to cart</Button>
+              <Button size="lg" className="flex-1 bg-accent text-accent-foreground hover:bg-accent/90">Buy Now</Button>
+            </div>
+          </div>
         </div>
-      </CardContent>
-    </Card>
+      </DialogContent>
+    </Dialog>
   );
 }
