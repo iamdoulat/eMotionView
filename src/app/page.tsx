@@ -4,20 +4,20 @@ import { Button } from '@/components/ui/button';
 import { ProductCard } from '@/components/product-card';
 import { products } from '@/lib/placeholder-data';
 import { Card } from '@/components/ui/card';
-import { ArrowRight, Rocket, Glasses, Watch, Laptop, Headphones, Cable, Bot, Home as HomeIcon } from 'lucide-react';
+import { ArrowRight } from 'lucide-react';
 
 export default function HomePage() {
   const featuredProducts = products.slice(0, 4);
 
   const categories = [
-    { name: 'Drones', icon: Rocket, href: '/products?category=Drones' },
-    { name: 'VR/AR', icon: Glasses, href: '/products?category=VR/AR' },
-    { name: 'Wearables', icon: Watch, href: '/products?category=Wearables' },
-    { name: 'Laptops', icon: Laptop, href: '/products?category=Laptops' },
-    { name: 'Audio', icon: Headphones, href: '/products?category=Audio' },
-    { name: 'Accessories', icon: Cable, href: '/products?category=Accessories' },
-    { name: 'Smart Home', icon: HomeIcon, href: '/products?category=Smart+Home' },
-    { name: 'AI Advisor', icon: Bot, href: '/recommendations' },
+    { name: 'Smart Watches', href: '/products?category=Wearables', image: 'https://placehold.co/150x150.png', hint: 'smartwatch' },
+    { name: 'Headphones', href: '/products?category=Audio', image: 'https://placehold.co/150x150.png', hint: 'headphones' },
+    { name: 'Android Smart TVs', href: '/products?category=Smart+Home', image: 'https://placehold.co/150x150.png', hint: 'smart tv' },
+    { name: 'Charger & Cables', href: '/products?category=Accessories', image: 'https://placehold.co/150x150.png', hint: 'phone charger' },
+    { name: 'Powerbanks', href: '/products?category=Accessories', image: 'https://placehold.co/150x150.png', hint: 'power bank' },
+    { name: 'Computer Monitors', href: '/products?category=Accessories', image: 'https://placehold.co/150x150.png', hint: 'computer monitor' },
+    { name: 'Smart Home Appliances', href: '/products?category=Smart+Home', image: 'https://placehold.co/150x150.png', hint: 'security camera' },
+    { name: 'Wireless Speakers', href: '/products?category=Audio', image: 'https://placehold.co/150x150.png', hint: 'wireless speaker' },
   ];
 
   return (
@@ -102,15 +102,22 @@ export default function HomePage() {
 
       <section className="py-16 sm:py-24">
         <div className="container mx-auto px-4">
-          <h2 className="font-headline text-3xl font-bold tracking-tight text-foreground text-center mb-4">Shop by Category</h2>
-           <p className="text-muted-foreground text-center mb-10">Find what you're looking for with our product categories.</p>
-          <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-4 gap-4">
+          <h2 className="font-headline text-3xl font-bold tracking-tight text-foreground text-center mb-2">Explore Popular Categories</h2>
+          <p className="text-muted-foreground text-center mb-12">Find your preferred item in the highlighted product selection.</p>
+          <div className="flex flex-wrap justify-center items-start gap-x-8 gap-y-12">
             {categories.map((category) => (
-              <Link href={category.href} key={category.name} className="block group">
-                 <Card className="text-center p-6 bg-card group-hover:shadow-lg group-hover:-translate-y-1 transition-all duration-300 flex flex-col items-center justify-center h-full aspect-square">
-                  <category.icon className="h-10 w-10 mb-4 text-primary transition-colors" />
-                  <h3 className="font-semibold text-lg group-hover:text-primary transition-colors">{category.name}</h3>
-                </Card>
+              <Link href={category.href} key={category.name} className="flex flex-col items-center text-center gap-3 group w-32">
+                <div className="bg-secondary rounded-full p-3 flex items-center justify-center w-24 h-24 group-hover:bg-primary/10 transition-colors duration-300">
+                  <Image
+                    src={category.image}
+                    alt={category.name}
+                    width={80}
+                    height={80}
+                    className="object-contain transition-transform duration-300 group-hover:scale-105"
+                    data-ai-hint={category.hint}
+                  />
+                </div>
+                <h3 className="font-medium text-sm text-foreground group-hover:text-primary transition-colors">{category.name}</h3>
               </Link>
             ))}
           </div>
