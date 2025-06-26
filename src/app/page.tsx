@@ -1,3 +1,4 @@
+
 import Link from 'next/link';
 import Image from 'next/image';
 import { Button } from '@/components/ui/button';
@@ -10,52 +11,70 @@ import { CategoryMenu } from '@/components/category-menu';
 export default function HomePage() {
   const featuredProducts = products.slice(0, 4);
 
+  const mainNavLinks = [
+    { href: "#", label: "Campaign" },
+    { href: "/products", label: "Trending" },
+    { href: "#", label: "Brands" },
+    { href: "#", label: "Outlets" },
+    { href: "#", label: "Support" },
+  ];
+
   const categoryItems = [
-    { name: 'Smart Watch', href: '/products?category=Wearables', image: 'https://placehold.co/100x100.png', hint: 'smartwatch' },
-    { name: 'Smart Phone', href: '/products?category=Smartphones', image: 'https://placehold.co/100x100.png', hint: 'smartphone' },
-    { name: 'Headphone', href: '/products?category=Audio', image: 'https://placehold.co/100x100.png', hint: 'headphones' },
-    { name: 'Laptop', href: '/products?category=Laptops', image: 'https://placehold.co/100x100.png', hint: 'laptop' },
-    { name: 'Drone', href: '/products?category=Drones', image: 'https://placehold.co/100x100.png', hint: 'drone' },
-    { name: 'Camera', href: '/products?category=Accessories', image: 'https://placehold.co/100x100.png', hint: 'camera' },
-    { name: 'Speaker', href: '/products?category=Audio', image: 'https://placehold.co/100x100.png', hint: 'speaker' },
-    { name: 'Router', href: '/products?category=Accessories', image: 'https://placehold.co/100x100.png', hint: 'router' },
-    { name: 'Power Bank', href: '/products?category=Accessories', image: 'https://placehold.co/100x100.png', hint: 'power bank' },
-    { name: 'Accessories', href: '/products?category=Accessories', image: 'https://placehold.co/100x100.png', hint: 'gadget accessories' },
+    { name: 'Smart Watch', href: '/products?category=Wearables', image: 'https://placehold.co/128x128.png', hint: 'smartwatch' },
+    { name: 'Smart Phone', href: '/products?category=Smartphones', image: 'https://placehold.co/128x128.png', hint: 'smartphone' },
+    { name: 'Headphone', href: '/products?category=Audio', image: 'https://placehold.co/128x128.png', hint: 'headphones' },
+    { name: 'Laptop', href: '/products?category=Laptops', image: 'https://placehold.co/128x128.png', hint: 'laptop' },
+    { name: 'Drone', href: '/products?category=Drones', image: 'https://placehold.co/128x128.png', hint: 'drone' },
+    { name: 'Camera', href: '/products?category=Accessories', image: 'https://placehold.co/128x128.png', hint: 'camera' },
+    { name: 'Speaker', href: '/products?category=Audio', image: 'https://placehold.co/128x128.png', hint: 'speaker' },
+    { name: 'Router', href: '/products?category=Accessories', image: 'https://placehold.co/128x128.png', hint: 'router' },
+    { name: 'Power Bank', href: '/products?category=Accessories', image: 'https://placehold.co/128x128.png', hint: 'power bank' },
+    { name: 'Accessories', href: '/products?category=Accessories', image: 'https://placehold.co/128x128.png', hint: 'gadget accessories' },
   ];
 
   return (
-    <div className="flex flex-col bg-secondary/50">
+    <div className="flex flex-col">
       {/* Hero Section */}
       <section className="bg-background">
         <div className="container mx-auto px-4 py-6">
-            <div className="grid grid-cols-1 lg:grid-cols-4 gap-6 items-stretch">
+            <div className="grid grid-cols-1 lg:grid-cols-4 gap-6 items-start">
                 {/* Category Menu */}
                 <div className="hidden lg:block lg:col-span-1">
                     <CategoryMenu />
                 </div>
 
-                {/* Hero Banner */}
-                <div className="lg:col-span-3">
-                  <div className="relative h-64 md:h-full w-full rounded-lg overflow-hidden group">
+                {/* Right Column */}
+                <div className="lg:col-span-3 flex flex-col gap-6">
+                  {/* Main Nav */}
+                  <nav className="hidden md:flex items-center gap-6 text-sm font-medium text-foreground h-14 -mt-[1px]">
+                    {mainNavLinks.map(link => (
+                      <Link key={link.href} href={link.href} className="hover:text-primary transition-colors h-full flex items-center">
+                        {link.label}
+                      </Link>
+                    ))}
+                  </nav>
+                  
+                  {/* Hero Banner */}
+                  <div className="relative h-[440px] w-full rounded-lg overflow-hidden group">
                     <Image 
                       src="https://placehold.co/900x440.png"
-                      alt="Stay Powered Anywhere, Anytime"
+                      alt="Gadget Fest"
                       fill
                       style={{objectFit: 'cover'}}
                       className="transition-transform duration-300 group-hover:scale-105"
-                      data-ai-hint="power banks sale"
+                      data-ai-hint="gadget festival sale"
                       priority
                     />
-                     <div className="absolute inset-0 bg-gradient-to-r from-black/50 to-transparent p-8 md:p-16 flex flex-col justify-center items-start">
-                        <h1 className="font-headline text-3xl font-bold tracking-tight text-white sm:text-5xl max-w-md">
-                            Stay Powered <br/> Anywhere, Anytime
+                     <div className="absolute inset-0 bg-gradient-to-r from-black/60 to-transparent p-8 md:p-16 flex flex-col justify-center items-start">
+                        <h1 className="font-headline text-4xl font-bold tracking-tight text-white sm:text-6xl max-w-md">
+                            GADGET FEST
                         </h1>
-                        <p className="mt-4 text-lg leading-8 text-neutral-200 max-w-md">
-                            Explore Our Range of High-Capacity Power Banks
+                        <p className="mt-4 text-xl leading-8 text-neutral-200 max-w-md">
+                            Up to 60% off on your favorite gadgets.
                         </p>
                         <div className="mt-6">
                             <Button asChild size="lg">
-                                <Link href="/products?category=Accessories">Shop Now</Link>
+                                <Link href="/products">Shop Now</Link>
                             </Button>
                         </div>
                     </div>
@@ -101,6 +120,22 @@ export default function HomePage() {
               </div>
             </CardContent>
           </Card>
+        </div>
+      </section>
+
+      <section className="bg-secondary/10 py-16">
+        <div className="container mx-auto px-4 grid grid-cols-1 md:grid-cols-2 gap-8 items-center">
+            <div className="relative h-80 rounded-lg overflow-hidden group">
+                <Image src="https://placehold.co/600x400.png" alt="New Arrival" fill style={{objectFit: 'cover'}} className="transition-transform duration-300 group-hover:scale-105" data-ai-hint="new arrival gadgets" />
+            </div>
+            <div className="grid grid-cols-2 gap-6">
+                <div className="relative h-40 rounded-lg overflow-hidden group">
+                     <Image src="https://placehold.co/300x200.png" alt="Power Banks" fill style={{objectFit: 'cover'}} className="transition-transform duration-300 group-hover:scale-105" data-ai-hint="power banks" />
+                </div>
+                 <div className="relative h-40 rounded-lg overflow-hidden group">
+                     <Image src="https://placehold.co/300x200.png" alt="25W Adapter" fill style={{objectFit: 'cover'}} className="transition-transform duration-300 group-hover:scale-105" data-ai-hint="phone adapter" />
+                </div>
+            </div>
         </div>
       </section>
 

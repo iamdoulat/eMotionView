@@ -7,23 +7,9 @@ import Image from "next/image"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet"
-import { Search, ShoppingCart, Menu, Phone, User, MapPin, LayoutGrid } from "lucide-react"
+import { Search, ShoppingCart, Menu, Phone, User, MapPin } from "lucide-react"
 import { Badge } from "@/components/ui/badge"
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu"
 import { cn } from "@/lib/utils"
-
-const mainNavLinks = [
-  { href: "#", label: "Campaign" },
-  { href: "/products", label: "Trending" },
-  { href: "#", label: "Brands" },
-  { href: "#", label: "Outlets" },
-  { href: "#", label: "Support" },
-];
 
 const categoryLinks = [
     { name: 'Smart Watches', href: '/products?category=Wearables' },
@@ -110,32 +96,6 @@ export function Header() {
             </Button>
           </div>
         </div>
-        <div className="hidden md:block border-t">
-          <div className="container mx-auto flex h-14 items-center justify-start gap-8 px-4">
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button className="font-bold bg-primary hover:bg-primary/90">
-                    <LayoutGrid className="mr-2 h-5 w-5" />
-                    All Categories
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent className="w-56">
-                {categoryLinks.map((link) => (
-                    <DropdownMenuItem key={link.name} asChild>
-                        <Link href={link.href}>{link.name}</Link>
-                    </DropdownMenuItem>
-                ))}
-              </DropdownMenuContent>
-            </DropdownMenu>
-            <nav className="flex items-center gap-6 text-sm font-medium text-foreground">
-              {mainNavLinks.map(link => (
-                <Link key={link.href} href={link.href} className="hover:text-primary transition-colors">
-                  {link.label}
-                </Link>
-              ))}
-            </nav>
-          </div>
-        </div>
       </div>
 
       {/* Sticky Header (Scrolled) */}
@@ -145,30 +105,7 @@ export function Header() {
             <Image src="https://placehold.co/50x50/FFFFFF/000000.png" alt="eMotionView Logo" width={32} height={32} data-ai-hint="logo globe"/>
             <span className="font-bold font-headline text-xl text-foreground">eMotionView</span>
           </Link>
-          <div className="hidden md:flex flex-1 items-center justify-center gap-6">
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button variant="ghost" className="font-semibold">
-                    <LayoutGrid className="mr-2 h-5 w-5" />
-                    Categories
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent className="w-56">
-                {categoryLinks.map((link) => (
-                    <DropdownMenuItem key={link.name} asChild>
-                        <Link href={link.href}>{link.name}</Link>
-                    </DropdownMenuItem>
-                ))}
-              </DropdownMenuContent>
-            </DropdownMenu>
-            <nav className="flex items-center gap-6 text-sm font-medium text-muted-foreground">
-              {mainNavLinks.map(link => (
-                <Link key={link.href} href={link.href} className="hover:text-primary transition-colors">
-                  {link.label}
-                </Link>
-              ))}
-            </nav>
-          </div>
+          <div className="flex-1" />
           <div className="flex items-center justify-end gap-2">
             <Button variant="ghost" size="icon"><Search className="h-5 w-5" /></Button>
             <Button variant="ghost" size="icon" asChild className="relative">
@@ -203,12 +140,6 @@ export function Header() {
                 {categoryLinks.map(link => (
                   <Link key={link.name} href={link.href} className="block py-2 text-muted-foreground hover:text-primary">
                     {link.name}
-                  </Link>
-                ))}
-                <hr className="my-4"/>
-                {mainNavLinks.map(link => (
-                  <Link key={link.href} href={link.href} className="block py-2 text-muted-foreground hover:text-primary">
-                    {link.label}
                   </Link>
                 ))}
               </div>
