@@ -11,6 +11,7 @@ import {
   LineChart,
   Settings,
   Home,
+  Boxes,
 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from "../ui/card";
 
@@ -18,6 +19,7 @@ const navItems = [
     { href: "/admin", label: "Dashboard", icon: LayoutDashboard },
     { href: "/admin/orders", label: "Orders", icon: ShoppingCart },
     { href: "/admin/products", label: "Products", icon: Package },
+    { href: "/admin/inventory", label: "Inventory", icon: Boxes },
     { href: "/admin/users", label: "Customers", icon: Users },
     { href: "/admin/analytics", label: "Analytics", icon: LineChart },
 ];

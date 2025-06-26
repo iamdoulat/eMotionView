@@ -12,6 +12,9 @@ export type Product = {
   images: string[];
   features: string[];
   specifications: Record<string, string>;
+  sku: string;
+  stock: number;
+  supplier: string;
 };
 
 export type Review = {
@@ -72,7 +75,10 @@ export const products: Product[] = [
       'Modes': 'Multiple Sports Modes',
       'Features': 'Call & Message Notifications',
       'Battery': 'Long Battery Life',
-    }
+    },
+    sku: 'HL-SW-IN-01',
+    stock: 55,
+    supplier: 'Haylou Direct',
   },
   {
     id: '2',
@@ -91,7 +97,10 @@ export const products: Product[] = [
       'Game Mode': 'Low Latency',
       'Playtime': 'Up to 30 Hours with charging case',
       'Microphone': 'Crystal Clear Calls with ENC',
-    }
+    },
+    sku: 'HL-EB-HQ5-01',
+    stock: 8,
+    supplier: 'Haylou Direct',
   },
   {
     id: '3',
@@ -112,7 +121,10 @@ export const products: Product[] = [
       'Health Monitoring': 'Heart Rate & SpO2',
       'Water Resistance': '2 ATM',
       'Sports Modes': '70+',
-    }
+    },
+    sku: 'MB-SW-L3-01',
+    stock: 0,
+    supplier: 'Mibro Inc.',
   },
   {
     id: '4',
@@ -131,7 +143,10 @@ export const products: Product[] = [
       'Water Resistance': '5 ATM',
       'Battery': 'Up to 14 days typical usage',
       'Display': '1.39" HD AMOLED',
-    }
+    },
+    sku: 'AF-SW-A2R-01',
+    stock: 23,
+    supplier: 'Amazfit Global',
   },
   {
     id: '5',
@@ -150,7 +165,10 @@ export const products: Product[] = [
       'Sports Modes': '100+',
       'Features': 'Always-On Display, SpO2 & Heart Rate Tracking',
       'Material': 'Metal Bezel',
-    }
+    },
+    sku: 'HL-SW-SU-01',
+    stock: 5,
+    supplier: 'Haylou Direct',
   },
   {
     id: '6',
@@ -171,7 +189,10 @@ export const products: Product[] = [
       'Waterproof': '5 ATM & IP69K',
       'Health': 'Blood Oxygen, Heart Rate, Blood Pressure',
       'Sensors': 'Compass & Barometer',
-    }
+    },
+    sku: 'KP-SW-T3U-01',
+    stock: 15,
+    supplier: 'KOSPET Intl.',
   },
   {
     id: '7',
@@ -190,7 +211,10 @@ export const products: Product[] = [
       'Ports': '2x USB-A, 1x USB-C',
       'Compliance': 'Airline Carry-on Compliant',
       'Display': 'Digital LED for battery percentage',
-    }
+    },
+    sku: 'EM-PB-20K-01',
+    stock: 150,
+    supplier: 'EnerMax Supplies',
   },
   {
     id: '8',
@@ -209,7 +233,10 @@ export const products: Product[] = [
       'Connectivity': 'WiFi (via gateway), Bluetooth',
       'Power': '4x AA Batteries',
       'Guest Access': 'Temporary codes and eKeys',
-    }
+    },
+    sku: 'GT-SL-01',
+    stock: 3,
+    supplier: 'Guardian Tech',
   },
 ];
 
