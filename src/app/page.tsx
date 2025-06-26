@@ -7,6 +7,7 @@ import { products } from '@/lib/placeholder-data';
 import { ArrowRight, Star, Tag, Truck } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 import { CategoryMenu } from '@/components/category-menu';
+import { Carousel, CarouselContent, CarouselItem } from '@/components/ui/carousel';
 
 export default function HomePage() {
   const featuredProducts = products.slice(0, 4);
@@ -20,16 +21,17 @@ export default function HomePage() {
   ];
 
   const categoryItems = [
-    { name: 'Smart Watch', href: '/products?category=Wearables', image: 'https://placehold.co/128x128.png', hint: 'smartwatch' },
-    { name: 'Smart Phone', href: '/products?category=Smartphones', image: 'https://placehold.co/128x128.png', hint: 'smartphone' },
-    { name: 'Headphone', href: '/products?category=Audio', image: 'https://placehold.co/128x128.png', hint: 'headphones' },
-    { name: 'Laptop', href: '/products?category=Laptops', image: 'https://placehold.co/128x128.png', hint: 'laptop' },
-    { name: 'Drone', href: '/products?category=Drones', image: 'https://placehold.co/128x128.png', hint: 'drone' },
-    { name: 'Camera', href: '/products?category=Accessories', image: 'https://placehold.co/128x128.png', hint: 'camera' },
-    { name: 'Speaker', href: '/products?category=Audio', image: 'https://placehold.co/128x128.png', hint: 'speaker' },
-    { name: 'Router', href: '/products?category=Accessories', image: 'https://placehold.co/128x128.png', hint: 'router' },
-    { name: 'Power Bank', href: '/products?category=Accessories', image: 'https://placehold.co/128x128.png', hint: 'power bank' },
-    { name: 'Accessories', href: '/products?category=Accessories', image: 'https://placehold.co/128x128.png', hint: 'gadget accessories' },
+    { name: 'Smart Watches', href: '/products?category=Wearables', image: 'https://placehold.co/128x128.png', hint: 'smartwatch' },
+    { name: 'Headphones', href: '/products?category=Audio', image: 'https://placehold.co/128x128.png', hint: 'headphones' },
+    { name: 'Android Smart TVs', href: '/products?category=Smart+Home', image: 'https://placehold.co/128x128.png', hint: 'smart tv' },
+    { name: 'Charger & Cables', href: '/products?category=Accessories', image: 'https://placehold.co/128x128.png', hint: 'phone charger' },
+    { name: 'Powerbanks', href: '/products?category=Accessories', image: 'https://placehold.co/128x128.png', hint: 'power bank' },
+    { name: 'Computer Monitors', href: '/products?category=Accessories', image: 'https://placehold.co/128x128.png', hint: 'computer monitor' },
+    { name: 'Smart Home Appliances', href: '/products?category=Smart+Home', image: 'https://placehold.co/128x128.png', hint: 'smart appliance' },
+    { name: 'Wireless Speakers', href: '/products?category=Audio', image: 'https://placehold.co/128x128.png', hint: 'wireless speaker' },
+    { name: 'Smart Phones', href: '/products?category=Smartphones', image: 'https://placehold.co/128x128.png', hint: 'smartphone' },
+    { name: 'Laptops', href: '/products?category=Laptops', image: 'https://placehold.co/128x128.png', hint: 'laptop' },
+    { name: 'Drones', href: '/products?category=Drones', image: 'https://placehold.co/128x128.png', hint: 'drone' },
   ];
 
   return (
@@ -126,26 +128,36 @@ export default function HomePage() {
       {/* Shop by Category Section */}
       <section className="container mx-auto px-4 py-16">
         <div className="text-center mb-12">
-          <h2 className="font-headline text-3xl font-bold tracking-tight text-foreground">Shop by Category</h2>
-          <p className="text-muted-foreground mt-2 max-w-2xl mx-auto">Find what you're looking for with our product categories.</p>
+          <h2 className="font-headline text-3xl font-bold tracking-tight text-foreground">Explore Popular Categories</h2>
+          <p className="text-muted-foreground mt-2 max-w-2xl mx-auto">Find your preferred item in the highlighted product selection.</p>
         </div>
-        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-6">
-          {categoryItems.map((category) => (
-            <Link key={category.name} href={category.href} className="group text-center">
-              <div className="w-32 h-32 mx-auto rounded-full overflow-hidden border-2 border-transparent group-hover:border-primary transition-all duration-300 group-hover:shadow-lg">
-                <Image
-                  src={category.image}
-                  alt={category.name}
-                  width={128}
-                  height={128}
-                  className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-300"
-                  data-ai-hint={category.hint}
-                />
-              </div>
-              <h3 className="mt-4 font-semibold text-foreground group-hover:text-primary transition-colors">{category.name}</h3>
-            </Link>
-          ))}
-        </div>
+        <Carousel
+          opts={{
+            align: "start",
+            dragFree: true,
+          }}
+          className="w-full"
+        >
+          <CarouselContent className="-ml-4">
+            {categoryItems.map((category) => (
+              <CarouselItem key={category.name} className="basis-auto pl-4 md:pl-6">
+                <Link href={category.href} className="group text-center block w-[130px]">
+                  <div className="w-32 h-32 mx-auto rounded-full bg-secondary/50 flex items-center justify-center overflow-hidden border-2 border-transparent group-hover:border-primary transition-all duration-300 group-hover:shadow-lg">
+                    <Image
+                      src={category.image}
+                      alt={category.name}
+                      width={128}
+                      height={128}
+                      className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-300"
+                      data-ai-hint={category.hint}
+                    />
+                  </div>
+                  <h3 className="mt-4 font-semibold text-sm text-foreground group-hover:text-primary transition-colors truncate">{category.name}</h3>
+                </Link>
+              </CarouselItem>
+            ))}
+          </CarouselContent>
+        </Carousel>
       </section>
 
       {/* Featured Products */}
