@@ -7,9 +7,10 @@ import Image from "next/image"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet"
-import { Search, ShoppingCart, Menu, Phone, User, MapPin } from "lucide-react"
+import { Search, ShoppingCart, Menu, Phone, User, MapPin, Heart, LayoutGrid } from "lucide-react"
 import { Badge } from "@/components/ui/badge"
 import { cn } from "@/lib/utils"
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
 
 const categoryLinks = [
     { name: 'Smart Watches', href: '/products?category=Wearables' },
@@ -42,7 +43,7 @@ export function Header() {
 
   return (
     <header className="sticky top-0 z-50 w-full bg-background/95 backdrop-blur-sm">
-      {/* Top Bar */}
+      {/* Top Bar (hides on scroll) */}
       <div className={cn(
         "hidden md:block bg-secondary/50 text-xs text-muted-foreground transition-all duration-300",
         isScrolled ? 'h-0 opacity-0 overflow-hidden' : 'h-8'
@@ -91,30 +92,69 @@ export function Header() {
             <Button variant="ghost" size="icon" asChild className="relative">
               <Link href="/cart" aria-label="Shopping Cart">
                 <ShoppingCart className="h-6 w-6" />
-                <Badge variant="destructive" className="absolute -top-1 -right-1 h-5 w-5 justify-center rounded-full p-0 text-xs">1</Badge>
+                <Badge variant="destructive" className="absolute -top-1 -right-1 h-5 w-5 justify-center rounded-full p-0 text-xs">3</Badge>
               </Link>
             </Button>
           </div>
         </div>
       </div>
 
-      {/* Sticky Header (Scrolled) */}
+      {/* Sticky Header (Scrolled) - Re-designed to match reference image */}
       <div className={cn("border-b shadow-md", isScrolled ? 'block' : 'hidden')}>
         <div className="container mx-auto flex h-16 items-center justify-between gap-4 px-4">
-          <Link href="/" className="flex items-center gap-2 flex-shrink-0">
-            <Image src="https://placehold.co/50x50/FFFFFF/000000.png" alt="eMotionView Logo" width={32} height={32} data-ai-hint="logo globe"/>
-            <span className="font-bold font-headline text-xl text-foreground">eMotionView</span>
-          </Link>
-          <div className="flex-1" />
-          <div className="flex items-center justify-end gap-2">
-            <Button variant="ghost" size="icon"><Search className="h-5 w-5" /></Button>
-            <Button variant="ghost" size="icon" asChild className="relative">
-              <Link href="/cart" aria-label="Shopping Cart">
-                <ShoppingCart className="h-6 w-6" />
-                <Badge variant="destructive" className="absolute -top-1 -right-1 h-5 w-5 justify-center rounded-full p-0 text-xs">1</Badge>
-              </Link>
-            </Button>
-          </div>
+            <Link href="/" className="flex items-center gap-2 flex-shrink-0">
+                <Image src="https://placehold.co/50x50/FFFFFF/000000.png" alt="eMotionView Logo" width={32} height={32} data-ai-hint="logo globe"/>
+                <span className="font-bold font-headline text-xl text-foreground">eMotionView</span>
+            </Link>
+
+            <div className="hidden lg:flex">
+              <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                      <Button variant="outline" className="items-center gap-2">
+                          <LayoutGrid className="h-5 w-5" />
+                          All Categories
+                      </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent className="w-64">
+                      {categoryLinks.map((link) => (
+                          <DropdownMenuItem key={link.name} asChild>
+                               <Link href={link.href}>{link.name}</Link>
+                          </DropdownMenuItem>
+                      ))}
+                  </DropdownMenuContent>
+              </DropdownMenu>
+            </div>
+
+            <div className="flex-1 flex justify-center px-4">
+                 <form className="w-full max-w-lg">
+                    <div className="relative">
+                        <Input type="search" placeholder="Search the product..." className="h-10 pr-12 rounded-full" />
+                        <Button type="submit" size="icon" className="absolute right-1 top-1/2 -translate-y-1/2 h-8 w-8 rounded-full bg-accent text-accent-foreground hover:bg-accent/90">
+                        <Search className="h-5 w-5" />
+                        </Button>
+                    </div>
+                </form>
+            </div>
+
+            <div className="flex items-center justify-end gap-1">
+                <Button variant="ghost" size="icon" asChild>
+                    <Link href="/wishlist">
+                        <Heart className="h-6 w-6" />
+                        <span className="sr-only">Wishlist</span>
+                    </Link>
+                </Button>
+                <Button variant="ghost" size="icon" asChild className="relative">
+                <Link href="/cart" aria-label="Shopping Cart">
+                    <ShoppingCart className="h-6 w-6" />
+                    <Badge variant="destructive" className="absolute -top-1 -right-1 h-5 w-5 justify-center rounded-full p-0 text-xs">3</Badge>
+                </Link>
+                </Button>
+                <Button variant="ghost" size="icon" asChild>
+                    <Link href="/sign-in" aria-label="Account">
+                        <User className="h-6 w-6" />
+                    </Link>
+                </Button>
+            </div>
         </div>
       </div>
 
@@ -151,7 +191,7 @@ export function Header() {
           <Button variant="ghost" size="icon" asChild className="relative">
             <Link href="/cart" aria-label="Shopping Cart">
               <ShoppingCart className="h-6 w-6" />
-              <Badge variant="destructive" className="absolute -top-1 -right-1 h-5 w-5 justify-center rounded-full p-0 text-xs">1</Badge>
+              <Badge variant="destructive" className="absolute -top-1 -right-1 h-5 w-5 justify-center rounded-full p-0 text-xs">3</Badge>
             </Link>
           </Button>
         </div>
