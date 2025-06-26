@@ -50,7 +50,6 @@ import { Badge } from "@/components/ui/badge";
 import { MoreHorizontal, PlusCircle, Edit, Trash2 } from "lucide-react";
 import { ProductForm } from "@/components/admin/product-form";
 
-
 export default function AdminProductsPage() {
   const [products, setProducts] = useState<Product[]>(initialProducts);
   const [productToEdit, setProductToEdit] = useState<Product | null>(null);
@@ -190,14 +189,14 @@ export default function AdminProductsPage() {
               <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
               <AlertDialogDescription>
                 This action cannot be undone. This will permanently delete the product "{productToDelete?.name}".
-              </dAlertDialogDescription>
+              </AlertDialogDescription>
             </AlertDialogHeader>
             <AlertDialogFooter>
               <AlertDialogCancel onClick={() => setProductToDelete(null)}>Cancel</AlertDialogCancel>
               <AlertDialogAction onClick={handleDeleteProduct} className="bg-destructive hover:bg-destructive/90">Delete Product</AlertDialogAction>
             </AlertDialogFooter>
           </AlertDialogContent>
-        </AlertDialog>
+      </AlertDialog>
     </div>
   );
 }

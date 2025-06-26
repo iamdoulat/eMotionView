@@ -125,7 +125,7 @@ function SortableSectionItem({
     const handlePromoBannerChange = (index: number, field: 'link', value: string) => {
         const newContent = [...(editedSection.content as PromoBanner[])];
         newContent[index] = { ...newContent[index], [field]: value };
-        setEditedSection(prev => ({...prev, content: newContent}));
+        setEditedSection(prev => ({ ...prev, content: newContent }));
     };
 
     const handleSingleBannerChange = (field: 'link', value: string) => {

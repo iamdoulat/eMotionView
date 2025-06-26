@@ -30,7 +30,7 @@ const productSchema = z.object({
         key: z.string().min(1, "Specification key cannot be empty."),
         value: z.string().min(1, "Specification value cannot be empty.")
     })),
-    images: z.array(z.string()).optional(),
+    images: z.array(z.string()).default([]),
 });
 
 type ProductFormData = z.infer<typeof productSchema>;
@@ -41,7 +41,7 @@ interface ProductFormProps {
     onCancel: () => void;
 }
 
-export const ProductForm = ({ product, onSave, onCancel }: ProductFormProps) => {
+export function ProductForm({ product, onSave, onCancel }: ProductFormProps) {
     const { register, handleSubmit, control, formState: { errors } } = useForm<ProductFormData>({
         resolver: zodResolver(productSchema),
         defaultValues: product ? {
