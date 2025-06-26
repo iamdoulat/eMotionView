@@ -10,6 +10,7 @@ import { CategoryMenu } from '@/components/category-menu';
 import { Carousel, CarouselContent, CarouselItem } from '@/components/ui/carousel';
 
 export default function HomePage() {
+  const newArrivals = products.slice(0, 6);
   const featuredProducts = products.slice(0, 4);
 
   const mainNavLinks = [
@@ -158,6 +159,21 @@ export default function HomePage() {
             ))}
           </CarouselContent>
         </Carousel>
+      </section>
+
+      {/* New Arrival Products */}
+      <section className="container mx-auto px-4 py-16">
+        <div className="flex justify-between items-center mb-8">
+          <h2 className="font-headline text-2xl font-bold tracking-tight text-foreground">New Arrival</h2>
+          <Button asChild variant="link" className="text-primary">
+            <Link href="/products?sort=newest">View All <ArrowRight className="ml-1 h-4 w-4" /></Link>
+          </Button>
+        </div>
+        <div className="grid grid-cols-2 gap-x-4 gap-y-8 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 xl:gap-x-6">
+          {newArrivals.map((product) => (
+            <ProductCard key={product.id} product={product} />
+          ))}
+        </div>
       </section>
 
       {/* Featured Products */}
