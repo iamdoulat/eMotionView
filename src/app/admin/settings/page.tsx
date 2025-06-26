@@ -31,6 +31,26 @@ export default function AdminSettingsPage() {
       
       <Card>
         <CardHeader>
+          <CardTitle>Payments & Shipping</CardTitle>
+          <CardDescription>Manage payment gateways, shipping zones, and tax rules.</CardDescription>
+        </CardHeader>
+        <CardContent>
+            <p className="text-sm text-muted-foreground">
+                Configure how you get paid and how you ship your products to customers.
+            </p>
+        </CardContent>
+        <CardFooter>
+          <Button asChild>
+            <Link href="/admin/settings/payments">
+                Configure Settings
+                <ArrowRight className="ml-2 h-4 w-4" />
+            </Link>
+          </Button>
+        </CardFooter>
+      </Card>
+
+      <Card>
+        <CardHeader>
           <CardTitle>Homepage Customization</CardTitle>
           <CardDescription>Customize the layout and content of your homepage.</CardDescription>
         </CardHeader>
