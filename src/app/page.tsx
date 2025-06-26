@@ -127,9 +127,46 @@ export default function HomePage() {
           </Card>
         </div>
       </section>
+      
+      {/* Three Banners Section */}
+      <section className="container mx-auto px-4 py-8">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <Link href="#" className="block rounded-lg overflow-hidden group">
+            <Image
+              src="https://placehold.co/400x200.png"
+              alt="New Arrival Smartwatches"
+              width={400}
+              height={200}
+              className="w-full h-auto object-cover transition-transform duration-300 group-hover:scale-105"
+              data-ai-hint="smartwatch sale"
+            />
+          </Link>
+          <Link href="#" className="block rounded-lg overflow-hidden group">
+            <Image
+              src="https://placehold.co/400x200.png"
+              alt="Power Banks"
+              width={400}
+              height={200}
+              className="w-full h-auto object-cover transition-transform duration-300 group-hover:scale-105"
+              data-ai-hint="power bank"
+            />
+          </Link>
+          <Link href="#" className="block rounded-lg overflow-hidden group">
+            <Image
+              src="https://placehold.co/400x200.png"
+              alt="Samsung 25W Adapter"
+              width={400}
+              height={200}
+              className="w-full h-auto object-cover transition-transform duration-300 group-hover:scale-105"
+              data-ai-hint="phone adapter"
+            />
+          </Link>
+        </div>
+      </section>
+
 
       {/* Shop by Category Section */}
-      <section className="container mx-auto px-4 py-16">
+      <section className="container mx-auto px-4 pb-16">
         <div className="text-center mb-12">
           <h2 className="font-headline text-3xl font-bold tracking-tight text-foreground">Explore Popular Categories</h2>
           <p className="text-muted-foreground mt-2 max-w-2xl mx-auto">Find your preferred item in the highlighted product selection.</p>
