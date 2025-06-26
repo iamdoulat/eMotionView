@@ -45,7 +45,7 @@ export default function HomePage() {
             {/* Horizontal Category List */}
             <div className="w-full">
                 <ul className="flex flex-wrap items-center gap-x-8 gap-y-2 text-sm font-medium">
-                    {heroCategories.slice(0, 10).map((category) => (
+                    {heroCategories.map((category) => (
                         <li key={category.name}>
                             <Link href={category.href} className="text-foreground hover:text-primary transition-colors">
                                 {category.name}

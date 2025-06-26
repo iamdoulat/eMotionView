@@ -7,6 +7,7 @@ import { Input } from "@/components/ui/input"
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet"
 import { Search, ShoppingCart, Menu, Phone, User, MapPin, LayoutGrid } from "lucide-react"
 import { Badge } from "@/components/ui/badge"
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
 
 const mainNavLinks = [
   { href: "#", label: "Campaign" },
@@ -129,12 +130,24 @@ export function Header() {
        {/* Bottom Bar / Main Navigation */}
       <div className="hidden md:block border-t">
         <div className="container mx-auto flex h-14 items-center justify-start gap-8 px-4">
-            <Button asChild className="font-bold bg-primary hover:bg-primary/90">
-                <Link href="/products">
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button className="font-bold bg-primary hover:bg-primary/90">
                     <LayoutGrid className="mr-2 h-5 w-5" />
                     All Categories
-                </Link>
-            </Button>
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent className="w-[250px] bg-background">
+                {categoryLinks.map(link => (
+                    <DropdownMenuItem key={link.name} asChild>
+                        <Link href={link.href} className="flex items-center gap-2 py-2">
+                            {link.name}
+                        </Link>
+                    </DropdownMenuItem>
+                ))}
+              </DropdownMenuContent>
+            </DropdownMenu>
+
             <nav className="flex items-center gap-6 text-sm font-medium text-foreground">
                 {mainNavLinks.map(link => (
                     <Link key={link.href} href={link.href} className="hover:text-primary transition-colors">
