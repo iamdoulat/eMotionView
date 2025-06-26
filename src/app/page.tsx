@@ -220,7 +220,7 @@ export default function HomePage() {
       {/* Smart Watches Section */}
       <section className="container mx-auto px-4 py-4">
         <div className="mb-8">
-          <Link href="/products?category=Wearables" className="block rounded-lg overflow-hidden group">
+          <Link href="/products?category=Wearables" className="block rounded-lg overflow-hidden group transition-all duration-300 ease-in-out hover:-translate-y-1 hover:shadow-xl">
             <Image
               src="https://placehold.co/1200x250.png"
               alt="Wear Style. Wear Technology"
@@ -247,7 +247,7 @@ export default function HomePage() {
       {/* Headphones Section */}
       <section className="container mx-auto px-4 py-4">
         <div className="mb-8">
-          <Link href="/products?category=Audio" className="block rounded-lg overflow-hidden group">
+          <Link href="/products?category=Audio" className="block rounded-lg overflow-hidden group transition-all duration-300 ease-in-out hover:-translate-y-1 hover:shadow-xl">
             <Image
               src="https://placehold.co/1200x250.png"
               alt="Plug it, Listen to it, Feel it"
