@@ -4,10 +4,11 @@
 import React, { useState, useEffect } from "react"
 import Link from "next/link"
 import Image from "next/image"
+import { useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet"
-import { Search, ShoppingCart, Menu, Phone, User, MapPin, Heart, LayoutGrid } from "lucide-react"
+import { Search, ShoppingCart, Menu, Phone, User, MapPin, Heart, LayoutGrid, LogOut } from "lucide-react"
 import { Badge } from "@/components/ui/badge"
 import { cn } from "@/lib/utils"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
@@ -28,17 +29,35 @@ const categoryLinks = [
 
 export function Header() {
   const [isScrolled, setIsScrolled] = useState(false);
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const router = useRouter();
 
   useEffect(() => {
     const handleScroll = () => {
       setIsScrolled(window.scrollY > 80);
     };
 
+    const checkLoginStatus = () => {
+        const loggedIn = localStorage.getItem('isLoggedIn') === 'true';
+        setIsLoggedIn(loggedIn);
+    };
+    checkLoginStatus();
+
     window.addEventListener("scroll", handleScroll);
+    window.addEventListener('storage', checkLoginStatus); // Listen for changes in other tabs
+
     return () => {
       window.removeEventListener("scroll", handleScroll);
+      window.removeEventListener('storage', checkLoginStatus);
     };
   }, []);
+
+  const handleLogout = () => {
+    localStorage.removeItem('isLoggedIn');
+    setIsLoggedIn(false);
+    router.push('/sign-in');
+    router.refresh();
+  };
 
   return (
     <header className="sticky top-0 z-50 w-full bg-background/95 backdrop-blur-sm">
@@ -57,10 +76,17 @@ export function Header() {
               09677460460
             </a>
             <span className="text-muted-foreground">|</span>
-            <Link href="/sign-in" className="flex items-center gap-1 hover:text-primary">
-              <User className="h-4 w-4" />
-              Login
-            </Link>
+             {isLoggedIn ? (
+                <button onClick={handleLogout} className="flex items-center gap-1 hover:text-primary text-xs">
+                    <LogOut className="h-4 w-4" />
+                    Logout
+                </button>
+            ) : (
+                <Link href="/sign-in" className="flex items-center gap-1 hover:text-primary">
+                    <User className="h-4 w-4" />
+                    Login
+                </Link>
+            )}
              <span className="text-muted-foreground">|</span>
              <Link href="/track-order" className="flex items-center gap-1 hover:text-primary">
                 <MapPin className="h-4 w-4" />
@@ -148,11 +174,29 @@ export function Header() {
                     <Badge className="absolute -top-1 -right-1 h-5 w-5 justify-center rounded-full p-0 text-xs bg-blue-600 text-primary-foreground hover:bg-blue-700 border-none">3</Badge>
                 </Link>
                 </Button>
-                <Button variant="ghost" size="icon" asChild>
-                    <Link href="/sign-in" aria-label="Account">
-                        <User className="h-6 w-6" />
-                    </Link>
-                </Button>
+                <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                        <Button variant="ghost" size="icon" aria-label="Account">
+                            <User className="h-6 w-6" />
+                        </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end">
+                        {isLoggedIn ? (
+                            <>
+                                <DropdownMenuItem asChild>
+                                    <Link href="/account">My Account</Link>
+                                </DropdownMenuItem>
+                                <DropdownMenuItem onClick={handleLogout}>
+                                    Logout
+                                </DropdownMenuItem>
+                            </>
+                        ) : (
+                            <DropdownMenuItem asChild>
+                                <Link href="/sign-in">Sign In</Link>
+                            </DropdownMenuItem>
+                        )}
+                    </DropdownMenuContent>
+                </DropdownMenu>
             </div>
         </div>
       </div>

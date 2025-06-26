@@ -1,7 +1,7 @@
 "use client"
 
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { User, ShoppingBag, Heart, LogOut } from 'lucide-react';
@@ -15,6 +15,13 @@ const navItems = [
 
 export function AccountSidebar() {
     const pathname = usePathname();
+    const router = useRouter();
+
+    const handleSignOut = () => {
+        localStorage.removeItem('isLoggedIn');
+        router.push('/sign-in');
+        router.refresh();
+    };
 
     return (
         <Card>
@@ -35,7 +42,7 @@ export function AccountSidebar() {
                         </Link>
                     </Button>
                 ))}
-                <Button variant="ghost" className="justify-start text-destructive hover:text-destructive">
+                <Button onClick={handleSignOut} variant="ghost" className="justify-start text-destructive hover:text-destructive">
                     <LogOut className="mr-2 h-4 w-4" />
                     Sign Out
                 </Button>

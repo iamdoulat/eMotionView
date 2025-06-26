@@ -36,11 +36,14 @@ export default function SignInPage() {
     // Simulate API call for login. In a real app, this would be an API call.
     setTimeout(() => {
       if (values.email === 'admin@gmail.com' && values.password === '123456') {
+        localStorage.setItem('isLoggedIn', 'true');
         toast({
           title: 'Login Successful',
           description: 'Welcome back, Admin!',
         });
         router.push('/account');
+        // Force a reload of the page to update header state
+        router.refresh(); 
       } else {
         toast({
           variant: 'destructive',
