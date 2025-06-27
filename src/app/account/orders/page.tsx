@@ -1,12 +1,32 @@
-import { orders } from "@/lib/placeholder-data";
+
+"use client";
+
+import { orders as initialOrders, type Order } from "@/lib/placeholder-data";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
 import { ArrowRight } from "lucide-react";
+import { useEffect, useState } from "react";
 
 export default function OrdersPage() {
+    const [orders, setOrders] = useState<Order[]>(initialOrders);
+
+    useEffect(() => {
+        const storedOrders: Order[] = JSON.parse(localStorage.getItem('newOrders') || '[]');
+        if (storedOrders.length > 0) {
+            const combinedOrders = [...initialOrders];
+            storedOrders.forEach(storedOrder => {
+                if (!combinedOrders.some(o => o.id === storedOrder.id)) {
+                    combinedOrders.push(storedOrder);
+                }
+            });
+            combinedOrders.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+            setOrders(combinedOrders);
+        }
+    }, []);
+
   return (
     <div>
         <h1 className="font-headline text-3xl font-bold text-foreground mb-6">My Orders</h1>

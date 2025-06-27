@@ -1,4 +1,7 @@
-import { orders } from "@/lib/placeholder-data";
+
+"use client";
+
+import { orders as initialOrders, type Order } from "@/lib/placeholder-data";
 import { notFound } from "next/navigation";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -7,9 +10,39 @@ import Image from "next/image";
 import Link from "next/link";
 import { Badge } from "@/components/ui/badge";
 import { Download, RefreshCw } from "lucide-react";
+import { useEffect, useState } from "react";
+import { Skeleton } from "@/components/ui/skeleton";
 
 export default function OrderDetailPage({ params }: { params: { id: string } }) {
-  const order = orders.find(o => o.id === params.id);
+  const [order, setOrder] = useState<Order | null | undefined>(undefined);
+
+  useEffect(() => {
+    if (params.id) {
+        const storedOrders: Order[] = JSON.parse(localStorage.getItem('newOrders') || '[]');
+        const allOrders = [...initialOrders, ...storedOrders];
+        const foundOrder = allOrders.find(o => o.id === params.id);
+        setOrder(foundOrder);
+    } else {
+        setOrder(null);
+    }
+  }, [params.id]);
+
+  if (order === undefined) {
+    return (
+        <div>
+            <Skeleton className="h-12 w-1/2 mb-6" />
+            <Card>
+                <CardHeader>
+                    <Skeleton className="h-8 w-3/4" />
+                    <Skeleton className="h-4 w-1/2 mt-2" />
+                </CardHeader>
+                <CardContent>
+                    <Skeleton className="h-48 w-full" />
+                </CardContent>
+            </Card>
+        </div>
+    );
+  }
   
   if (!order) {
     notFound();

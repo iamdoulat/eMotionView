@@ -1,7 +1,7 @@
 
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import Link from "next/link";
 import { orders as initialOrders, type Order } from "@/lib/placeholder-data";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -26,18 +26,39 @@ export default function AdminOrdersPage() {
   const [filter, setFilter] = useState<StatusFilter>("all");
   const [searchTerm, setSearchTerm] = useState("");
 
+  useEffect(() => {
+    const storedOrders: Order[] = JSON.parse(localStorage.getItem('newOrders') || '[]');
+    if (storedOrders.length > 0) {
+        const combinedOrders = [...initialOrders];
+        storedOrders.forEach(storedOrder => {
+            if (!combinedOrders.some(o => o.id === storedOrder.id)) {
+                combinedOrders.push(storedOrder);
+            }
+        });
+        setOrders(combinedOrders);
+    }
+  }, []);
+
   const filteredOrders = useMemo(() => {
     return orders
       .filter(order => filter === 'all' || order.status === filter)
       .filter(order =>
         order.orderNumber.toLowerCase().includes(searchTerm.toLowerCase()) ||
         order.customerName.toLowerCase().includes(searchTerm.toLowerCase())
-      );
+      )
+      .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
   }, [orders, filter, searchTerm]);
 
   const handleSaveChanges = () => {
     if (!orderToEdit) return;
-    setOrders(orders.map(o => o.id === orderToEdit.id ? orderToEdit : o));
+    const updatedOrders = orders.map(o => o.id === orderToEdit.id ? orderToEdit : o);
+    setOrders(updatedOrders);
+
+    const storedOrders: Order[] = JSON.parse(localStorage.getItem('newOrders') || '[]');
+    if (storedOrders.some(o => o.id === orderToEdit.id)) {
+      const newStoredOrders = storedOrders.map(o => o.id === orderToEdit.id ? orderToEdit : o);
+      localStorage.setItem('newOrders', JSON.stringify(newStoredOrders));
+    }
     setOrderToEdit(null);
   };
   
