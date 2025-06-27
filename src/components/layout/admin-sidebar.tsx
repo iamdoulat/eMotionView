@@ -23,6 +23,11 @@ import {
   Building,
   FileDown,
   FileUp,
+  LayoutTemplate,
+  PanelBottom,
+  Mail,
+  CreditCard,
+  Globe,
 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from "../ui/card";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
@@ -53,10 +58,19 @@ const bottomNavItems = [
     { href: "/admin/chat", label: "Chat", icon: MessageSquare },
 ];
 
+const settingsNavItems = [
+    { href: "/admin/settings/general", label: "General", icon: Settings },
+    { href: "/admin/settings/homepage", label: "Homepage", icon: LayoutTemplate },
+    { href: "/admin/settings/footer", label: "Footer", icon: PanelBottom },
+    { href: "/admin/settings/communication", label: "Communication", icon: Mail },
+    { href: "/admin/settings/payments", label: "Payments & Shipping", icon: CreditCard },
+    { href: "/admin/settings/cdn", label: "Global CDN", icon: Globe },
+];
 
 export function AdminSidebar() {
     const pathname = usePathname();
     const [isProductsOpen, setIsProductsOpen] = useState(() => pathname.startsWith('/admin/products'));
+    const [isSettingsOpen, setIsSettingsOpen] = useState(() => pathname.startsWith('/admin/settings'));
 
     return (
         <aside className="sticky top-24">
@@ -64,7 +78,7 @@ export function AdminSidebar() {
               <CardHeader>
                   <CardTitle className="font-headline">Admin Panel</CardTitle>
               </CardHeader>
-              <CardContent className="flex flex-col gap-2 p-4">
+              <CardContent className="flex flex-col gap-2 p-4 min-h-[calc(100vh-8rem)]">
                    <Button asChild variant="outline" className="justify-start">
                       <Link href="/">
                           <Home className="mr-2 h-4 w-4" />
@@ -126,14 +140,34 @@ export function AdminSidebar() {
                           </Link>
                       </Button>
                   ))}
-                   <div className="mt-auto pt-4">
-                      <Button asChild variant="ghost" className="justify-start w-full">
-                          <Link href="/admin/settings">
-                              <Settings className="mr-2 h-4 w-4" />
-                              Settings
-                          </Link>
+                  <div className="flex-grow" />
+                  <Collapsible open={isSettingsOpen} onOpenChange={setIsSettingsOpen} className="w-full space-y-1">
+                    <CollapsibleTrigger asChild>
+                      <Button variant={pathname.startsWith('/admin/settings') ? "default" : "ghost"} className="justify-between w-full">
+                        <div className="flex items-center gap-2">
+                          <Settings className="h-4 w-4" />
+                          Settings
+                        </div>
+                        <ChevronsUpDown className="h-4 w-4" />
                       </Button>
-                   </div>
+                    </CollapsibleTrigger>
+                    <CollapsibleContent className="pl-6 pt-1 space-y-1">
+                      {settingsNavItems.map((item) => (
+                        <Button
+                          key={item.href}
+                          asChild
+                          variant={pathname === item.href ? "secondary" : "ghost"}
+                          className="justify-start w-full"
+                          size="sm"
+                        >
+                          <Link href={item.href}>
+                            <item.icon className="mr-2 h-4 w-4" />
+                            {item.label}
+                          </Link>
+                        </Button>
+                      ))}
+                    </CollapsibleContent>
+                  </Collapsible>
               </CardContent>
           </Card>
         </aside>
