@@ -110,6 +110,26 @@ export default function AdminSettingsPage() {
           </Button>
         </CardFooter>
       </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>Global CDN</CardTitle>
+          <CardDescription>Enable and configure CDN services for your store assets.</CardDescription>
+        </CardHeader>
+        <CardContent>
+            <p className="text-sm text-muted-foreground">
+                Improve your store's performance by serving assets from a global content delivery network.
+            </p>
+        </CardContent>
+        <CardFooter>
+          <Button asChild>
+            <Link href="/admin/settings/cdn">
+                Configure CDN
+                <ArrowRight className="ml-2 h-4 w-4" />
+            </Link>
+          </Button>
+        </CardFooter>
+      </Card>
     </div>
   );
 }
