@@ -1,3 +1,4 @@
+
 export type Product = {
   id: string;
   name: string;
@@ -19,6 +20,7 @@ export type Product = {
   productType: 'Physical' | 'Digital';
   downloadUrl?: string;
   digitalProductNote?: string;
+  productAttributes?: { name: string; values: string[] }[];
 };
 
 export type Review = {
@@ -151,6 +153,9 @@ export const products: Product[] = [
     supplier: 'Haylou Direct',
     points: 100,
     productType: 'Physical',
+    productAttributes: [
+      { name: 'Color', values: ['Black', 'Silver'] },
+    ],
   },
   {
     id: '2',
@@ -201,6 +206,10 @@ export const products: Product[] = [
     supplier: 'Mibro Inc.',
     points: 150,
     productType: 'Physical',
+    productAttributes: [
+      { name: 'Color', values: ['Black', 'Gold'] },
+      { name: 'Size', values: ['Large'] }
+    ],
   },
   {
     id: '4',

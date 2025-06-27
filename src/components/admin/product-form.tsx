@@ -5,18 +5,19 @@ import { useForm, useFieldArray, type SubmitHandler } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import type { Product } from "@/lib/placeholder-data";
-import { categories, brands, suppliers } from "@/lib/placeholder-data";
+import { categories, brands, suppliers, attributes } from "@/lib/placeholder-data";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
-import { Form, FormControl, FormField, FormItem, FormLabel } from "@/components/ui/form";
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Trash2 } from "lucide-react";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { DialogFooter } from "@/components/ui/dialog";
 import Image from "next/image";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { Card } from "@/components/ui/card";
 
 const productSchema = z.object({
     id: z.string().optional(),
@@ -36,6 +37,10 @@ const productSchema = z.object({
         value: z.string().min(1, "Specification value cannot be empty.")
     })),
     images: z.array(z.string()).default([]),
+    productAttributes: z.array(z.object({
+        name: z.string().min(1, "Please select an attribute."),
+        values: z.array(z.string()).min(1, "Please select at least one value."),
+    })).optional(),
     productType: z.enum(['Physical', 'Digital']).default('Physical'),
     downloadUrl: z.string().url({ message: "Please enter a valid URL." }).optional().or(z.literal('')),
     digitalProductNote: z.string().optional(),
@@ -58,6 +63,7 @@ export function ProductForm({ product, onSave, onCancel }: ProductFormProps) {
             points: product.points || undefined,
             features: product.features.map(f => ({ value: f })),
             specifications: Object.entries(product.specifications).map(([key, value]) => ({ key, value })),
+            productAttributes: product.productAttributes || [],
             downloadUrl: product.downloadUrl || '',
             digitalProductNote: product.digitalProductNote || '',
         } : {
@@ -74,6 +80,7 @@ export function ProductForm({ product, onSave, onCancel }: ProductFormProps) {
             features: [{ value: "" }],
             specifications: [{ key: "", value: "" }],
             images: [],
+            productAttributes: [],
             productType: 'Physical',
             downloadUrl: '',
             digitalProductNote: '',
@@ -94,6 +101,12 @@ export function ProductForm({ product, onSave, onCancel }: ProductFormProps) {
         name: "specifications",
     });
 
+    const { fields: attributeFields, append: appendAttribute, remove: removeAttribute } = useFieldArray({
+        control,
+        name: "productAttributes",
+    });
+
+
     const onSubmit: SubmitHandler<ProductFormData> = (data) => {
         const specObject: Record<string, string> = {};
         data.specifications.forEach(spec => {
@@ -110,6 +123,7 @@ export function ProductForm({ product, onSave, onCancel }: ProductFormProps) {
             images: product?.images || ['https://placehold.co/600x600.png'],
             features: data.features.map(f => f.value),
             specifications: specObject,
+            productAttributes: data.productAttributes,
             points: data.points,
             discountPercentage: data.originalPrice && data.price < data.originalPrice ? Math.round(((data.originalPrice - data.price) / data.originalPrice) * 100) : undefined,
             downloadUrl: data.downloadUrl || undefined,
@@ -290,6 +304,91 @@ export function ProductForm({ product, onSave, onCancel }: ProductFormProps) {
                             ))}
                             <Button type="button" variant="outline" size="sm" onClick={() => appendFeature({ value: "" })}>Add Feature</Button>
                         </div>
+                        
+                        <div className="space-y-2">
+                            <Label>Product Attributes</Label>
+                            <div className="space-y-4">
+                                {attributeFields.map((field, index) => {
+                                    const attributeName = form.watch(`productAttributes.${index}.name`);
+                                    const availableValues = attributes.find(a => a.name === attributeName)?.values || [];
+                                    const selectedValues = form.watch(`productAttributes.${index}.values`) || [];
+                                    
+                                    return (
+                                        <Card key={field.id} className="p-4 bg-secondary/50">
+                                            <div className="flex gap-4">
+                                                <div className="flex-1 space-y-2">
+                                                    <FormField
+                                                        control={control}
+                                                        name={`productAttributes.${index}.name`}
+                                                        render={({ field: selectField }) => (
+                                                            <FormItem>
+                                                                <FormLabel>Attribute</FormLabel>
+                                                                <Select 
+                                                                    onValueChange={(value) => {
+                                                                        selectField.onChange(value);
+                                                                        form.setValue(`productAttributes.${index}.values`, []);
+                                                                    }} 
+                                                                    defaultValue={selectField.value}
+                                                                >
+                                                                    <FormControl>
+                                                                        <SelectTrigger>
+                                                                            <SelectValue placeholder="Select an attribute" />
+                                                                        </SelectTrigger>
+                                                                    </FormControl>
+                                                                    <SelectContent>
+                                                                        {attributes.map(attr => (
+                                                                            <SelectItem key={attr.id} value={attr.name}>{attr.name}</SelectItem>
+                                                                        ))}
+                                                                    </SelectContent>
+                                                                </Select>
+                                                                <FormMessage />
+                                                            </FormItem>
+                                                        )}
+                                                    />
+                                                    {attributeName && (
+                                                        <div className="space-y-2">
+                                                            <Label>Values</Label>
+                                                            <div className="flex flex-wrap gap-2">
+                                                                {availableValues.map(value => (
+                                                                    <Button
+                                                                        type="button"
+                                                                        key={value}
+                                                                        variant={selectedValues.includes(value) ? 'default' : 'outline'}
+                                                                        size="sm"
+                                                                        onClick={() => {
+                                                                            const newValues = selectedValues.includes(value)
+                                                                                ? selectedValues.filter((v: string) => v !== value)
+                                                                                : [...selectedValues, value];
+                                                                            form.setValue(`productAttributes.${index}.values`, newValues, { shouldValidate: true });
+                                                                        }}
+                                                                    >
+                                                                        {value}
+                                                                    </Button>
+                                                                ))}
+                                                            </div>
+                                                            {errors.productAttributes?.[index]?.values && <p className="text-destructive text-sm">{errors.productAttributes[index]?.values?.message}</p>}
+                                                        </div>
+                                                    )}
+                                                </div>
+                                                <Button type="button" variant="destructive" size="icon" onClick={() => removeAttribute(index)}>
+                                                    <Trash2 className="h-4 w-4" />
+                                                </Button>
+                                            </div>
+                                        </Card>
+                                    )
+                                })}
+                            </div>
+                            <Button 
+                                type="button" 
+                                variant="outline" 
+                                size="sm" 
+                                onClick={() => appendAttribute({ name: '', values: [] })}
+                                className="mt-2"
+                            >
+                                Add Attribute
+                            </Button>
+                        </div>
+
 
                         <div className="space-y-2">
                             <Label>Specifications</Label>
