@@ -137,18 +137,35 @@ export function ProductForm({ product, onSave, onCancel }: ProductFormProps) {
         });
 
         const transformedData: Product = {
-            ...data,
-            id: product?.id || "",
+            // Explicitly map fields from form data
+            name: data.name,
+            permalink: data.permalink,
+            description: data.description,
+            price: data.price,
+            originalPrice: data.originalPrice,
+            category: data.category,
+            brand: data.brand,
+            sku: data.sku,
+            stock: data.stock,
+            supplier: data.supplier,
+            points: data.points,
+            productType: data.productType,
+            downloadUrl: data.downloadUrl || undefined,
+            digitalProductNote: data.digitalProductNote || undefined,
+            productAttributes: data.productAttributes,
+
+            // Transformed fields from form data
+            features: data.features.map(f => f.value),
+            specifications: specObject,
+            
+            // Fields from original product object (non-editable in form)
+            id: product?.id || data.id || "",
             rating: product?.rating || 0,
             reviewCount: product?.reviewCount || 0,
             images: product?.images || ['https://placehold.co/600x600.png'],
-            features: data.features.map(f => f.value),
-            specifications: specObject,
-            productAttributes: data.productAttributes,
-            points: data.points,
+
+            // Calculated field
             discountPercentage: data.originalPrice && data.price < data.originalPrice ? Math.round(((data.originalPrice - data.price) / data.originalPrice) * 100) : undefined,
-            downloadUrl: data.downloadUrl || undefined,
-            digitalProductNote: data.digitalProductNote || undefined,
         };
         onSave(transformedData);
     };
