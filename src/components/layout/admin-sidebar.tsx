@@ -23,6 +23,7 @@ import {
   Building,
   FileDown,
   FileUp,
+  UserCog,
 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from "../ui/card";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
@@ -47,7 +48,8 @@ const productNavItems = [
 
 const mainNavItems = [
     { href: "/admin/inventory", label: "Inventory", icon: Boxes },
-    { href: "/admin/users", label: "Customers", icon: Users },
+    { href: "/admin/customers", label: "Customers", icon: Users },
+    { href: "/admin/users", label: "Staff", icon: UserCog },
     { href: "/admin/analytics", label: "Analytics", icon: LineChart },
     { href: "/admin/club-points", label: "Club Points", icon: Award },
     { href: "/admin/chat", label: "Chat", icon: MessageSquare },

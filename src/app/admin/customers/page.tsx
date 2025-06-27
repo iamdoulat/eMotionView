@@ -17,12 +17,12 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { MoreHorizontal, Trash2, Edit, View } from "lucide-react";
 import { format } from 'date-fns';
 
-export default function AdminUsersPage() {
+export default function AdminCustomersPage() {
   const [users, setUsers] = useState<User[]>(initialUsers);
   const [userToEdit, setUserToEdit] = useState<User | null>(null);
   const [userToDelete, setUserToDelete] = useState<User | null>(null);
 
-  const staffUsers = useMemo(() => users.filter(user => user.role !== 'Customer'), [users]);
+  const customerUsers = useMemo(() => users.filter(user => user.role === 'Customer'), [users]);
 
   const handleSaveChanges = () => {
     if (!userToEdit) return;
@@ -40,15 +40,15 @@ export default function AdminUsersPage() {
     <>
       <Card>
         <CardHeader>
-          <CardTitle>Staff Management</CardTitle>
-          <CardDescription>Manage your internal staff members and their roles.</CardDescription>
+          <CardTitle>Customers</CardTitle>
+          <CardDescription>Manage your customers and view their details.</CardDescription>
         </CardHeader>
         <CardContent>
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead>Staff Member</TableHead>
-                <TableHead>Role</TableHead>
+                <TableHead>Customer</TableHead>
+                <TableHead>Points</TableHead>
                 <TableHead>Status</TableHead>
                 <TableHead className="hidden md:table-cell">Registered</TableHead>
                 <TableHead className="hidden lg:table-cell">Last Login</TableHead>
@@ -58,12 +58,12 @@ export default function AdminUsersPage() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {staffUsers.map((user) => (
+              {customerUsers.map((user) => (
                 <TableRow key={user.id}>
                   <TableCell>
                     <div className="flex items-center gap-4">
                       <Avatar className="h-9 w-9">
-                        <AvatarImage src={user.avatar} alt={user.name} data-ai-hint="person face" />
+                        <AvatarImage src={user.avatar} alt={user.name} data-ai-hint="person face"/>
                         <AvatarFallback>{user.name.split(' ').map(n => n[0]).join('')}</AvatarFallback>
                       </Avatar>
                       <div className="grid gap-1">
@@ -72,8 +72,8 @@ export default function AdminUsersPage() {
                       </div>
                     </div>
                   </TableCell>
-                  <TableCell>
-                    <Badge variant={user.role === 'Admin' ? 'destructive' : 'secondary'}>{user.role}</Badge>
+                   <TableCell>
+                    {user.points?.toLocaleString() || 0}
                   </TableCell>
                   <TableCell>
                     <Badge variant={user.status === 'Active' ? 'default' : 'secondary'}>{user.status}</Badge>
@@ -118,7 +118,7 @@ export default function AdminUsersPage() {
       <Dialog open={!!userToEdit} onOpenChange={(open) => !open && setUserToEdit(null)}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Edit User</DialogTitle>
+            <DialogTitle>Edit Customer</DialogTitle>
           </DialogHeader>
           {userToEdit && (
             <div className="space-y-4 py-4">
@@ -147,19 +147,7 @@ export default function AdminUsersPage() {
               </div>
               <div className="space-y-2">
                 <Label htmlFor="role">Role</Label>
-                 <Select
-                    value={userToEdit.role}
-                    onValueChange={(value: 'Admin' | 'Manager' | 'Staff') => setUserToEdit({ ...userToEdit, role: value as any })}
-                >
-                    <SelectTrigger id="role">
-                        <SelectValue placeholder="Select role" />
-                    </SelectTrigger>
-                    <SelectContent>
-                        <SelectItem value="Admin">Admin</SelectItem>
-                        <SelectItem value="Manager">Manager</SelectItem>
-                        <SelectItem value="Staff">Staff</SelectItem>
-                    </SelectContent>
-                </Select>
+                <p className="text-sm p-2 bg-secondary rounded-md border">{userToEdit.role}</p>
               </div>
             </div>
           )}
@@ -175,7 +163,7 @@ export default function AdminUsersPage() {
           <AlertDialogHeader>
             <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
             <AlertDialogDescription>
-              This action cannot be undone. This will permanently delete the user account for {userToDelete?.name}.
+              This action cannot be undone. This will permanently delete the customer account for {userToDelete?.name}.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>

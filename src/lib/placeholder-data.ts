@@ -70,7 +70,7 @@ export type User = {
   registeredDate: string;
   status: 'Active' | 'Inactive';
   lastLogin: string;
-  role: 'Admin' | 'Customer';
+  role: 'Admin' | 'Manager' | 'Staff' | 'Customer';
   points?: number;
 };
 
@@ -580,6 +580,28 @@ export const users: User[] = [
     status: 'Active',
     lastLogin: '2024-05-22T10:00:00Z',
     role: 'Admin',
+    points: 0,
+  },
+   {
+    id: '6',
+    name: 'David Chen',
+    email: 'david.chen@email.com',
+    avatar: 'https://placehold.co/40x40.png',
+    registeredDate: '2024-05-02',
+    status: 'Active',
+    lastLogin: '2024-05-22T11:00:00Z',
+    role: 'Manager',
+    points: 0,
+  },
+  {
+    id: '7',
+    name: 'Sarah Miller',
+    email: 'sarah.miller@email.com',
+    avatar: 'https://placehold.co/40x40.png',
+    registeredDate: '2024-05-03',
+    status: 'Active',
+    lastLogin: '2024-05-22T09:30:00Z',
+    role: 'Staff',
     points: 0,
   },
   {
