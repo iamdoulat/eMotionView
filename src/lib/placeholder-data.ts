@@ -42,7 +42,7 @@ export type Order = {
   date: string;
   customerName: string;
   customerAvatar: string;
-  status: 'Delivered' | 'Processing' | 'Shipped' | 'Cancelled';
+  status: 'Pending' | 'Delivered' | 'Processing' | 'Shipped' | 'Cancelled';
   total: number;
   items: {
     productId: string;

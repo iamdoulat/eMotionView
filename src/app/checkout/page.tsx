@@ -37,7 +37,7 @@ export default function CheckoutPage() {
         date: new Date().toISOString(),
         customerName: 'John Doe', // Hardcoded for prototype
         customerAvatar: 'https://placehold.co/40x40.png',
-        status: 'Processing',
+        status: 'Pending',
         total: total,
         items: cart.map(item => ({
             productId: item.id,

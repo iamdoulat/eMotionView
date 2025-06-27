@@ -66,8 +66,8 @@ export default function AdminOrdersPage() {
     switch (status) {
       case 'Delivered':
         return 'default';
+      case 'Pending':
       case 'Shipped':
-        return 'secondary';
       case 'Processing':
         return 'secondary';
       case 'Cancelled':
@@ -96,6 +96,7 @@ export default function AdminOrdersPage() {
           <Tabs value={filter} onValueChange={(value) => setFilter(value as StatusFilter)}>
             <TabsList>
               <TabsTrigger value="all">All</TabsTrigger>
+              <TabsTrigger value="Pending">Pending</TabsTrigger>
               <TabsTrigger value="Processing">Processing</TabsTrigger>
               <TabsTrigger value="Shipped">Shipped</TabsTrigger>
               <TabsTrigger value="Delivered">Delivered</TabsTrigger>
@@ -183,6 +184,7 @@ export default function AdminOrdersPage() {
                     <SelectValue placeholder="Select status" />
                   </SelectTrigger>
                   <SelectContent>
+                    <SelectItem value="Pending">Pending</SelectItem>
                     <SelectItem value="Processing">Processing</SelectItem>
                     <SelectItem value="Shipped">Shipped</SelectItem>
                     <SelectItem value="Delivered">Delivered</SelectItem>

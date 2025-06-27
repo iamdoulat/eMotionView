@@ -20,7 +20,7 @@ const formSchema = z.object({
   email: z.string().email({ message: "Please enter a valid email address." }),
 });
 
-const statusSteps = ['Processing', 'Shipped', 'Delivered'];
+const statusSteps = ['Pending', 'Processing', 'Shipped', 'Delivered'];
 
 export default function TrackOrderPage() {
   const [isLoading, setIsLoading] = useState(false);
