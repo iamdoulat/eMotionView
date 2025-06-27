@@ -18,12 +18,15 @@ import { useCart } from '@/hooks/use-cart';
 import { useToast } from '@/hooks/use-toast';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
+import { useWishlist } from '@/hooks/use-wishlist';
+import { cn } from '@/lib/utils';
 
 export default function ProductDetailPage() {
   const params = useParams<{ id: string }>();
   const product = products.find(p => p.id === params.id);
   const { toast } = useToast();
   const { addToCart } = useCart();
+  const { addToWishlist, removeFromWishlist, isInWishlist } = useWishlist();
   const router = useRouter();
   
   if (!product) {
@@ -33,6 +36,7 @@ export default function ProductDetailPage() {
   const [selectedImage, setSelectedImage] = useState(product.images[0]);
   const [quantity, setQuantity] = useState(1);
   const productReviews = allReviews.filter(r => r.productId === params.id);
+  const isWished = isInWishlist(product.id);
 
   const isStockManaged = product.manageStock ?? true;
   const canPurchase = !isStockManaged || product.stock > 0;
@@ -143,9 +147,19 @@ export default function ProductDetailPage() {
                       />
                     ))}
                   </div>
-                   <button className="text-muted-foreground hover:text-primary">
-                      <Heart className="h-6 w-6" />
-                   </button>
+                  <button 
+                    className="text-muted-foreground hover:text-primary"
+                    onClick={() => {
+                      isWished ? removeFromWishlist(product.id) : addToWishlist(product.id);
+                      toast({
+                        title: isWished ? 'Removed from Wishlist' : 'Added to Wishlist',
+                        description: product.name,
+                      });
+                    }}
+                    aria-label={isWished ? 'Remove from wishlist' : 'Add to wishlist'}
+                  >
+                    <Heart className={cn("h-6 w-6 transition-colors", isWished && "fill-destructive text-destructive")} />
+                  </button>
                 </div>
 
                 <div className="mt-6">

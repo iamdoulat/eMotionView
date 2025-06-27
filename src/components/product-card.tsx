@@ -7,13 +7,15 @@ import type { Product } from '@/lib/placeholder-data';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Star, ShoppingCart, CheckCircle, Plus, Minus } from 'lucide-react';
+import { Star, ShoppingCart, CheckCircle, Plus, Minus, Heart } from 'lucide-react';
 import { Dialog, DialogContent, DialogTrigger } from "@/components/ui/dialog";
 import { useCart } from '@/hooks/use-cart';
 import { useToast } from '@/hooks/use-toast';
 import { useState } from 'react';
 import { Input } from './ui/input';
 import { Label } from './ui/label';
+import { useWishlist } from '@/hooks/use-wishlist';
+import { cn } from '@/lib/utils';
 
 interface ProductCardProps {
   product: Product;
@@ -21,10 +23,12 @@ interface ProductCardProps {
 
 export function ProductCard({ product }: ProductCardProps) {
   const { addToCart } = useCart();
+  const { addToWishlist, removeFromWishlist, isInWishlist } = useWishlist();
   const { toast } = useToast();
   const [dialogQuantity, setDialogQuantity] = useState(1);
   const isStockManaged = product.manageStock ?? true;
   const canPurchase = !isStockManaged || product.stock > 0;
+  const isWished = isInWishlist(product.id);
 
   const handleQuickAddToCart = (e: React.MouseEvent) => {
     e.preventDefault();
@@ -52,12 +56,22 @@ export function ProductCard({ product }: ProductCardProps) {
     });
   };
 
+  const handleWishlistClick = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    isWished ? removeFromWishlist(product.id) : addToWishlist(product.id);
+    toast({
+        title: isWished ? "Removed from Wishlist" : "Added to Wishlist",
+        description: product.name,
+    });
+  }
+
   return (
     <Dialog onOpenChange={() => setDialogQuantity(1)}>
       <Card className="group overflow-hidden rounded-lg shadow-sm hover:shadow-lg transition-shadow duration-300 flex flex-col h-full bg-background">
         <CardHeader className="p-0 relative border-b">
           <DialogTrigger asChild>
-            <div className="block aspect-square bg-secondary/30 cursor-pointer">
+            <Link href={`/products/${product.id}`} className="block aspect-square bg-secondary/30 cursor-pointer">
               <Image
                 src={product.images[0]}
                 alt={product.name}
@@ -66,13 +80,22 @@ export function ProductCard({ product }: ProductCardProps) {
                 className="w-full h-full object-contain p-4 group-hover:scale-105 transition-transform duration-300"
                 data-ai-hint={`${product.category} product`}
               />
-            </div>
+            </Link>
           </DialogTrigger>
           {product.discountPercentage && (
             <Badge className="absolute top-3 left-3 bg-blue-600 hover:bg-blue-700 text-primary-foreground border-none">
               {product.discountPercentage}%
             </Badge>
           )}
+          <Button 
+            size="icon" 
+            variant="ghost" 
+            className="absolute top-2 right-2 z-10 h-8 w-8 text-muted-foreground hover:text-destructive rounded-full bg-background/50 hover:bg-background"
+            onClick={handleWishlistClick}
+            aria-label={isWished ? 'Remove from wishlist' : 'Add to wishlist'}
+          >
+            <Heart className={cn("h-5 w-5", isWished && "fill-destructive text-destructive")} />
+          </Button>
         </CardHeader>
         <CardContent className="p-3 flex-grow flex flex-col">
           <h3 className="text-sm font-medium h-10 line-clamp-2">

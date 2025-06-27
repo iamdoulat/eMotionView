@@ -5,6 +5,7 @@ import { cn } from '@/lib/utils';
 import { Header } from '@/components/layout/header';
 import { Footer } from '@/components/layout/footer';
 import { Toaster } from "@/components/ui/toaster"
+import { LiveChatWidget } from '@/components/live-chat-widget';
 
 const poppins = Poppins({
   subsets: ['latin'],
@@ -33,6 +34,7 @@ export default function RootLayout({
         </main>
         <Footer />
         <Toaster />
+        <LiveChatWidget />
       </body>
     </html>
   );
