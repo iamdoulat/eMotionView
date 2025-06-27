@@ -54,6 +54,7 @@ export type User = {
   status: 'Active' | 'Inactive';
   lastLogin: string;
   role: 'Admin' | 'Customer';
+  points?: number;
 };
 
 export const products: Product[] = [
@@ -405,6 +406,7 @@ export const users: User[] = [
     status: 'Active',
     lastLogin: '2024-05-22T10:00:00Z',
     role: 'Admin',
+    points: 0,
   },
   {
     id: '2',
@@ -415,6 +417,7 @@ export const users: User[] = [
     status: 'Active',
     lastLogin: '2024-05-21T14:30:00Z',
     role: 'Customer',
+    points: 1250,
   },
   {
     id: '3',
@@ -425,6 +428,7 @@ export const users: User[] = [
     status: 'Inactive',
     lastLogin: '2024-04-25T08:00:00Z',
     role: 'Customer',
+    points: 300,
   },
   {
     id: '4',
@@ -435,6 +439,7 @@ export const users: User[] = [
     status: 'Active',
     lastLogin: '2024-05-22T11:00:00Z',
     role: 'Customer',
+    points: 580,
   },
   {
     id: '5',
@@ -445,5 +450,6 @@ export const users: User[] = [
     status: 'Active',
     lastLogin: '2024-05-20T18:45:00Z',
     role: 'Customer',
+    points: 2400,
   },
 ];

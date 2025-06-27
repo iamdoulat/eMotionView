@@ -13,6 +13,7 @@ import {
   Settings,
   Home,
   Boxes,
+  Award,
 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from "../ui/card";
 
@@ -23,6 +24,7 @@ const navItems = [
     { href: "/admin/inventory", label: "Inventory", icon: Boxes },
     { href: "/admin/users", label: "Customers", icon: Users },
     { href: "/admin/analytics", label: "Analytics", icon: LineChart },
+    { href: "/admin/club-points", label: "Club Points", icon: Award },
 ];
 
 export function AdminSidebar() {
