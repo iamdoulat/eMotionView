@@ -18,10 +18,12 @@ import { DialogFooter } from "@/components/ui/dialog";
 import Image from "next/image";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Card } from "@/components/ui/card";
+import { useEffect, useState } from "react";
 
 const productSchema = z.object({
     id: z.string().optional(),
     name: z.string().min(1, "Product name is required"),
+    permalink: z.string().optional(),
     description: z.string().min(1, "Description is required"),
     price: z.coerce.number().min(0, "Price must be a positive number"),
     originalPrice: z.coerce.number().optional(),
@@ -59,6 +61,7 @@ export function ProductForm({ product, onSave, onCancel }: ProductFormProps) {
         resolver: zodResolver(productSchema),
         defaultValues: product ? {
             ...product,
+            permalink: product.permalink || '',
             productType: product.productType || 'Physical',
             points: product.points || undefined,
             features: product.features.map(f => ({ value: f })),
@@ -68,6 +71,7 @@ export function ProductForm({ product, onSave, onCancel }: ProductFormProps) {
             digitalProductNote: product.digitalProductNote || '',
         } : {
             name: "",
+            permalink: "",
             description: "",
             price: 0,
             originalPrice: undefined,
@@ -88,6 +92,23 @@ export function ProductForm({ product, onSave, onCancel }: ProductFormProps) {
     });
 
     const { register, handleSubmit, control, formState: { errors } } = form;
+
+    const [isPermalinkManuallyEdited, setIsPermalinkManuallyEdited] = useState(!!product?.id);
+    const productName = form.watch('name');
+
+    useEffect(() => {
+        if (!isPermalinkManuallyEdited && productName) {
+            const generatedPermalink = productName
+                .toLowerCase()
+                .trim()
+                .replace(/&/g, 'and')
+                .replace(/[^a-z0-9\s-]/g, '')
+                .replace(/\s+/g, '-')
+                .replace(/-+/g, '-');
+            form.setValue('permalink', generatedPermalink, { shouldValidate: true });
+        }
+    }, [productName, isPermalinkManuallyEdited, form]);
+
 
     const productType = form.watch('productType');
 
@@ -195,6 +216,20 @@ export function ProductForm({ product, onSave, onCancel }: ProductFormProps) {
                                 {errors.sku && <p className="text-destructive text-sm">{errors.sku.message}</p>}
                             </div>
                         </div>
+
+                        <div className="space-y-2">
+                            <Label htmlFor="permalink">Permalink</Label>
+                            <Input
+                                id="permalink"
+                                {...register("permalink")}
+                                onChange={(e) => {
+                                    setIsPermalinkManuallyEdited(true);
+                                    form.setValue('permalink', e.target.value);
+                                }}
+                            />
+                            {errors.permalink && <p className="text-destructive text-sm">{errors.permalink.message}</p>}
+                        </div>
+
 
                         <div className="space-y-2">
                             <Label htmlFor="description">Description</Label>

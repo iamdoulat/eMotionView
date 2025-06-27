@@ -2,6 +2,7 @@
 export type Product = {
   id: string;
   name: string;
+  permalink?: string;
   description: string;
   price: number;
   originalPrice?: number;
@@ -130,6 +131,7 @@ export const products: Product[] = [
   {
     id: '1',
     name: 'Haylou Iron Neo Smart watch with 3ATM',
+    permalink: 'haylou-iron-neo-smart-watch-with-3atm',
     description: 'A stylish and durable smartwatch with 3ATM water resistance, perfect for tracking your fitness goals and staying connected on the go.',
     price: 3099,
     originalPrice: 3199,
@@ -160,6 +162,7 @@ export const products: Product[] = [
   {
     id: '2',
     name: 'HAYLOU HQ5 28dB ANC TWS Earbuds',
+    permalink: 'haylou-hq5-28db-anc-tws-earbuds',
     description: 'Experience immersive sound with these true wireless earbuds featuring 28dB Active Noise Cancellation and a comfortable, ergonomic design.',
     price: 1499,
     category: 'Audio',
@@ -184,6 +187,7 @@ export const products: Product[] = [
   {
     id: '3',
     name: 'Mibro Lite 3 BT Calling Smartwatch with 2 ATM',
+    permalink: 'mibro-lite-3-bt-calling-smartwatch-with-2-atm',
     description: 'A sleek and powerful smartwatch that tracks your fitness, manages notifications, and lets you take calls directly from your wrist.',
     price: 4999,
     originalPrice: 5499,
@@ -214,6 +218,7 @@ export const products: Product[] = [
   {
     id: '4',
     name: 'Amazfit Active 2R Smart Watch with...',
+    permalink: 'amazfit-active-2r-smart-watch-with',
     description: 'A high-performance smartwatch for active lifestyles, featuring advanced health tracking and a rugged design.',
     price: 13999,
     category: 'Wearables',
@@ -237,6 +242,7 @@ export const products: Product[] = [
   {
     id: '5',
     name: 'Haylou Solar Ultra BT calling Smart Watch',
+    permalink: 'haylou-solar-ultra-bt-calling-smart-watch',
     description: 'A premium smartwatch with a stunning display and Bluetooth calling capabilities, designed to complement your style.',
     price: 7499,
     category: 'Wearables',
@@ -260,6 +266,7 @@ export const products: Product[] = [
   {
     id: '6',
     name: 'KOSPET TANK T3 ULTRA 2 Special Edition',
+    permalink: 'kospet-tank-t3-ultra-2-special-edition',
     description: 'A rugged and durable smartwatch for the modern adventurer, built to withstand the toughest conditions.',
     price: 11999,
     originalPrice: 12999,
@@ -285,6 +292,7 @@ export const products: Product[] = [
   {
     id: '7',
     name: 'Portable Power Bank 20K',
+    permalink: 'portable-power-bank-20k',
     description: 'Charge your devices on the go with this high-capacity 20,000mAh power bank, featuring fast charging for multiple gadgets.',
     price: 2500,
     category: 'Accessories',
@@ -302,12 +310,13 @@ export const products: Product[] = [
     },
     sku: 'EM-PB-20K-01',
     stock: 150,
-    supplier: 'EnerMax Supplies',
+    supplier: 'Global Imports',
     productType: 'Physical',
   },
   {
     id: '8',
     name: 'Sentinel Smart Lock',
+    permalink: 'sentinel-smart-lock',
     description: 'Secure your home with the touch of a button or a simple voice command. Keyless entry has never been easier or more secure.',
     price: 10500,
     category: 'Smart Home',
@@ -331,6 +340,7 @@ export const products: Product[] = [
   {
     id: '9',
     name: 'Digital Art Pack - Sci-Fi Edition',
+    permalink: 'digital-art-pack-sci-fi-edition',
     description: 'A collection of 20 high-resolution digital artworks with a sci-fi theme. Perfect for wallpapers, prints, or creative projects.',
     price: 25,
     category: 'Digital Products',
