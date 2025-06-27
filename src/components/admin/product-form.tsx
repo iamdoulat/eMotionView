@@ -37,6 +37,8 @@ const productSchema = z.object({
     })),
     images: z.array(z.string()).default([]),
     productType: z.enum(['Physical', 'Digital']).default('Physical'),
+    downloadUrl: z.string().url({ message: "Please enter a valid URL." }).optional().or(z.literal('')),
+    digitalProductNote: z.string().optional(),
 });
 
 type ProductFormData = z.infer<typeof productSchema>;
@@ -56,6 +58,8 @@ export function ProductForm({ product, onSave, onCancel }: ProductFormProps) {
             points: product.points || undefined,
             features: product.features.map(f => ({ value: f })),
             specifications: Object.entries(product.specifications).map(([key, value]) => ({ key, value })),
+            downloadUrl: product.downloadUrl || '',
+            digitalProductNote: product.digitalProductNote || '',
         } : {
             name: "",
             description: "",
@@ -71,10 +75,14 @@ export function ProductForm({ product, onSave, onCancel }: ProductFormProps) {
             specifications: [{ key: "", value: "" }],
             images: [],
             productType: 'Physical',
+            downloadUrl: '',
+            digitalProductNote: '',
         },
     });
 
     const { register, handleSubmit, control, formState: { errors } } = form;
+
+    const productType = form.watch('productType');
 
     const { fields: featureFields, append: appendFeature, remove: removeFeature } = useFieldArray({
         control,
@@ -104,6 +112,8 @@ export function ProductForm({ product, onSave, onCancel }: ProductFormProps) {
             specifications: specObject,
             points: data.points,
             discountPercentage: data.originalPrice && data.price < data.originalPrice ? Math.round(((data.originalPrice - data.price) / data.originalPrice) * 100) : undefined,
+            downloadUrl: data.downloadUrl || undefined,
+            digitalProductNote: data.digitalProductNote || undefined,
         };
         onSave(transformedData);
     };
@@ -142,6 +152,22 @@ export function ProductForm({ product, onSave, onCancel }: ProductFormProps) {
                                 </FormItem>
                             )}
                         />
+
+                        {productType === 'Digital' && (
+                            <div className="space-y-4 p-4 border border-dashed rounded-md">
+                                <h3 className="text-lg font-medium">Digital Product Files</h3>
+                                <div className="space-y-2">
+                                    <Label htmlFor="downloadUrl">Download URL</Label>
+                                    <Input id="downloadUrl" {...register("downloadUrl")} placeholder="https://example.com/your-file.zip" />
+                                    {errors.downloadUrl && <p className="text-destructive text-sm">{errors.downloadUrl.message}</p>}
+                                </div>
+                                <div className="space-y-2">
+                                    <Label htmlFor="digitalProductNote">Download Note for Customer</Label>
+                                    <Textarea id="digitalProductNote" {...register("digitalProductNote")} placeholder="e.g. Your download link will expire in 48 hours." />
+                                    {errors.digitalProductNote && <p className="text-destructive text-sm">{errors.digitalProductNote.message}</p>}
+                                </div>
+                            </div>
+                        )}
 
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                             <div className="space-y-2">

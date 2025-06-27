@@ -17,6 +17,8 @@ export type Product = {
   supplier: string;
   points?: number;
   productType: 'Physical' | 'Digital';
+  downloadUrl?: string;
+  digitalProductNote?: string;
 };
 
 export type Review = {
@@ -45,6 +47,8 @@ export type Order = {
     quantity: number;
     price: number;
     productType: 'Physical' | 'Digital';
+    downloadUrl?: string;
+    digitalProductNote?: string;
   }[];
 };
 
@@ -336,6 +340,8 @@ export const products: Product[] = [
     stock: 9999,
     supplier: 'Studio Creations',
     productType: 'Digital',
+    downloadUrl: 'https://example.com/download/scifi-art-pack.zip',
+    digitalProductNote: 'Your download link will be available immediately after purchase in your order details section. The link will expire in 72 hours.',
   },
 ];
 
@@ -512,6 +518,8 @@ export const orders: Order[] = [
         quantity: 1,
         price: 25.00,
         productType: 'Digital',
+        downloadUrl: 'https://example.com/download/scifi-art-pack.zip',
+        digitalProductNote: 'Your download link will be available immediately after purchase in your order details section. The link will expire in 72 hours.',
       },
     ],
   },

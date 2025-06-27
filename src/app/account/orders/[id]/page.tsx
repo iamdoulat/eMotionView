@@ -59,9 +59,13 @@ export default function OrderDetailPage({ params }: { params: { id: string } }) 
                   <p className="font-medium">${item.price.toFixed(2)}</p>
                 </div>
                 {item.productType === 'Digital' && order.status === 'Delivered' && (
-                  <div className="mt-2 pl-[80px] flex items-center gap-4">
-                      <Button size="sm"><Download className="mr-2 h-4 w-4" /> Download</Button>
-                      <p className="text-xs text-muted-foreground">Your download link is available. Access your digital product instantly.</p>
+                  <div className="mt-2 pl-[80px] flex flex-col items-start gap-2">
+                      <Button asChild size="sm">
+                        <Link href={item.downloadUrl || '#'} target="_blank"><Download className="mr-2 h-4 w-4" /> Download</Link>
+                      </Button>
+                      {item.digitalProductNote && (
+                        <p className="text-xs text-muted-foreground">{item.digitalProductNote}</p>
+                      )}
                   </div>
                 )}
               </div>
