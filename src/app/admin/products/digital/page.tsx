@@ -1,15 +1,196 @@
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+
+"use client";
+
+import { useState, useMemo } from "react";
+import { products as initialProducts, type Product } from "@/lib/placeholder-data";
+import Image from "next/image";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+  CardFooter
+} from "@/components/ui/card";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import {
+    AlertDialog,
+    AlertDialogAction,
+    AlertDialogCancel,
+    AlertDialogContent,
+    AlertDialogDescription,
+    AlertDialogFooter,
+    AlertDialogHeader,
+    AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { Button } from "@/components/ui/button";
+import { MoreHorizontal, PlusCircle, Edit, Trash2 } from "lucide-react";
+import { ProductForm } from "@/components/admin/product-form";
 
 export default function DigitalProductsPage() {
+  const [allProducts, setAllProducts] = useState<Product[]>(initialProducts);
+  const [productToEdit, setProductToEdit] = useState<Product | null>(null);
+  const [isFormOpen, setIsFormOpen] = useState(false);
+  const [productToDelete, setProductToDelete] = useState<Product | null>(null);
+
+  const digitalProducts = useMemo(() => allProducts.filter(p => p.productType === 'Digital'), [allProducts]);
+
+  const handleOpenForm = (product?: Product) => {
+    setProductToEdit(product || null);
+    setIsFormOpen(true);
+  };
+
+  const handleCloseForm = () => {
+    setProductToEdit(null);
+    setIsFormOpen(false);
+  };
+
+  const handleSaveProduct = (productData: Product) => {
+    if (productToEdit && 'id' in productToEdit && productToEdit.id) {
+        setAllProducts(allProducts.map(p => p.id === productData.id ? productData : p));
+    } else {
+      const newProductWithId = { ...productData, id: `prod-${Date.now()}`};
+      setAllProducts([...allProducts, newProductWithId]);
+    }
+    handleCloseForm();
+  };
+
+  const handleDeleteProduct = () => {
+    if (!productToDelete) return;
+    setAllProducts(allProducts.filter(p => p.id !== productToDelete.id));
+    setProductToDelete(null);
+  };
+
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle>Digital Products</CardTitle>
-        <CardDescription>Manage your digital products and downloads. This feature is under construction.</CardDescription>
-      </CardHeader>
-      <CardContent>
-        <p>Coming soon!</p>
-      </CardContent>
-    </Card>
+    <div>
+      <Card>
+        <CardHeader>
+          <div className="flex items-center justify-between">
+              <div>
+                  <CardTitle>Digital Products</CardTitle>
+                  <CardDescription>Manage your downloadable products and services.</CardDescription>
+              </div>
+              <Button onClick={() => handleOpenForm()}>
+                  <PlusCircle className="mr-2 h-4 w-4" />
+                  Add Product
+              </Button>
+          </div>
+        </CardHeader>
+        <CardContent>
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead className="hidden w-[100px] sm:table-cell">
+                  <span className="sr-only">Image</span>
+                </TableHead>
+                <TableHead>Name</TableHead>
+                <TableHead>Price</TableHead>
+                <TableHead className="hidden md:table-cell">Category</TableHead>
+                <TableHead className="hidden md:table-cell">SKU</TableHead>
+                <TableHead>
+                  <span className="sr-only">Actions</span>
+                </TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {digitalProducts.map((product) => (
+                <TableRow key={product.id}>
+                  <TableCell className="hidden sm:table-cell">
+                    <Image
+                      alt={product.name}
+                      className="aspect-square rounded-md object-cover"
+                      height="64"
+                      src={product.images[0] || "https://placehold.co/64x64.png"}
+                      width="64"
+                      data-ai-hint="product"
+                    />
+                  </TableCell>
+                  <TableCell className="font-medium">{product.name}</TableCell>
+                  <TableCell>${product.price.toFixed(2)}</TableCell>
+                  <TableCell className="hidden md:table-cell">{product.category}</TableCell>
+                  <TableCell className="hidden md:table-cell">{product.sku}</TableCell>
+                  <TableCell>
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button aria-haspopup="true" size="icon" variant="ghost">
+                          <MoreHorizontal className="h-4 w-4" />
+                          <span className="sr-only">Toggle menu</span>
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="end">
+                        <DropdownMenuLabel>Actions</DropdownMenuLabel>
+                        <DropdownMenuItem onClick={() => handleOpenForm(product)}>
+                          <Edit className="mr-2 h-4 w-4" /> Edit
+                        </DropdownMenuItem>
+                        <DropdownMenuItem className="text-destructive" onClick={() => setProductToDelete(product)}>
+                           <Trash2 className="mr-2 h-4 w-4" /> Delete
+                        </DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </CardContent>
+        <CardFooter>
+          <div className="text-xs text-muted-foreground">
+            Showing <strong>1-{digitalProducts.length}</strong> of <strong>{digitalProducts.length}</strong> digital products
+          </div>
+        </CardFooter>
+      </Card>
+
+      <Dialog open={isFormOpen} onOpenChange={setIsFormOpen}>
+          <DialogContent className="sm:max-w-3xl">
+              <DialogHeader>
+                  <DialogTitle>{productToEdit ? "Edit Product" : "Add New Product"}</DialogTitle>
+                  <DialogDescription>
+                      {productToEdit ? "Update the details for this product." : "Fill in the details for the new product."}
+                  </DialogDescription>
+              </DialogHeader>
+              <ProductForm
+                  product={productToEdit}
+                  onSave={handleSaveProduct}
+                  onCancel={handleCloseForm}
+              />
+          </DialogContent>
+      </Dialog>
+
+      <AlertDialog open={!!productToDelete} onOpenChange={(open) => !open && setProductToDelete(null)}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+              <AlertDialogDescription>
+                This action cannot be undone. This will permanently delete the product "{productToDelete?.name}".
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel onClick={() => setProductToDelete(null)}>Cancel</AlertDialogCancel>
+              <AlertDialogAction onClick={handleDeleteProduct} className="bg-destructive hover:bg-destructive/90">Delete Product</AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+      </AlertDialog>
+    </div>
   );
 }
