@@ -1,4 +1,3 @@
-
 "use client"
 
 import React, { useState, useEffect, useRef } from "react"
@@ -43,6 +42,7 @@ export function Header() {
   const [isScrolled, setIsScrolled] = useState(false);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
+  const [isMounted, setIsMounted] = useState(false);
   const router = useRouter();
   const { cartCount, isInitialized: isCartInitialized } = useCart();
 
@@ -53,8 +53,9 @@ export function Header() {
   const [isSearchFocused, setIsSearchFocused] = useState(false);
   const searchWrapperRef = useRef<HTMLElement>(null);
 
-
   useEffect(() => {
+    setIsMounted(true);
+    
     const handleResize = () => setIsMobile(window.innerWidth < 768);
     const handleScroll = () => setIsScrolled(window.scrollY > 80);
     const checkLoginStatus = () => setIsLoggedIn(localStorage.getItem('isLoggedIn') === 'true');
@@ -66,23 +67,12 @@ export function Header() {
     window.addEventListener("scroll", handleScroll);
     window.addEventListener('storage', checkLoginStatus); // Listen for login/logout from other tabs
 
-    // Also listen for our custom cart updates
-    const handleCartUpdate = () => {
-        // This is a bit of a hack to force a re-render.
-        // A better solution would be a global state manager (Zustand, Redux, etc.)
-        // But for this project, this is sufficient.
-        router.refresh(); 
-    };
-    window.addEventListener('storage', handleCartUpdate);
-
-
     return () => {
       window.removeEventListener("resize", handleResize);
       window.removeEventListener("scroll", handleScroll);
       window.removeEventListener('storage', checkLoginStatus);
-      window.removeEventListener('storage', handleCartUpdate);
     };
-  }, [router]);
+  }, []);
 
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
@@ -238,6 +228,41 @@ export function Header() {
     </Button>
   );
 
+  const AccountLinks = ({isMobile = false}: {isMobile?: boolean}) => {
+    if (!isMounted) {
+      return isMobile ? null : <div className="h-4 w-10 bg-muted rounded-md animate-pulse"></div>;
+    }
+
+    if (isLoggedIn) {
+        return isMobile ? (
+            <>
+                <Button variant="ghost" asChild className="w-full justify-start">
+                    <Link href="/account"><User className="mr-2 h-4 w-4" /> My Account</Link>
+                </Button>
+                <Button variant="ghost" onClick={handleLogout} className="w-full justify-start text-destructive hover:text-destructive">
+                    <LogOut className="mr-2 h-4 w-4" /> Logout
+                </Button>
+            </>
+        ) : (
+            <button onClick={handleLogout} className="flex items-center gap-1 hover:text-primary text-xs">
+                <LogOut className="h-4 w-4" />
+                Logout
+            </button>
+        )
+    }
+
+    return isMobile ? (
+        <Button variant="ghost" asChild className="w-full justify-start">
+            <Link href="/sign-in"><User className="mr-2 h-4 w-4" /> Login / Sign Up</Link>
+        </Button>
+    ) : (
+        <Link href="/sign-in" className="flex items-center gap-1 hover:text-primary">
+            <User className="h-4 w-4" />
+            Login
+        </Link>
+    )
+  }
+
   return (
     <header className="sticky top-0 z-50 w-full bg-background/95 backdrop-blur-sm" ref={searchWrapperRef}>
       {/* Top Bar (hides on scroll) */}
@@ -252,17 +277,7 @@ export function Header() {
               09677460460
             </a>
             <span className="text-muted-foreground">|</span>
-             {isLoggedIn ? (
-                <button onClick={handleLogout} className="flex items-center gap-1 hover:text-primary text-xs">
-                    <LogOut className="h-4 w-4" />
-                    Logout
-                </button>
-            ) : (
-                <Link href="/sign-in" className="flex items-center gap-1 hover:text-primary">
-                    <User className="h-4 w-4" />
-                    Login
-                </Link>
-            )}
+             <AccountLinks />
              <span className="text-muted-foreground">|</span>
              <Link href="/track-order" className="flex items-center gap-1 hover:text-primary">
                 <MapPin className="h-4 w-4" />
@@ -345,19 +360,23 @@ export function Header() {
                         </Button>
                     </DropdownMenuTrigger>
                     <DropdownMenuContent align="end">
-                        {isLoggedIn ? (
-                            <>
+                        {isMounted ? (
+                            isLoggedIn ? (
+                                <>
+                                    <DropdownMenuItem asChild>
+                                        <Link href="/account">My Account</Link>
+                                    </DropdownMenuItem>
+                                    <DropdownMenuItem onClick={handleLogout}>
+                                        Logout
+                                    </DropdownMenuItem>
+                                </>
+                            ) : (
                                 <DropdownMenuItem asChild>
-                                    <Link href="/account">My Account</Link>
+                                    <Link href="/sign-in">Sign In</Link>
                                 </DropdownMenuItem>
-                                <DropdownMenuItem onClick={handleLogout}>
-                                    Logout
-                                </DropdownMenuItem>
-                            </>
+                            )
                         ) : (
-                            <DropdownMenuItem asChild>
-                                <Link href="/sign-in">Sign In</Link>
-                            </DropdownMenuItem>
+                           <DropdownMenuItem disabled>Loading...</DropdownMenuItem>
                         )}
                     </DropdownMenuContent>
                 </DropdownMenu>
@@ -375,21 +394,30 @@ export function Header() {
                 <span className="sr-only">Toggle Menu</span>
               </Button>
             </SheetTrigger>
-            <SheetContent side="left" className="w-[300px] p-0">
+            <SheetContent side="left" className="w-[300px] p-0 flex flex-col">
               <div className="bg-primary p-4">
                 <Link href="/" className="flex items-center gap-2">
                   <Image src="https://placehold.co/40x40/FFFFFF/8B2BE2.png" alt="eMotionView Logo" width={40} height={40} data-ai-hint="logo initial"/>
                   <span className="font-bold text-xl text-primary-foreground">eMotionView</span>
                 </Link>
               </div>
-              <div className="p-4 space-y-2">
-                <h3 className="font-semibold text-lg mb-2">All Categories</h3>
-                {categoryLinks.map(link => (
-                  <Link key={link.name} href={link.href} className="block py-2 text-muted-foreground hover:text-primary">
-                    {link.name}
-                  </Link>
-                ))}
-              </div>
+              <ScrollArea className="flex-1">
+                <div className="p-4 space-y-2">
+                    <h3 className="font-semibold px-2 text-lg mb-2">Account</h3>
+                    <AccountLinks isMobile={true} />
+                </div>
+                <Separator/>
+                <div className="p-4 space-y-2">
+                  <h3 className="font-semibold px-2 text-lg mb-2">All Categories</h3>
+                  {categoryLinks.map(link => (
+                    <Button variant="ghost" asChild key={link.name} className="w-full justify-start">
+                        <Link href={link.href}>
+                        {link.name}
+                        </Link>
+                    </Button>
+                  ))}
+                </div>
+              </ScrollArea>
             </SheetContent>
           </Sheet>
           <Link href="/" className="flex items-center gap-2">
