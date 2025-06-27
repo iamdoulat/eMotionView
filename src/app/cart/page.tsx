@@ -1,18 +1,41 @@
+
+"use client";
+
 import Link from 'next/link';
 import Image from 'next/image';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { X, Plus, Minus } from 'lucide-react';
-import { products } from '@/lib/placeholder-data';
+import { X, Plus, Minus, ShoppingCart, Loader2 } from 'lucide-react';
 import { Separator } from '@/components/ui/separator';
+import { useCart } from '@/hooks/use-cart';
 
 export default function CartPage() {
-  const cartItems = products.slice(0, 3).map(p => ({ ...p, quantity: Math.floor(Math.random() * 3) + 1 }));
-  const subtotal = cartItems.reduce((acc, item) => acc + item.price * item.quantity, 0);
-  const shipping = 5.00;
+  const { cart, updateQuantity, removeFromCart, subtotal, isInitialized } = useCart();
+  const shipping = cart.length > 0 ? 5.00 : 0;
   const total = subtotal + shipping;
+
+  if (!isInitialized) {
+      return (
+          <div className="container mx-auto px-4 py-8 flex justify-center items-center min-h-[calc(100vh-16rem)]">
+              <Loader2 className="h-8 w-8 animate-spin text-primary" />
+          </div>
+      );
+  }
+
+  if (cart.length === 0) {
+      return (
+        <div className="container mx-auto px-4 py-8 text-center min-h-[calc(100vh-16rem)] flex flex-col justify-center items-center">
+            <ShoppingCart className="mx-auto h-12 w-12 text-muted-foreground" />
+            <h1 className="font-headline text-4xl font-bold text-foreground mt-4">Your Cart is Empty</h1>
+            <p className="text-muted-foreground mt-2">Looks like you haven't added anything to your cart yet.</p>
+            <Button asChild className="mt-6">
+                <Link href="/products">Continue Shopping</Link>
+            </Button>
+        </div>
+      )
+  }
 
   return (
     <div className="container mx-auto px-4 py-8">
@@ -34,7 +57,7 @@ export default function CartPage() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {cartItems.map((item) => (
+                  {cart.map((item) => (
                     <TableRow key={item.id}>
                       <TableCell className="hidden md:table-cell">
                         <Image
@@ -52,14 +75,14 @@ export default function CartPage() {
                       </TableCell>
                       <TableCell className="text-center">
                         <div className="flex items-center justify-center">
-                          <Button variant="outline" size="icon" className="h-8 w-8"><Minus className="h-4 w-4" /></Button>
+                          <Button variant="outline" size="icon" className="h-8 w-8" onClick={() => updateQuantity(item.id, item.quantity - 1)}><Minus className="h-4 w-4" /></Button>
                           <Input type="number" value={item.quantity} className="w-16 h-8 text-center mx-2" readOnly/>
-                          <Button variant="outline" size="icon" className="h-8 w-8"><Plus className="h-4 w-4" /></Button>
+                          <Button variant="outline" size="icon" className="h-8 w-8" onClick={() => updateQuantity(item.id, item.quantity + 1)}><Plus className="h-4 w-4" /></Button>
                         </div>
                       </TableCell>
                       <TableCell className="text-right font-medium">${(item.price * item.quantity).toFixed(2)}</TableCell>
                       <TableCell className="text-right">
-                        <Button variant="ghost" size="icon">
+                        <Button variant="ghost" size="icon" onClick={() => removeFromCart(item.id)}>
                           <X className="h-4 w-4" />
                           <span className="sr-only">Remove item</span>
                         </Button>

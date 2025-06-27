@@ -1,3 +1,4 @@
+
 "use client"
 
 import Image from 'next/image';
@@ -6,16 +7,53 @@ import type { Product } from '@/lib/placeholder-data';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Star, ShoppingCart, CheckCircle } from 'lucide-react';
+import { Star, ShoppingCart, CheckCircle, Plus, Minus } from 'lucide-react';
 import { Dialog, DialogContent, DialogTrigger } from "@/components/ui/dialog";
+import { useCart } from '@/hooks/use-cart';
+import { useToast } from '@/hooks/use-toast';
+import { useState } from 'react';
+import { Input } from './ui/input';
+import { Label } from './ui/label';
 
 interface ProductCardProps {
   product: Product;
 }
 
 export function ProductCard({ product }: ProductCardProps) {
+  const { addToCart } = useCart();
+  const { toast } = useToast();
+  const [dialogQuantity, setDialogQuantity] = useState(1);
+  const isStockManaged = product.manageStock ?? true;
+  const canPurchase = !isStockManaged || product.stock > 0;
+
+  const handleQuickAddToCart = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (!canPurchase) {
+      toast({
+        variant: "destructive",
+        title: "Out of Stock",
+        description: `Sorry, ${product.name} is currently unavailable.`,
+      });
+      return;
+    }
+    addToCart(product.id, 1);
+    toast({
+      title: "Added to Cart",
+      description: `1 x ${product.name} has been added to your cart.`,
+    });
+  };
+  
+  const handleDialogAddToCart = () => {
+    addToCart(product.id, dialogQuantity);
+    toast({
+      title: "Added to Cart",
+      description: `${dialogQuantity} x ${product.name} has been added to your cart.`,
+    });
+  };
+
   return (
-    <Dialog>
+    <Dialog onOpenChange={() => setDialogQuantity(1)}>
       <Card className="group overflow-hidden rounded-lg shadow-sm hover:shadow-lg transition-shadow duration-300 flex flex-col h-full bg-background">
         <CardHeader className="p-0 relative border-b">
           <DialogTrigger asChild>
@@ -56,7 +94,7 @@ export function ProductCard({ product }: ProductCardProps) {
                       <Star key={i} className={`h-4 w-4 ${i < Math.round(product.rating) ? 'text-yellow-400 fill-yellow-400' : 'text-gray-300'}`} />
                       ))}
                   </div>
-                  <Button size="icon" variant="ghost" className="w-8 h-8 text-muted-foreground hover:text-primary rounded-full hover:bg-primary/10">
+                  <Button size="icon" variant="ghost" className="w-8 h-8 text-muted-foreground hover:text-primary rounded-full hover:bg-primary/10" onClick={handleQuickAddToCart} disabled={!canPurchase}>
                       <ShoppingCart className="h-5 w-5" />
                   </Button>
               </div>
@@ -113,9 +151,42 @@ export function ProductCard({ product }: ProductCardProps) {
               </div>
             </div>
 
+             <div className="mb-6">
+                <Label className="text-sm font-medium mb-2 block">Quantity:</Label>
+                <div className="flex items-center gap-2">
+                    <Button
+                        variant="outline"
+                        size="icon"
+                        className="h-9 w-9"
+                        onClick={() => setDialogQuantity(q => Math.max(1, q - 1))}
+                        disabled={!canPurchase}
+                    >
+                        <Minus className="h-4 w-4" />
+                    </Button>
+                    <Input
+                        type="number"
+                        className="w-16 h-9 text-center"
+                        value={dialogQuantity}
+                        onChange={(e) => setDialogQuantity(parseInt(e.target.value, 10) || 1)}
+                        readOnly
+                    />
+                    <Button
+                        variant="outline"
+                        size="icon"
+                        className="h-9 w-9"
+                        onClick={() => setDialogQuantity(q => Math.min(product.stock, q + 1))}
+                        disabled={!canPurchase || (isStockManaged && dialogQuantity >= product.stock)}
+                    >
+                        <Plus className="h-4 w-4" />
+                    </Button>
+                </div>
+            </div>
+
             <div className="flex flex-col sm:flex-row gap-4 mt-auto">
-              <Button size="lg" className="flex-1">Add to cart</Button>
-              <Button size="lg" className="flex-1 bg-accent text-accent-foreground hover:bg-accent/90">Buy Now</Button>
+              <Button size="lg" className="flex-1" onClick={handleDialogAddToCart} disabled={!canPurchase}>Add to cart</Button>
+              <Button size="lg" className="flex-1 bg-accent text-accent-foreground hover:bg-accent/90" asChild>
+                <Link href={`/products/${product.id}`}>View Details</Link>
+              </Button>
             </div>
           </div>
         </div>

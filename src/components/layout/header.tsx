@@ -15,6 +15,7 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigge
 import { products, categories, brands, suppliers, attributes } from "@/lib/placeholder-data"
 import { Separator } from "@/components/ui/separator"
 import { ScrollArea } from "../ui/scroll-area"
+import { useCart } from "@/hooks/use-cart"
 
 const categoryLinks = [
     { name: 'Smart Watches', href: '/products?category=Wearables' },
@@ -43,6 +44,7 @@ export function Header() {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
   const router = useRouter();
+  const { cartCount, isInitialized: isCartInitialized } = useCart();
 
   // Search state
   const [searchTerm, setSearchTerm] = useState('');
@@ -62,14 +64,25 @@ export function Header() {
 
     window.addEventListener("resize", handleResize);
     window.addEventListener("scroll", handleScroll);
-    window.addEventListener('storage', checkLoginStatus);
+    window.addEventListener('storage', checkLoginStatus); // Listen for login/logout from other tabs
+
+    // Also listen for our custom cart updates
+    const handleCartUpdate = () => {
+        // This is a bit of a hack to force a re-render.
+        // A better solution would be a global state manager (Zustand, Redux, etc.)
+        // But for this project, this is sufficient.
+        router.refresh(); 
+    };
+    window.addEventListener('storage', handleCartUpdate);
+
 
     return () => {
       window.removeEventListener("resize", handleResize);
       window.removeEventListener("scroll", handleScroll);
       window.removeEventListener('storage', checkLoginStatus);
+      window.removeEventListener('storage', handleCartUpdate);
     };
-  }, []);
+  }, [router]);
 
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
@@ -212,6 +225,19 @@ export function Header() {
     </div>
   );
 
+  const CartButton = ({ className }: { className?: string }) => (
+    <Button variant="ghost" size="icon" asChild className={cn("relative", className)}>
+      <Link href="/cart" aria-label="Shopping Cart">
+        <ShoppingCart className="h-8 w-8" />
+        {isCartInitialized && cartCount > 0 && (
+          <Badge className="absolute -top-1 -right-1 h-5 w-5 justify-center rounded-full p-0 text-xs bg-blue-600 text-primary-foreground hover:bg-blue-700 border-none">
+            {cartCount}
+          </Badge>
+        )}
+      </Link>
+    </Button>
+  );
+
   return (
     <header className="sticky top-0 z-50 w-full bg-background/95 backdrop-blur-sm" ref={searchWrapperRef}>
       {/* Top Bar (hides on scroll) */}
@@ -263,12 +289,7 @@ export function Header() {
             {isSearchFocused && searchTerm.length >= 3 && searchResultsPanel}
           </div>
           <div className="flex items-center justify-end">
-            <Button variant="ghost" size="icon" asChild className="relative">
-              <Link href="/cart" aria-label="Shopping Cart">
-                <ShoppingCart className="h-8 w-8" />
-                <Badge className="absolute -top-1 -right-1 h-5 w-5 justify-center rounded-full p-0 text-xs bg-blue-600 text-primary-foreground hover:bg-blue-700 border-none">3</Badge>
-              </Link>
-            </Button>
+            <CartButton />
           </div>
         </div>
       </div>
@@ -316,12 +337,7 @@ export function Header() {
                         <span className="sr-only">Wishlist</span>
                     </Link>
                 </Button>
-                <Button variant="ghost" size="icon" asChild className="relative">
-                <Link href="/cart" aria-label="Shopping Cart">
-                    <ShoppingCart className="h-8 w-8" />
-                    <Badge className="absolute -top-1 -right-1 h-5 w-5 justify-center rounded-full p-0 text-xs bg-blue-600 text-primary-foreground hover:bg-blue-700 border-none">3</Badge>
-                </Link>
-                </Button>
+                <CartButton />
                 <DropdownMenu>
                     <DropdownMenuTrigger asChild>
                         <Button variant="ghost" size="icon" aria-label="Account">
@@ -379,12 +395,7 @@ export function Header() {
           <Link href="/" className="flex items-center gap-2">
             <span className="font-bold font-headline text-xl text-foreground">eMotionView</span>
           </Link>
-          <Button variant="ghost" size="icon" asChild className="relative">
-            <Link href="/cart" aria-label="Shopping Cart">
-              <ShoppingCart className="h-8 w-8" />
-              <Badge className="absolute -top-1 -right-1 h-5 w-5 justify-center rounded-full p-0 text-xs bg-blue-600 text-primary-foreground hover:bg-blue-700 border-none">3</Badge>
-            </Link>
-          </Button>
+          <CartButton />
         </div>
         <div className="px-4 py-3 border-b relative">
           <form>

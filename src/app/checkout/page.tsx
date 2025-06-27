@@ -10,56 +10,67 @@ import { Label } from '@/components/ui/label';
 import { Separator } from '@/components/ui/separator';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import type { Order } from '@/lib/placeholder-data';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Loader2 } from 'lucide-react';
+import { useCart } from '@/hooks/use-cart';
 
 export default function CheckoutPage() {
   const router = useRouter();
   const [isLoading, setIsLoading] = useState(false);
+  const { cart, subtotal, clearCart, isInitialized } = useCart();
+  
+  const shipping = cart.length > 0 ? 5.00 : 0;
+  const total = subtotal + shipping;
+
+  useEffect(() => {
+    if (isInitialized && cart.length === 0) {
+      router.replace('/cart');
+    }
+  }, [isInitialized, cart, router]);
 
   const handlePlaceOrder = () => {
     setIsLoading(true);
 
+    const newOrder: Order = {
+        id: `order-${Date.now()}`,
+        orderNumber: `USA-${Math.floor(Math.random() * 900000) + 100000}`,
+        date: new Date().toISOString(),
+        customerName: 'John Doe', // Hardcoded for prototype
+        customerAvatar: 'https://placehold.co/40x40.png',
+        status: 'Processing',
+        total: total,
+        items: cart.map(item => ({
+            productId: item.id,
+            name: item.name,
+            image: item.images[0],
+            quantity: item.quantity,
+            price: item.price,
+            productType: item.productType,
+            downloadUrl: item.downloadUrl,
+            digitalProductNote: item.digitalProductNote,
+        })),
+    };
+
     // Simulate API call and order creation
     setTimeout(() => {
-        const newOrder: Order = {
-            id: `order-${Date.now()}`,
-            orderNumber: `USA-${Math.floor(Math.random() * 900000) + 100000}`,
-            date: new Date().toISOString(),
-            customerName: 'John Doe', // Hardcoded for prototype
-            customerAvatar: 'https://placehold.co/40x40.png',
-            status: 'Processing',
-            total: 1054.49,
-            items: [
-                {
-                    productId: '1',
-                    name: 'Aura Drone',
-                    image: 'https://placehold.co/100x100.png',
-                    quantity: 1,
-                    price: 799.99,
-                    productType: 'Physical',
-                },
-                {
-                    productId: '3',
-                    name: 'Quantum Smartwatch',
-                    image: 'https://placehold.co/100x100.png',
-                    quantity: 1,
-                    price: 249.50,
-                    productType: 'Physical',
-                },
-            ],
-        };
-
-        // Persist new order in localStorage for this session
         const existingOrders: Order[] = JSON.parse(localStorage.getItem('newOrders') || '[]');
         localStorage.setItem('newOrders', JSON.stringify([...existingOrders, newOrder]));
         
-        // Redirect to thank you page
+        clearCart();
+        
         router.push(`/checkout/thank-you?orderId=${newOrder.id}`);
         
-        setIsLoading(false);
+        // No need to set loading to false as we are navigating away
     }, 1500);
   };
+  
+  if (!isInitialized || cart.length === 0) {
+    return (
+      <div className="container mx-auto px-4 py-8 flex justify-center items-center min-h-[calc(100vh-16rem)]">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      </div>
+    );
+  }
 
   return (
     <div className="container mx-auto px-4 py-8">
@@ -131,27 +142,27 @@ export default function CheckoutPage() {
           <h2 className="text-2xl font-headline mb-4">Order Summary</h2>
           <Card>
             <CardContent className="pt-6 space-y-4">
-              <div className="flex justify-between">
-                <span>1x Aura Drone</span>
-                <span>$799.99</span>
-              </div>
-              <div className="flex justify-between">
-                <span>1x Quantum Smartwatch</span>
-                <span>$249.50</span>
+              <div className="space-y-2">
+                {cart.map(item => (
+                  <div className="flex justify-between" key={item.id}>
+                    <span className="truncate pr-2">{item.quantity}x {item.name}</span>
+                    <span className="shrink-0">${(item.price * item.quantity).toFixed(2)}</span>
+                  </div>
+                ))}
               </div>
               <Separator />
               <div className="flex justify-between text-muted-foreground">
                 <span>Subtotal</span>
-                <span>$1049.49</span>
+                <span>${subtotal.toFixed(2)}</span>
               </div>
               <div className="flex justify-between text-muted-foreground">
                 <span>Shipping</span>
-                <span>$5.00</span>
+                <span>${shipping.toFixed(2)}</span>
               </div>
               <Separator />
               <div className="flex justify-between font-bold text-lg">
                 <span>Total</span>
-                <span>$1054.49</span>
+                <span>${total.toFixed(2)}</span>
               </div>
             </CardContent>
             <CardFooter>

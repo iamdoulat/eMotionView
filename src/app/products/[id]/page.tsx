@@ -3,10 +3,10 @@
 
 import Image from 'next/image';
 import { products, reviews as allReviews } from '@/lib/placeholder-data';
-import { notFound } from 'next/navigation';
+import { notFound, useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Star, Heart, ShieldCheck } from 'lucide-react';
+import { Star, Heart, ShieldCheck, Plus, Minus } from 'lucide-react';
 import { Reviews } from '@/components/reviews';
 import { Breadcrumb } from '@/components/breadcrumb';
 import { useState } from 'react';
@@ -14,15 +14,23 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Table, TableBody, TableCell, TableRow } from "@/components/ui/table"
 import Link from 'next/link';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { useCart } from '@/hooks/use-cart';
+import { useToast } from '@/hooks/use-toast';
+import { Label } from '@/components/ui/label';
+import { Input } from '@/components/ui/input';
 
 export default function ProductDetailPage({ params }: { params: { id: string } }) {
   const product = products.find(p => p.id === params.id);
+  const { toast } = useToast();
+  const { addToCart } = useCart();
+  const router = useRouter();
   
   if (!product) {
     notFound();
   }
 
   const [selectedImage, setSelectedImage] = useState(product.images[0]);
+  const [quantity, setQuantity] = useState(1);
   const productReviews = allReviews.filter(r => r.productId === params.id);
 
   const isStockManaged = product.manageStock ?? true;
@@ -30,6 +38,19 @@ export default function ProductDetailPage({ params }: { params: { id: string } }
   const stockStatus = isStockManaged
       ? (product.stock > 0 ? `In Stock (${product.stock} available)` : "Out of Stock")
       : "In Stock";
+      
+  const handleAddToCart = () => {
+    addToCart(product.id, quantity);
+    toast({
+        title: "Added to Cart",
+        description: `${quantity} x ${product.name} has been added to your cart.`,
+    });
+  };
+
+  const handleBuyNow = () => {
+      addToCart(product.id, quantity);
+      router.push('/checkout');
+  };
 
 
   return (
@@ -137,12 +158,45 @@ export default function ProductDetailPage({ params }: { params: { id: string } }
                         </Button>
                     </div>
                 </div>
+
+                 <div className="mt-6">
+                    <Label className="text-sm font-medium mb-2 block">Quantity:</Label>
+                    <div className="flex items-center gap-2">
+                        <Button
+                            variant="outline"
+                            size="icon"
+                            className="h-9 w-9"
+                            onClick={() => setQuantity(q => Math.max(1, q - 1))}
+                            disabled={!canPurchase}
+                        >
+                            <Minus className="h-4 w-4" />
+                        </Button>
+                        <Input
+                            type="number"
+                            className="w-16 h-9 text-center"
+                            value={quantity}
+                            onChange={(e) => setQuantity(parseInt(e.target.value, 10) || 1)}
+                            min="1"
+                            max={isStockManaged ? product.stock : undefined}
+                            readOnly
+                        />
+                        <Button
+                            variant="outline"
+                            size="icon"
+                            className="h-9 w-9"
+                            onClick={() => setQuantity(q => Math.min(product.stock, q + 1))}
+                            disabled={!canPurchase || (isStockManaged && quantity >= product.stock)}
+                        >
+                            <Plus className="h-4 w-4" />
+                        </Button>
+                    </div>
+                </div>
                 
                 <div className="mt-auto pt-6 flex flex-col sm:flex-row gap-4">
-                  <Button size="lg" className="flex-1 bg-green-600 hover:bg-green-700 text-primary-foreground" disabled={!canPurchase}>
+                  <Button size="lg" className="flex-1 bg-green-600 hover:bg-green-700 text-primary-foreground" disabled={!canPurchase} onClick={handleAddToCart}>
                     Add To Cart
                   </Button>
-                  <Button size="lg" className="flex-1" disabled={!canPurchase}>
+                  <Button size="lg" className="flex-1" disabled={!canPurchase} onClick={handleBuyNow}>
                     Buy Now
                   </Button>
                 </div>
