@@ -21,6 +21,10 @@ export default function ProfilePage() {
                     <Label htmlFor="email">Email</Label>
                     <Input id="email" type="email" defaultValue="john.doe@example.com" />
                 </div>
+                <div className="space-y-2">
+                    <Label htmlFor="mobile">Mobile Number</Label>
+                    <Input id="mobile" type="tel" defaultValue="+1234567890" />
+                </div>
             </CardContent>
             <CardFooter>
                 <Button>Save Changes</Button>
