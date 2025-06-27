@@ -48,6 +48,21 @@ export default function OrderDetailPage({ params }: { params: { id: string } }) 
     notFound();
   }
 
+  const getStatusVariant = (status: Order['status']) => {
+    switch (status) {
+      case 'Delivered':
+        return 'default';
+      case 'Pending':
+      case 'Shipped':
+      case 'Processing':
+        return 'secondary';
+      case 'Cancelled':
+        return 'destructive';
+      default:
+        return 'outline';
+    }
+  }
+
   return (
     <div>
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-6">
@@ -69,7 +84,7 @@ export default function OrderDetailPage({ params }: { params: { id: string } }) 
             <Separator orientation="vertical" className="h-4" />
             <span>Total: ${order.total.toFixed(2)}</span>
             <Separator orientation="vertical" className="h-4" />
-            <span>Status: <Badge variant={order.status === 'Delivered' ? 'default' : order.status === 'Cancelled' ? 'destructive' : 'secondary'}>{order.status}</Badge></span>
+            <span>Status: <Badge variant={getStatusVariant(order.status)}>{order.status}</Badge></span>
           </div>
         </CardHeader>
         <CardContent>

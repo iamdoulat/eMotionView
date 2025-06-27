@@ -11,20 +11,20 @@ import { ArrowRight } from "lucide-react";
 import { useEffect, useState } from "react";
 
 export default function OrdersPage() {
-    const [orders, setOrders] = useState<Order[]>(initialOrders);
+    const [orders, setOrders] = useState<Order[]>([]);
 
     useEffect(() => {
         const storedOrders: Order[] = JSON.parse(localStorage.getItem('newOrders') || '[]');
-        if (storedOrders.length > 0) {
-            const combinedOrders = [...initialOrders];
-            storedOrders.forEach(storedOrder => {
-                if (!combinedOrders.some(o => o.id === storedOrder.id)) {
-                    combinedOrders.push(storedOrder);
-                }
-            });
-            combinedOrders.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
-            setOrders(combinedOrders);
-        }
+        const combinedOrders = [...initialOrders];
+        
+        storedOrders.forEach(storedOrder => {
+            if (!combinedOrders.some(o => o.id === storedOrder.id)) {
+                combinedOrders.push(storedOrder);
+            }
+        });
+        
+        combinedOrders.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+        setOrders(combinedOrders);
     }, []);
 
   return (

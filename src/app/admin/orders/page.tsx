@@ -21,22 +21,22 @@ import { format } from 'date-fns';
 type StatusFilter = "all" | Order['status'];
 
 export default function AdminOrdersPage() {
-  const [orders, setOrders] = useState<Order[]>(initialOrders);
+  const [orders, setOrders] = useState<Order[]>([]);
   const [orderToEdit, setOrderToEdit] = useState<Order | null>(null);
   const [filter, setFilter] = useState<StatusFilter>("all");
   const [searchTerm, setSearchTerm] = useState("");
 
   useEffect(() => {
     const storedOrders: Order[] = JSON.parse(localStorage.getItem('newOrders') || '[]');
-    if (storedOrders.length > 0) {
-        const combinedOrders = [...initialOrders];
-        storedOrders.forEach(storedOrder => {
-            if (!combinedOrders.some(o => o.id === storedOrder.id)) {
-                combinedOrders.push(storedOrder);
-            }
-        });
-        setOrders(combinedOrders);
-    }
+    const combinedOrders = [...initialOrders];
+    
+    storedOrders.forEach(storedOrder => {
+        if (!combinedOrders.some(o => o.id === storedOrder.id)) {
+            combinedOrders.push(storedOrder);
+        }
+    });
+
+    setOrders(combinedOrders);
   }, []);
 
   const filteredOrders = useMemo(() => {
