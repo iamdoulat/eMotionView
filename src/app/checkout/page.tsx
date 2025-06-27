@@ -21,12 +21,12 @@ export default function CheckoutPage() {
   const shipping = cart.length > 0 ? 5.00 : 0;
   const total = subtotal + shipping;
 
-  // Redirect to cart if it's empty
+  // Redirect to cart if it's empty and we are not in the process of placing an order
   useEffect(() => {
-    if (isInitialized && cart.length === 0) {
+    if (isInitialized && cart.length === 0 && !isLoading) {
       router.replace('/cart');
     }
-  }, [isInitialized, cart, router]);
+  }, [isInitialized, cart, router, isLoading]);
 
   const handlePlaceOrder = () => {
     setIsLoading(true);
