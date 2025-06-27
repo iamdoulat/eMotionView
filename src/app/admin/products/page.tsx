@@ -1,9 +1,9 @@
-
 "use client";
 
 import { useState } from "react";
 import { products as initialProducts, type Product } from "@/lib/placeholder-data";
 import Image from "next/image";
+import Link from "next/link";
 import {
   Card,
   CardContent,
@@ -42,12 +42,11 @@ import {
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuLabel,
-  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { MoreHorizontal, PlusCircle, Edit, Trash2 } from "lucide-react";
+import { MoreHorizontal, PlusCircle, Edit, Trash2, View } from "lucide-react";
 import { ProductForm } from "@/components/admin/product-form";
 
 export default function AdminProductsPage() {
@@ -146,6 +145,12 @@ export default function AdminProductsPage() {
                       </DropdownMenuTrigger>
                       <DropdownMenuContent align="end">
                         <DropdownMenuLabel>Actions</DropdownMenuLabel>
+                        <DropdownMenuItem asChild>
+                          <Link href={`/products/${product.id}`} target="_blank">
+                            <View className="mr-2 h-4 w-4" />
+                            View
+                          </Link>
+                        </DropdownMenuItem>
                         <DropdownMenuItem onClick={() => handleOpenForm(product)}>
                           <Edit className="mr-2 h-4 w-4" /> Edit
                         </DropdownMenuItem>
