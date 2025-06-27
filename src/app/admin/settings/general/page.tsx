@@ -7,6 +7,8 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Textarea } from "@/components/ui/textarea";
+import Image from "next/image";
 
 export default function GeneralSettingsPage() {
     return (
@@ -20,8 +22,20 @@ export default function GeneralSettingsPage() {
                 </CardHeader>
                 <CardContent className="space-y-4">
                     <div className="space-y-2">
+                        <Label>Store Logo</Label>
+                        <div className="flex items-center gap-4">
+                            <Image src="https://placehold.co/128x40.png" alt="Current Logo" width={128} height={40} className="rounded-md border bg-secondary p-2 object-contain" data-ai-hint="logo" />
+                            <Input id="store-logo" type="file" className="max-w-sm" />
+                        </div>
+                        <p className="text-sm text-muted-foreground">Recommended size: 200x50px. File upload is for demonstration.</p>
+                    </div>
+                    <div className="space-y-2">
                         <Label htmlFor="store-name">Store Name</Label>
                         <Input id="store-name" defaultValue="eMotionView" />
+                    </div>
+                     <div className="space-y-2">
+                        <Label htmlFor="store-address">Store Address</Label>
+                        <Textarea id="store-address" defaultValue="10/25 (9th Commercial Floor), Eastern Plaza, 70 Bir Uttam C.R Datta Road, Hatirpool, Dhaka-1205" />
                     </div>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div className="space-y-2">
