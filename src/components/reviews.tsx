@@ -1,3 +1,4 @@
+
 "use client";
 
 import type { Review } from '@/lib/placeholder-data';
@@ -10,6 +11,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Separator } from '@/components/ui/separator';
+import { useToast } from '@/hooks/use-toast';
 
 interface ReviewsProps {
   productId: string;
@@ -22,6 +24,7 @@ export function Reviews({ reviews, productId }: ReviewsProps) {
   const [hoverRating, setHoverRating] = useState(0);
   const [title, setTitle] = useState('');
   const [comment, setComment] = useState('');
+  const { toast } = useToast();
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -31,9 +34,20 @@ export function Reviews({ reviews, productId }: ReviewsProps) {
       rating,
       title,
       comment,
+      status: 'pending' // New reviews should be pending
     });
-    // Here you would typically show a success message or toast
+
+    // Reset form and show a confirmation toast
+    setRating(0);
+    setTitle('');
+    setComment('');
+    toast({
+        title: "Review Submitted",
+        description: "Thank you! Your review is pending approval."
+    })
   };
+  
+  const approvedReviews = reviews.filter(r => r.status === 'approved');
 
   return (
     <div className="space-y-8">
@@ -90,13 +104,13 @@ export function Reviews({ reviews, productId }: ReviewsProps) {
       
       <Separator />
 
-      <h3 className="text-xl font-bold">Customer Reviews ({reviews.length})</h3>
+      <h3 className="text-xl font-bold">Customer Reviews ({approvedReviews.length})</h3>
 
-      {reviews.length === 0 ? (
+      {approvedReviews.length === 0 ? (
         <p className="text-muted-foreground text-center py-4">No reviews yet for this product. Be the first to write one!</p>
       ) : (
         <div className="space-y-6">
-          {reviews.map(review => (
+          {approvedReviews.map(review => (
             <Card key={review.id}>
               <CardHeader>
                 <div className="flex items-start sm:items-center gap-4 flex-col sm:flex-row">
@@ -122,6 +136,15 @@ export function Reviews({ reviews, productId }: ReviewsProps) {
               </CardHeader>
               <CardContent>
                 <p className="text-muted-foreground">{review.comment}</p>
+                {review.reply && (
+                    <div className="mt-4 ml-4 md:ml-8 pl-4 border-l-2 border-primary bg-secondary/50 rounded-r-lg">
+                        <div className="flex items-center gap-2 pt-3">
+                            <p className="font-semibold text-sm">Reply from {review.reply.author}</p>
+                            <p className="text-xs text-muted-foreground">on {new Date(review.reply.date).toLocaleDateString()}</p>
+                        </div>
+                        <p className="text-muted-foreground pb-3 pt-1">{review.reply.text}</p>
+                    </div>
+                )}
               </CardContent>
             </Card>
           ))}

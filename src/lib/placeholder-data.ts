@@ -34,6 +34,12 @@ export type Review = {
   title: string;
   comment: string;
   date: string;
+  status: 'pending' | 'approved' | 'rejected';
+  reply?: {
+    text: string;
+    date: string;
+    author: string;
+  };
 };
 
 export type Order = {
@@ -384,6 +390,12 @@ export const reviews: Review[] = [
     title: 'Absolutely incredible!',
     comment: "The video quality is breathtaking and it's so easy to fly. The obstacle avoidance gives me peace of mind. Worth every penny.",
     date: '2024-05-15',
+    status: 'approved',
+    reply: {
+      text: "We're so glad you're enjoying the watch! Happy fitness tracking!",
+      date: '2024-05-16',
+      author: 'Admin',
+    }
   },
   {
     id: '2',
@@ -391,9 +403,10 @@ export const reviews: Review[] = [
     author: 'John Smith',
     avatar: 'https://placehold.co/40x40.png',
     rating: 4,
-    title: 'Great drone, but battery could be better',
-    comment: "Flight time is closer to 25 minutes with aggressive flying, but it's a solid piece of hardware. The 4K footage is crisp and stable.",
+    title: 'Great watch, but battery could be better',
+    comment: "The watch works great and has all the features I need. The only downside is the battery life is a little shorter than advertised with heavy use.",
     date: '2024-05-12',
+    status: 'approved',
   },
   {
     id: '3',
@@ -402,8 +415,9 @@ export const reviews: Review[] = [
     avatar: 'https://placehold.co/40x40.png',
     rating: 5,
     title: 'Truly immersive experience',
-    comment: "The resolution is insane, there's no screen-door effect at all. Setup was a breeze and the integrated audio is a game changer.",
+    comment: "The noise cancellation is insane, I can't hear anything else when I have these on. The sound quality is crisp and clear.",
     date: '2024-04-30',
+    status: 'approved',
   },
   {
     id: '4',
@@ -411,9 +425,10 @@ export const reviews: Review[] = [
     author: 'Michael Brown',
     avatar: 'https://placehold.co/40x40.png',
     rating: 5,
-    title: 'The perfect work machine',
-    comment: "This laptop handles everything I throw at it, from 4K video editing to complex code compilations, without breaking a sweat. The display is gorgeous.",
+    title: 'The perfect fitness companion',
+    comment: "This watch handles all my workout tracking perfectly. GPS is accurate and the health metrics are very detailed. Highly recommend for any athlete.",
     date: '2024-05-20',
+    status: 'pending',
   },
    {
     id: '5',
@@ -421,9 +436,10 @@ export const reviews: Review[] = [
     author: 'Chris Green',
     avatar: 'https://placehold.co/40x40.png',
     rating: 5,
-    title: 'A professional tool for creators',
-    comment: "I'm a professional photographer and this drone has elevated my work. The gimbal is incredibly smooth and the raw image quality is fantastic for post-processing.",
+    title: 'A stylish and professional watch',
+    comment: "I love the design. It looks great whether I'm at the gym or in a business meeting. The screen is bright and easy to read in sunlight.",
     date: '2024-05-18',
+    status: 'pending',
   },
 ];
 
