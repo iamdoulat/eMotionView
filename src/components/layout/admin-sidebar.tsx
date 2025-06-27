@@ -17,6 +17,12 @@ import {
   Award,
   MessageSquare,
   ChevronsUpDown,
+  Tag,
+  Palette,
+  Fingerprint,
+  Building,
+  FileDown,
+  FileUp,
 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from "../ui/card";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
@@ -28,14 +34,15 @@ const topNavItems = [
 ];
 
 const productNavItems = [
-    { href: "/admin/products", label: "All Products" },
-    { href: "/admin/products/digital", label: "Digital Products" },
-    { href: "/admin/products/categories", label: "Categories" },
-    { href: "/admin/products/brands", label: "Brands" },
-    { href: "/admin/products/attributes", label: "Attributes" },
-    { href: "/admin/products/reviews", label: "Reviews" },
-    { href: "/admin/products/import", label: "Bulk Import" },
-    { href: "/admin/products/export", label: "Bulk Export" },
+    { href: "/admin/products", label: "All Products", icon: Package },
+    { href: "/admin/products/digital", label: "Digital Products", icon: Fingerprint },
+    { href: "/admin/products/categories", label: "Categories", icon: Boxes },
+    { href: "/admin/products/brands", label: "Brands", icon: Tag },
+    { href: "/admin/products/attributes", label: "Attributes", icon: Palette },
+    { href: "/admin/products/suppliers", label: "Suppliers", icon: Building },
+    { href: "/admin/products/reviews", label: "Reviews", icon: MessageSquare },
+    { href: "/admin/products/import", label: "Bulk Import", icon: FileUp },
+    { href: "/admin/products/export", label: "Bulk Export", icon: FileDown },
 ];
 
 const bottomNavItems = [
@@ -98,6 +105,7 @@ export function AdminSidebar() {
                           size="sm"
                         >
                           <Link href={item.href}>
+                            <item.icon className="mr-2 h-4 w-4" />
                             {item.label}
                           </Link>
                         </Button>

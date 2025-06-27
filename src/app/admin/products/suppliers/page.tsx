@@ -5,7 +5,7 @@ import { useState } from "react";
 import { useForm, type SubmitHandler } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { categories as initialCategories, type Category } from "@/lib/placeholder-data";
+import { suppliers as initialSuppliers, type Supplier } from "@/lib/placeholder-data";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
@@ -14,52 +14,52 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, Di
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
 import { MoreHorizontal, PlusCircle, Edit, Trash2 } from "lucide-react";
 
-const categorySchema = z.object({
+const supplierSchema = z.object({
   id: z.string().optional(),
-  name: z.string().min(1, "Category name is required"),
-  description: z.string().min(1, "Description is required"),
+  name: z.string().min(1, "Supplier name is required"),
+  contactPerson: z.string().min(1, "Contact person is required"),
+  email: z.string().email("Invalid email address"),
 });
 
-type CategoryFormData = z.infer<typeof categorySchema>;
+type SupplierFormData = z.infer<typeof supplierSchema>;
 
-export default function CategoriesPage() {
-  const [categories, setCategories] = useState<Category[]>(initialCategories);
+export default function SuppliersPage() {
+  const [suppliers, setSuppliers] = useState<Supplier[]>(initialSuppliers);
   const [isFormOpen, setIsFormOpen] = useState(false);
-  const [categoryToEdit, setCategoryToEdit] = useState<Category | null>(null);
-  const [categoryToDelete, setCategoryToDelete] = useState<Category | null>(null);
+  const [supplierToEdit, setSupplierToEdit] = useState<Supplier | null>(null);
+  const [supplierToDelete, setSupplierToDelete] = useState<Supplier | null>(null);
 
-  const { register, handleSubmit, reset, formState: { errors } } = useForm<CategoryFormData>({
-    resolver: zodResolver(categorySchema),
+  const { register, handleSubmit, reset, formState: { errors } } = useForm<SupplierFormData>({
+    resolver: zodResolver(supplierSchema),
   });
 
-  const handleOpenForm = (category?: Category) => {
-    setCategoryToEdit(category || null);
-    reset(category || { name: "", description: "" });
+  const handleOpenForm = (supplier?: Supplier) => {
+    setSupplierToEdit(supplier || null);
+    reset(supplier || { name: "", contactPerson: "", email: "" });
     setIsFormOpen(true);
   };
 
   const handleCloseForm = () => {
-    setCategoryToEdit(null);
+    setSupplierToEdit(null);
     setIsFormOpen(false);
   };
 
-  const handleSaveCategory: SubmitHandler<CategoryFormData> = (data) => {
-    if (categoryToEdit) {
-      setCategories(categories.map(c => c.id === categoryToEdit.id ? { ...c, ...data } : c));
+  const handleSaveSupplier: SubmitHandler<SupplierFormData> = (data) => {
+    if (supplierToEdit) {
+      setSuppliers(suppliers.map(s => s.id === supplierToEdit.id ? { ...s, ...data } : s));
     } else {
-      const newCategory: Category = { ...data, id: `cat-${Date.now()}` };
-      setCategories([...categories, newCategory]);
+      const newSupplier: Supplier = { ...data, id: `sup-${Date.now()}` };
+      setSuppliers([...suppliers, newSupplier]);
     }
     handleCloseForm();
   };
 
-  const handleDeleteCategory = () => {
-    if (!categoryToDelete) return;
-    setCategories(categories.filter(c => c.id !== categoryToDelete.id));
-    setCategoryToDelete(null);
+  const handleDeleteSupplier = () => {
+    if (!supplierToDelete) return;
+    setSuppliers(suppliers.filter(s => s.id !== supplierToDelete.id));
+    setSupplierToDelete(null);
   };
 
   return (
@@ -68,12 +68,12 @@ export default function CategoriesPage() {
         <CardHeader>
           <div className="flex items-center justify-between">
             <div>
-              <CardTitle>Product Categories</CardTitle>
-              <CardDescription>Organize your products into categories.</CardDescription>
+              <CardTitle>Suppliers</CardTitle>
+              <CardDescription>Manage your product suppliers.</CardDescription>
             </div>
             <Button onClick={() => handleOpenForm()}>
               <PlusCircle className="mr-2 h-4 w-4" />
-              Add Category
+              Add Supplier
             </Button>
           </div>
         </CardHeader>
@@ -81,18 +81,20 @@ export default function CategoriesPage() {
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead>Category Name</TableHead>
-                <TableHead>Description</TableHead>
+                <TableHead>Supplier Name</TableHead>
+                <TableHead>Contact Person</TableHead>
+                <TableHead>Email</TableHead>
                 <TableHead>
                   <span className="sr-only">Actions</span>
                 </TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
-              {categories.map((category) => (
-                <TableRow key={category.id}>
-                  <TableCell className="font-medium">{category.name}</TableCell>
-                  <TableCell>{category.description}</TableCell>
+              {suppliers.map((supplier) => (
+                <TableRow key={supplier.id}>
+                  <TableCell className="font-medium">{supplier.name}</TableCell>
+                  <TableCell>{supplier.contactPerson}</TableCell>
+                  <TableCell>{supplier.email}</TableCell>
                   <TableCell className="text-right">
                     <DropdownMenu>
                       <DropdownMenuTrigger asChild>
@@ -102,10 +104,10 @@ export default function CategoriesPage() {
                       </DropdownMenuTrigger>
                       <DropdownMenuContent align="end">
                         <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                        <DropdownMenuItem onClick={() => handleOpenForm(category)}>
+                        <DropdownMenuItem onClick={() => handleOpenForm(supplier)}>
                           <Edit className="mr-2 h-4 w-4" /> Edit
                         </DropdownMenuItem>
-                        <DropdownMenuItem className="text-destructive" onClick={() => setCategoryToDelete(category)}>
+                        <DropdownMenuItem className="text-destructive" onClick={() => setSupplierToDelete(supplier)}>
                           <Trash2 className="mr-2 h-4 w-4" /> Delete
                         </DropdownMenuItem>
                       </DropdownMenuContent>
@@ -118,7 +120,7 @@ export default function CategoriesPage() {
         </CardContent>
         <CardFooter>
           <div className="text-xs text-muted-foreground">
-            Showing <strong>1-{categories.length}</strong> of <strong>{categories.length}</strong> categories.
+            Showing <strong>1-{suppliers.length}</strong> of <strong>{suppliers.length}</strong> suppliers.
           </div>
         </CardFooter>
       </Card>
@@ -126,43 +128,48 @@ export default function CategoriesPage() {
       <Dialog open={isFormOpen} onOpenChange={setIsFormOpen}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>{categoryToEdit ? "Edit Category" : "Add New Category"}</DialogTitle>
+            <DialogTitle>{supplierToEdit ? "Edit Supplier" : "Add New Supplier"}</DialogTitle>
             <DialogDescription>
-              Fill in the details for the category.
+              Fill in the details for the supplier.
             </DialogDescription>
           </DialogHeader>
-          <form onSubmit={handleSubmit(handleSaveCategory)}>
+          <form onSubmit={handleSubmit(handleSaveSupplier)}>
             <div className="space-y-4 py-4">
               <div className="space-y-2">
-                <Label htmlFor="name">Category Name</Label>
+                <Label htmlFor="name">Supplier Name</Label>
                 <Input id="name" {...register("name")} />
                 {errors.name && <p className="text-destructive text-sm">{errors.name.message}</p>}
               </div>
               <div className="space-y-2">
-                <Label htmlFor="description">Description</Label>
-                <Textarea id="description" {...register("description")} />
-                {errors.description && <p className="text-destructive text-sm">{errors.description.message}</p>}
+                <Label htmlFor="contactPerson">Contact Person</Label>
+                <Input id="contactPerson" {...register("contactPerson")} />
+                {errors.contactPerson && <p className="text-destructive text-sm">{errors.contactPerson.message}</p>}
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="email">Email</Label>
+                <Input id="email" type="email" {...register("email")} />
+                {errors.email && <p className="text-destructive text-sm">{errors.email.message}</p>}
               </div>
             </div>
             <DialogFooter>
               <Button type="button" variant="ghost" onClick={handleCloseForm}>Cancel</Button>
-              <Button type="submit">Save Category</Button>
+              <Button type="submit">Save Supplier</Button>
             </DialogFooter>
           </form>
         </DialogContent>
       </Dialog>
 
-      <AlertDialog open={!!categoryToDelete} onOpenChange={(open) => !open && setCategoryToDelete(null)}>
+      <AlertDialog open={!!supplierToDelete} onOpenChange={(open) => !open && setSupplierToDelete(null)}>
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
             <AlertDialogDescription>
-              This action cannot be undone. This will permanently delete the category "{categoryToDelete?.name}".
+              This action cannot be undone. This will permanently delete the supplier "{supplierToDelete?.name}".
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction onClick={handleDeleteCategory} className="bg-destructive hover:bg-destructive/90">Delete</AlertDialogAction>
+            <AlertDialogAction onClick={handleDeleteSupplier} className="bg-destructive hover:bg-destructive/90">Delete</AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
