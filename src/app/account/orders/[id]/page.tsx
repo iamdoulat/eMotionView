@@ -2,7 +2,7 @@
 "use client";
 
 import { orders as initialOrders, type Order } from "@/lib/placeholder-data";
-import { notFound } from "next/navigation";
+import { notFound, useParams } from "next/navigation";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
@@ -13,19 +13,21 @@ import { Download, RefreshCw } from "lucide-react";
 import { useEffect, useState } from "react";
 import { Skeleton } from "@/components/ui/skeleton";
 
-export default function OrderDetailPage({ params }: { params: { id: string } }) {
+export default function OrderDetailPage() {
+  const params = useParams<{ id: string }>();
   const [order, setOrder] = useState<Order | null | undefined>(undefined);
+  const id = params.id;
 
   useEffect(() => {
-    if (params.id) {
+    if (id) {
         const storedOrders: Order[] = JSON.parse(localStorage.getItem('newOrders') || '[]');
         const allOrders = [...initialOrders, ...storedOrders];
-        const foundOrder = allOrders.find(o => o.id === params.id);
+        const foundOrder = allOrders.find(o => o.id === id);
         setOrder(foundOrder);
     } else {
         setOrder(null);
     }
-  }, [params.id]);
+  }, [id]);
 
   if (order === undefined) {
     return (
