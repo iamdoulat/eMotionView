@@ -27,16 +27,24 @@ export default function AdminOrdersPage() {
   const [searchTerm, setSearchTerm] = useState("");
 
   useEffect(() => {
-    const storedOrders: Order[] = JSON.parse(localStorage.getItem('newOrders') || '[]');
-    const combinedOrders = [...initialOrders];
-    
-    storedOrders.forEach(storedOrder => {
-        if (!combinedOrders.some(o => o.id === storedOrder.id)) {
-            combinedOrders.push(storedOrder);
-        }
-    });
+    // Function to load and combine orders
+    const loadOrders = () => {
+        const storedOrders: Order[] = JSON.parse(localStorage.getItem('newOrders') || '[]');
+        const combinedOrders = [...initialOrders];
+        
+        // Add new orders from storage, avoiding duplicates
+        storedOrders.forEach(storedOrder => {
+            if (!combinedOrders.some(o => o.id === storedOrder.id)) {
+                combinedOrders.push(storedOrder);
+            }
+        });
+        setOrders(combinedOrders);
+    };
 
-    setOrders(combinedOrders);
+    loadOrders();
+    // Also listen for storage events to update orders in real-time from other tabs
+    window.addEventListener('storage', loadOrders);
+    return () => window.removeEventListener('storage', loadOrders);
   }, []);
 
   const filteredOrders = useMemo(() => {
@@ -51,14 +59,26 @@ export default function AdminOrdersPage() {
 
   const handleSaveChanges = () => {
     if (!orderToEdit) return;
-    const updatedOrders = orders.map(o => o.id === orderToEdit.id ? orderToEdit : o);
-    setOrders(updatedOrders);
+    
+    // Update state
+    const updatedOrdersState = orders.map(o => o.id === orderToEdit.id ? orderToEdit : o);
+    setOrders(updatedOrdersState);
 
+    // Update local storage for orders that came from it
     const storedOrders: Order[] = JSON.parse(localStorage.getItem('newOrders') || '[]');
-    if (storedOrders.some(o => o.id === orderToEdit.id)) {
-      const newStoredOrders = storedOrders.map(o => o.id === orderToEdit.id ? orderToEdit : o);
-      localStorage.setItem('newOrders', JSON.stringify(newStoredOrders));
+    const isStoredOrder = storedOrders.some(o => o.id === orderToEdit.id);
+
+    if (isStoredOrder) {
+        const newStoredOrders = storedOrders.map(o => o.id === orderToEdit.id ? orderToEdit : o);
+        localStorage.setItem('newOrders', JSON.stringify(newStoredOrders));
+    } else {
+        // This is a more complex case - if we edit a non-stored (initial) order,
+        // we might want to add it to local storage to persist the change.
+        // For simplicity, we'll just add it to newOrders to persist changes.
+        const otherStoredOrders = storedOrders.filter(o => o.id !== orderToEdit.id);
+        localStorage.setItem('newOrders', JSON.stringify([...otherStoredOrders, orderToEdit]));
     }
+
     setOrderToEdit(null);
   };
   

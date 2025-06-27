@@ -20,9 +20,10 @@ export default function ThankYouPage() {
     useEffect(() => {
         if (orderId) {
             const storedOrders: Order[] = JSON.parse(localStorage.getItem('newOrders') || '[]');
+            // The new order will be in storedOrders, but we check initialOrders as a fallback.
             const allOrders = [...initialOrders, ...storedOrders];
             const foundOrder = allOrders.find(o => o.id === orderId);
-            setOrder(foundOrder);
+            setOrder(foundOrder || null);
         } else {
             setOrder(null);
         }
@@ -107,7 +108,10 @@ export default function ThankYouPage() {
                         </div>
                     </div>
                     
-                    <div className="mt-8 flex justify-center">
+                    <div className="mt-8 flex justify-center gap-4">
+                        <Button asChild size="lg" variant="outline">
+                            <Link href="/account/orders">View My Orders</Link>
+                        </Button>
                         <Button asChild size="lg">
                             <Link href="/">Continue Shopping</Link>
                         </Button>

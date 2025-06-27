@@ -21,7 +21,10 @@ export default function CheckoutPage() {
   const shipping = cart.length > 0 ? 5.00 : 0;
   const total = subtotal + shipping;
 
-  // Redirect to cart if it's empty and we are not in the process of placing an order
+  // This is the critical fix:
+  // Redirect to cart if it's empty, but NOT while we are processing an order.
+  // This prevents the race condition where the page tries to redirect to /cart
+  // at the same time it's trying to redirect to /checkout/thank-you.
   useEffect(() => {
     if (isInitialized && cart.length === 0 && !isLoading) {
       router.replace('/cart');
@@ -68,8 +71,8 @@ export default function CheckoutPage() {
     }, 1500);
   };
   
-  // Loading state while cart is initializing or if cart is empty
-  if (!isInitialized || cart.length === 0) {
+  // Loading state while cart is initializing or if cart is empty before the effect redirects
+  if (!isInitialized || (cart.length === 0 && !isLoading)) {
     return (
       <div className="container mx-auto px-4 py-8 flex justify-center items-center min-h-[calc(100vh-16rem)]">
         <Loader2 className="h-8 w-8 animate-spin text-primary" />
@@ -77,7 +80,6 @@ export default function CheckoutPage() {
     );
   }
 
-  // The main component render
   return (
     <div className="container mx-auto px-4 py-8">
       <header className="mb-8 text-center">

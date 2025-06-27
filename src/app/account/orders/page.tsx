@@ -17,15 +17,33 @@ export default function OrdersPage() {
         const storedOrders: Order[] = JSON.parse(localStorage.getItem('newOrders') || '[]');
         const combinedOrders = [...initialOrders];
         
+        // Add new orders from storage, avoiding duplicates
         storedOrders.forEach(storedOrder => {
             if (!combinedOrders.some(o => o.id === storedOrder.id)) {
                 combinedOrders.push(storedOrder);
             }
         });
         
+        // Sort all orders by date, most recent first
         combinedOrders.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
         setOrders(combinedOrders);
     }, []);
+
+    const getStatusVariant = (status: Order['status']) => {
+        switch (status) {
+            case 'Delivered':
+                return 'default';
+            case 'Processing':
+            case 'Shipped':
+                return 'secondary';
+            case 'Pending':
+                 return 'secondary';
+            case 'Cancelled':
+                return 'destructive';
+            default:
+                return 'outline';
+        }
+    }
 
   return (
     <div>
@@ -52,7 +70,7 @@ export default function OrdersPage() {
                                 <TableCell className="font-medium">{order.orderNumber}</TableCell>
                                 <TableCell>{new Date(order.date).toLocaleDateString()}</TableCell>
                                 <TableCell>
-                                    <Badge variant={order.status === 'Delivered' ? 'default' : order.status === 'Cancelled' ? 'destructive' : 'secondary'}>
+                                    <Badge variant={getStatusVariant(order.status)}>
                                         {order.status}
                                     </Badge>
                                 </TableCell>
@@ -61,6 +79,7 @@ export default function OrdersPage() {
                                     <Button asChild variant="ghost" size="icon">
                                         <Link href={`/account/orders/${order.id}`}>
                                             <ArrowRight className="h-4 w-4"/>
+                                            <span className="sr-only">View Order</span>
                                         </Link>
                                     </Button>
                                 </TableCell>
