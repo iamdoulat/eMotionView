@@ -1,18 +1,17 @@
 
 "use client";
 
-import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Separator } from '@/components/ui/separator';
-import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import type { Order } from '@/lib/placeholder-data';
 import { useState, useEffect } from 'react';
 import { Loader2 } from 'lucide-react';
 import { useCart } from '@/hooks/use-cart';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Separator } from '@/components/ui/separator';
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 
 export default function CheckoutPage() {
   const router = useRouter();
@@ -22,6 +21,7 @@ export default function CheckoutPage() {
   const shipping = cart.length > 0 ? 5.00 : 0;
   const total = subtotal + shipping;
 
+  // Redirect to cart if it's empty
   useEffect(() => {
     if (isInitialized && cart.length === 0) {
       router.replace('/cart');
@@ -53,17 +53,22 @@ export default function CheckoutPage() {
 
     // Simulate API call and order creation
     setTimeout(() => {
-        const existingOrders: Order[] = JSON.parse(localStorage.getItem('newOrders') || '[]');
-        localStorage.setItem('newOrders', JSON.stringify([...existingOrders, newOrder]));
-        
-        clearCart();
-        
-        router.push(`/checkout/thank-you?orderId=${newOrder.id}`);
-        
-        // No need to set loading to false as we are navigating away
+        try {
+            const existingOrders: Order[] = JSON.parse(localStorage.getItem('newOrders') || '[]');
+            localStorage.setItem('newOrders', JSON.stringify([...existingOrders, newOrder]));
+            
+            clearCart();
+            
+            router.push(`/checkout/thank-you?orderId=${newOrder.id}`);
+        } catch (error) {
+            console.error("Failed to place order:", error);
+            // Handle error, e.g., show a toast message
+            setIsLoading(false);
+        }
     }, 1500);
   };
   
+  // Loading state while cart is initializing or if cart is empty
   if (!isInitialized || cart.length === 0) {
     return (
       <div className="container mx-auto px-4 py-8 flex justify-center items-center min-h-[calc(100vh-16rem)]">
@@ -72,6 +77,7 @@ export default function CheckoutPage() {
     );
   }
 
+  // The main component render
   return (
     <div className="container mx-auto px-4 py-8">
       <header className="mb-8 text-center">
