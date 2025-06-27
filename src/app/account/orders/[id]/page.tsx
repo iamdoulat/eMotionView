@@ -43,15 +43,27 @@ export default function OrderDetailPage({ params }: { params: { id: string } }) 
           <h3 className="font-semibold text-lg mb-4">Items Ordered</h3>
           <div className="space-y-4">
             {order.items.map((item, index) => (
-              <div key={index} className="flex items-center justify-between">
-                <div className="flex items-center gap-4">
-                  <Image src={item.image} alt={item.name} width={64} height={64} className="rounded-md" data-ai-hint="product" />
-                  <div>
-                    <Link href={`/products/${item.productId}`} className="font-medium hover:text-primary">{item.name}</Link>
-                    <p className="text-sm text-muted-foreground">Qty: {item.quantity}</p>
+              <div key={index}>
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-4">
+                    <Image src={item.image} alt={item.name} width={64} height={64} className="rounded-md" data-ai-hint="product" />
+                    <div>
+                      {item.productType === 'Physical' ? (
+                          <Link href={`/products/${item.productId}`} className="font-medium hover:text-primary">{item.name}</Link>
+                      ) : (
+                          <span className="font-medium">{item.name}</span>
+                      )}
+                      <p className="text-sm text-muted-foreground">Qty: {item.quantity}</p>
+                    </div>
                   </div>
+                  <p className="font-medium">${item.price.toFixed(2)}</p>
                 </div>
-                <p className="font-medium">${item.price.toFixed(2)}</p>
+                {item.productType === 'Digital' && order.status === 'Delivered' && (
+                  <div className="mt-2 pl-[80px] flex items-center gap-4">
+                      <Button size="sm"><Download className="mr-2 h-4 w-4" /> Download</Button>
+                      <p className="text-xs text-muted-foreground">Your download link is available. Access your digital product instantly.</p>
+                  </div>
+                )}
               </div>
             ))}
           </div>

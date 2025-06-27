@@ -16,6 +16,7 @@ export type Product = {
   stock: number;
   supplier: string;
   points?: number;
+  productType: 'Physical' | 'Digital';
 };
 
 export type Review = {
@@ -43,6 +44,7 @@ export type Order = {
     image: string;
     quantity: number;
     price: number;
+    productType: 'Physical' | 'Digital';
   }[];
 };
 
@@ -91,6 +93,7 @@ export const categories: Category[] = [
   { id: 'cat-5', name: 'Smartphones', description: 'The latest mobile phones.' },
   { id: 'cat-6', name: 'Laptops', description: 'Portable computers for work and play.' },
   { id: 'cat-7', name: 'Drones', description: 'Flying cameras and recreational drones.' },
+  { id: 'cat-8', name: 'Digital Products', description: 'Downloadable products and services.' },
 ];
 
 export const brands: Brand[] = [
@@ -100,6 +103,7 @@ export const brands: Brand[] = [
   { id: 'brand-4', name: 'KOSPET', logo: 'https://placehold.co/100x40.png' },
   { id: 'brand-5', name: 'EnerMax', logo: 'https://placehold.co/100x40.png' },
   { id: 'brand-6', name: 'Guardian Tech', logo: 'https://placehold.co/100x40.png' },
+  { id: 'brand-7', name: 'Studio Creations', logo: 'https://placehold.co/100x40.png' },
 ];
 
 export const attributes: Attribute[] = [
@@ -112,6 +116,7 @@ export const suppliers: Supplier[] = [
   { id: 'sup-1', name: 'Haylou Direct', contactPerson: 'Alex Green', email: 'alex@hayloudirect.com' },
   { id: 'sup-2', name: 'Mibro Inc.', contactPerson: 'Brenda Smith', email: 'brenda@mibro.com' },
   { id: 'sup-3', name: 'Global Imports', contactPerson: 'Charles Davis', email: 'sales@globalimports.net' },
+  { id: 'sup-4', name: 'Studio Creations', contactPerson: 'Digital Team', email: 'digital@studiocreations.com' },
 ];
 
 
@@ -141,6 +146,7 @@ export const products: Product[] = [
     stock: 55,
     supplier: 'Haylou Direct',
     points: 100,
+    productType: 'Physical',
   },
   {
     id: '2',
@@ -164,6 +170,7 @@ export const products: Product[] = [
     stock: 8,
     supplier: 'Haylou Direct',
     points: 50,
+    productType: 'Physical',
   },
   {
     id: '3',
@@ -189,6 +196,7 @@ export const products: Product[] = [
     stock: 0,
     supplier: 'Mibro Inc.',
     points: 150,
+    productType: 'Physical',
   },
   {
     id: '4',
@@ -211,6 +219,7 @@ export const products: Product[] = [
     sku: 'AF-SW-A2R-01',
     stock: 23,
     supplier: 'Global Imports',
+    productType: 'Physical',
   },
   {
     id: '5',
@@ -233,6 +242,7 @@ export const products: Product[] = [
     sku: 'HL-SW-SU-01',
     stock: 5,
     supplier: 'Haylou Direct',
+    productType: 'Physical',
   },
   {
     id: '6',
@@ -257,6 +267,7 @@ export const products: Product[] = [
     sku: 'KP-SW-T3U-01',
     stock: 15,
     supplier: 'Global Imports',
+    productType: 'Physical',
   },
   {
     id: '7',
@@ -279,6 +290,7 @@ export const products: Product[] = [
     sku: 'EM-PB-20K-01',
     stock: 150,
     supplier: 'EnerMax Supplies',
+    productType: 'Physical',
   },
   {
     id: '8',
@@ -301,6 +313,29 @@ export const products: Product[] = [
     sku: 'GT-SL-01',
     stock: 3,
     supplier: 'Guardian Tech',
+    productType: 'Physical',
+  },
+  {
+    id: '9',
+    name: 'Digital Art Pack - Sci-Fi Edition',
+    description: 'A collection of 20 high-resolution digital artworks with a sci-fi theme. Perfect for wallpapers, prints, or creative projects.',
+    price: 25,
+    category: 'Digital Products',
+    brand: 'Studio Creations',
+    rating: 4.8,
+    reviewCount: 150,
+    images: ['https://placehold.co/600x600.png'],
+    features: ['20 PNG files', '4K Resolution (3840x2160)', 'Instant Download', 'Commercial use license included'],
+    specifications: {
+      'File Format': 'PNG',
+      'Resolution': '3840x2160',
+      'File Count': '20',
+      'License': 'Commercial Use',
+    },
+    sku: 'DG-ART-SF-01',
+    stock: 9999,
+    supplier: 'Studio Creations',
+    productType: 'Digital',
   },
 ];
 
@@ -373,6 +408,7 @@ export const orders: Order[] = [
         image: 'https://placehold.co/100x100.png',
         quantity: 1,
         price: 799.99,
+        productType: 'Physical',
       },
     ],
   },
@@ -391,6 +427,7 @@ export const orders: Order[] = [
         image: 'https://placehold.co/100x100.png',
         quantity: 1,
         price: 249.50,
+        productType: 'Physical',
       },
     ],
   },
@@ -409,6 +446,7 @@ export const orders: Order[] = [
         image: 'https://placehold.co/100x100.png',
         quantity: 1,
         price: 349.00,
+        productType: 'Physical',
       },
       {
         productId: '8',
@@ -416,6 +454,7 @@ export const orders: Order[] = [
         image: 'https://placehold.co/100x100.png',
         quantity: 1,
         price: 229.00,
+        productType: 'Physical',
       },
     ],
   },
@@ -434,6 +473,7 @@ export const orders: Order[] = [
         image: 'https://placehold.co/100x100.png',
         quantity: 1,
         price: 1999.99,
+        productType: 'Physical',
       },
     ],
   },
@@ -452,6 +492,26 @@ export const orders: Order[] = [
         image: 'https://placehold.co/100x100.png',
         quantity: 1,
         price: 1499.00,
+        productType: 'Physical',
+      },
+    ],
+  },
+  {
+    id: '6',
+    orderNumber: 'USA-DIGITAL-01',
+    date: '2024-05-23',
+    customerName: 'John Doe',
+    customerAvatar: 'https://placehold.co/40x40.png',
+    status: 'Delivered',
+    total: 25.00,
+    items: [
+      {
+        productId: '9',
+        name: 'Digital Art Pack - Sci-Fi Edition',
+        image: 'https://placehold.co/100x100.png',
+        quantity: 1,
+        price: 25.00,
+        productType: 'Digital',
       },
     ],
   },

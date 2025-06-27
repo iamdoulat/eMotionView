@@ -16,6 +16,7 @@ import { Trash2 } from "lucide-react";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { DialogFooter } from "@/components/ui/dialog";
 import Image from "next/image";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 
 const productSchema = z.object({
     id: z.string().optional(),
@@ -35,6 +36,7 @@ const productSchema = z.object({
         value: z.string().min(1, "Specification value cannot be empty.")
     })),
     images: z.array(z.string()).default([]),
+    productType: z.enum(['Physical', 'Digital']).default('Physical'),
 });
 
 type ProductFormData = z.infer<typeof productSchema>;
@@ -50,6 +52,7 @@ export function ProductForm({ product, onSave, onCancel }: ProductFormProps) {
         resolver: zodResolver(productSchema),
         defaultValues: product ? {
             ...product,
+            productType: product.productType || 'Physical',
             points: product.points || undefined,
             features: product.features.map(f => ({ value: f })),
             specifications: Object.entries(product.specifications).map(([key, value]) => ({ key, value })),
@@ -67,6 +70,7 @@ export function ProductForm({ product, onSave, onCancel }: ProductFormProps) {
             features: [{ value: "" }],
             specifications: [{ key: "", value: "" }],
             images: [],
+            productType: 'Physical',
         },
     });
 
@@ -109,6 +113,36 @@ export function ProductForm({ product, onSave, onCancel }: ProductFormProps) {
             <form onSubmit={handleSubmit(onSubmit)}>
                 <ScrollArea className="h-[70vh] pr-6">
                     <div className="space-y-4">
+                        <FormField
+                            control={control}
+                            name="productType"
+                            render={({ field }) => (
+                                <FormItem className="space-y-3">
+                                <FormLabel>Product Type</FormLabel>
+                                <FormControl>
+                                    <RadioGroup
+                                    onValueChange={field.onChange}
+                                    defaultValue={field.value}
+                                    className="flex items-center gap-4"
+                                    >
+                                    <FormItem className="flex items-center space-x-2 space-y-0">
+                                        <FormControl>
+                                        <RadioGroupItem value="Physical" />
+                                        </FormControl>
+                                        <FormLabel className="font-normal">Physical</FormLabel>
+                                    </FormItem>
+                                    <FormItem className="flex items-center space-x-2 space-y-0">
+                                        <FormControl>
+                                        <RadioGroupItem value="Digital" />
+                                        </FormControl>
+                                        <FormLabel className="font-normal">Digital</FormLabel>
+                                    </FormItem>
+                                    </RadioGroup>
+                                </FormControl>
+                                </FormItem>
+                            )}
+                        />
+
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                             <div className="space-y-2">
                                 <Label htmlFor="name">Product Name</Label>
