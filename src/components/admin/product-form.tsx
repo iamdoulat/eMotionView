@@ -25,6 +25,7 @@ const productSchema = z.object({
     sku: z.string().min(1, "SKU is required"),
     stock: z.coerce.number().min(0, "Stock must be a positive number"),
     supplier: z.string().min(1, "Supplier is required"),
+    points: z.coerce.number().optional(),
     features: z.array(z.object({ value: z.string().min(1, "Feature cannot be empty.") })),
     specifications: z.array(z.object({
         key: z.string().min(1, "Specification key cannot be empty."),
@@ -46,6 +47,7 @@ export function ProductForm({ product, onSave, onCancel }: ProductFormProps) {
         resolver: zodResolver(productSchema),
         defaultValues: product ? {
             ...product,
+            points: product.points || undefined,
             features: product.features.map(f => ({ value: f })),
             specifications: Object.entries(product.specifications).map(([key, value]) => ({ key, value })),
         } : {
@@ -58,6 +60,7 @@ export function ProductForm({ product, onSave, onCancel }: ProductFormProps) {
             sku: "",
             stock: 0,
             supplier: "",
+            points: undefined,
             features: [{ value: "" }],
             specifications: [{ key: "", value: "" }],
             images: [],
@@ -90,6 +93,7 @@ export function ProductForm({ product, onSave, onCancel }: ProductFormProps) {
             images: product?.images || ['https://placehold.co/600x600.png'],
             features: data.features.map(f => f.value),
             specifications: specObject,
+            points: data.points,
             discountPercentage: data.originalPrice && data.price < data.originalPrice ? Math.round(((data.originalPrice - data.price) / data.originalPrice) * 100) : undefined,
         };
         onSave(transformedData);
@@ -118,7 +122,7 @@ export function ProductForm({ product, onSave, onCancel }: ProductFormProps) {
                         {errors.description && <p className="text-destructive text-sm">{errors.description.message}</p>}
                     </div>
 
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div className="space-y-2">
                             <Label htmlFor="price">Price</Label>
                             <Input id="price" type="number" step="0.01" {...register("price")} />
@@ -128,10 +132,15 @@ export function ProductForm({ product, onSave, onCancel }: ProductFormProps) {
                             <Label htmlFor="originalPrice">Original Price (Optional)</Label>
                             <Input id="originalPrice" type="number" step="0.01" {...register("originalPrice")} />
                         </div>
-                        <div className="space-y-2">
+                         <div className="space-y-2">
                             <Label htmlFor="stock">Stock Quantity</Label>
                             <Input id="stock" type="number" {...register("stock")} />
                             {errors.stock && <p className="text-destructive text-sm">{errors.stock.message}</p>}
+                        </div>
+                        <div className="space-y-2">
+                            <Label htmlFor="points">Club Points</Label>
+                            <Input id="points" type="number" {...register("points")} placeholder="e.g. 100" />
+                            {errors.points && <p className="text-destructive text-sm">{errors.points.message}</p>}
                         </div>
                     </div>
                      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">

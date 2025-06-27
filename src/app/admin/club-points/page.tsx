@@ -2,6 +2,7 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 import { users as allUsers, User } from "@/lib/placeholder-data";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
@@ -12,6 +13,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { PlusCircle, MinusCircle, Search } from "lucide-react";
 
 export default function ClubPointsPage() {
@@ -19,6 +21,7 @@ export default function ClubPointsPage() {
   const [selectedUser, setSelectedUser] = useState<User | null>(null);
   const [pointsToAdjust, setPointsToAdjust] = useState(0);
   const [searchTerm, setSearchTerm] = useState("");
+  const [pointSystemType, setPointSystemType] = useState<'amount' | 'product'>('amount');
 
   const handleAdjustPoints = (adjustment: 'add' | 'remove') => {
     if (!selectedUser || pointsToAdjust <= 0) return;
@@ -69,22 +72,50 @@ export default function ClubPointsPage() {
                         </div>
                         <Switch id="enable-system" defaultChecked />
                     </div>
-
-                    <div className="space-y-4">
-                        <h3 className="text-lg font-medium">Earning Points</h3>
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            <div className="space-y-2">
-                                <Label htmlFor="earning-amount">Amount Spent</Label>
-                                <Input id="earning-amount" type="number" defaultValue="100" />
-                                <p className="text-sm text-muted-foreground">For every $X spent...</p>
+                    
+                    <div className="space-y-2">
+                        <Label className="text-base font-medium">Point System Type</Label>
+                        <p className="text-sm text-muted-foreground">Choose how customers earn points.</p>
+                        <RadioGroup value={pointSystemType} onValueChange={(value) => setPointSystemType(value as 'amount' | 'product')} className="mt-2 space-y-1">
+                            <div className="flex items-center space-x-2">
+                                <RadioGroupItem value="amount" id="type-amount" />
+                                <Label htmlFor="type-amount" className="font-normal">Amount Spend Based</Label>
                             </div>
-                            <div className="space-y-2">
-                                <Label htmlFor="earning-points">Points Earned</Label>
-                                <Input id="earning-points" type="number" defaultValue="10" />
-                                <p className="text-sm text-muted-foreground">...customer earns Y points.</p>
+                            <div className="flex items-center space-x-2">
+                                <RadioGroupItem value="product" id="type-product" />
+                                <Label htmlFor="type-product" className="font-normal">Product Based</Label>
+                            </div>
+                        </RadioGroup>
+                    </div>
+
+                    {pointSystemType === 'amount' && (
+                        <div className="space-y-4 p-4 border rounded-md">
+                            <h3 className="text-lg font-medium">Earning Points (By Amount)</h3>
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <div className="space-y-2">
+                                    <Label htmlFor="earning-amount">Amount Spent</Label>
+                                    <Input id="earning-amount" type="number" defaultValue="100" />
+                                    <p className="text-sm text-muted-foreground">For every $X spent...</p>
+                                </div>
+                                <div className="space-y-2">
+                                    <Label htmlFor="earning-points">Points Earned</Label>
+                                    <Input id="earning-points" type="number" defaultValue="10" />
+                                    <p className="text-sm text-muted-foreground">...customer earns Y points.</p>
+                                </div>
                             </div>
                         </div>
-                    </div>
+                    )}
+
+                    {pointSystemType === 'product' && (
+                        <div className="p-4 border-dashed border-2 rounded-md text-center bg-secondary">
+                            <p className="text-sm text-muted-foreground">
+                                Points are assigned to individual products.
+                                <br />
+                                You can set the point value when <Link href="/admin/products" className="text-primary underline">adding or editing a product</Link>.
+                            </p>
+                        </div>
+                    )}
+
 
                     <div className="space-y-4">
                         <h3 className="text-lg font-medium">Redeeming Points</h3>

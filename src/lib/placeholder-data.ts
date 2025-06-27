@@ -15,6 +15,7 @@ export type Product = {
   sku: string;
   stock: number;
   supplier: string;
+  points?: number;
 };
 
 export type Review = {
@@ -82,6 +83,7 @@ export const products: Product[] = [
     sku: 'HL-SW-IN-01',
     stock: 55,
     supplier: 'Haylou Direct',
+    points: 100,
   },
   {
     id: '2',
@@ -104,6 +106,7 @@ export const products: Product[] = [
     sku: 'HL-EB-HQ5-01',
     stock: 8,
     supplier: 'Haylou Direct',
+    points: 50,
   },
   {
     id: '3',
@@ -128,6 +131,7 @@ export const products: Product[] = [
     sku: 'MB-SW-L3-01',
     stock: 0,
     supplier: 'Mibro Inc.',
+    points: 150,
   },
   {
     id: '4',
