@@ -3,7 +3,7 @@
 
 import Image from 'next/image';
 import { products, reviews as allReviews } from '@/lib/placeholder-data';
-import { notFound, useRouter } from 'next/navigation';
+import { notFound, useRouter, useParams } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Star, Heart, ShieldCheck, Plus, Minus } from 'lucide-react';
@@ -19,7 +19,8 @@ import { useToast } from '@/hooks/use-toast';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 
-export default function ProductDetailPage({ params }: { params: { id: string } }) {
+export default function ProductDetailPage() {
+  const params = useParams<{ id: string }>();
   const product = products.find(p => p.id === params.id);
   const { toast } = useToast();
   const { addToCart } = useCart();
