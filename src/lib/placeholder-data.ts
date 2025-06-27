@@ -16,6 +16,7 @@ export type Product = {
   specifications: Record<string, string>;
   sku: string;
   stock: number;
+  manageStock?: boolean;
   supplier: string;
   points?: number;
   productType: 'Physical' | 'Digital';
@@ -152,6 +153,7 @@ export const products: Product[] = [
     },
     sku: 'HL-SW-IN-01',
     stock: 55,
+    manageStock: true,
     supplier: 'Haylou Direct',
     points: 100,
     productType: 'Physical',
@@ -180,6 +182,7 @@ export const products: Product[] = [
     },
     sku: 'HL-EB-HQ5-01',
     stock: 8,
+    manageStock: true,
     supplier: 'Haylou Direct',
     points: 50,
     productType: 'Physical',
@@ -207,6 +210,7 @@ export const products: Product[] = [
     },
     sku: 'MB-SW-L3-01',
     stock: 0,
+    manageStock: true,
     supplier: 'Mibro Inc.',
     points: 150,
     productType: 'Physical',
@@ -236,6 +240,7 @@ export const products: Product[] = [
     },
     sku: 'AF-SW-A2R-01',
     stock: 23,
+    manageStock: true,
     supplier: 'Global Imports',
     productType: 'Physical',
   },
@@ -260,6 +265,7 @@ export const products: Product[] = [
     },
     sku: 'HL-SW-SU-01',
     stock: 5,
+    manageStock: true,
     supplier: 'Haylou Direct',
     productType: 'Physical',
   },
@@ -286,6 +292,7 @@ export const products: Product[] = [
     },
     sku: 'KP-SW-T3U-01',
     stock: 15,
+    manageStock: true,
     supplier: 'Global Imports',
     productType: 'Physical',
   },
@@ -310,6 +317,7 @@ export const products: Product[] = [
     },
     sku: 'EM-PB-20K-01',
     stock: 150,
+    manageStock: true,
     supplier: 'Global Imports',
     productType: 'Physical',
   },
@@ -334,6 +342,7 @@ export const products: Product[] = [
     },
     sku: 'GT-SL-01',
     stock: 3,
+    manageStock: true,
     supplier: 'Guardian Tech',
     productType: 'Physical',
   },
@@ -357,6 +366,7 @@ export const products: Product[] = [
     },
     sku: 'DG-ART-SF-01',
     stock: 9999,
+    manageStock: false,
     supplier: 'Studio Creations',
     productType: 'Digital',
     downloadUrl: 'https://example.com/download/scifi-art-pack.zip',

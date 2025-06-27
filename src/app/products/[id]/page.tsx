@@ -25,6 +25,13 @@ export default function ProductDetailPage({ params }: { params: { id: string } }
   const [selectedImage, setSelectedImage] = useState(product.images[0]);
   const productReviews = allReviews.filter(r => r.productId === params.id);
 
+  const isStockManaged = product.manageStock ?? true;
+  const canPurchase = !isStockManaged || product.stock > 0;
+  const stockStatus = isStockManaged
+      ? (product.stock > 0 ? `In Stock (${product.stock} available)` : "Out of Stock")
+      : "In Stock";
+
+
   return (
     <div className="bg-background">
       <div className="container mx-auto px-4 py-6">
@@ -98,6 +105,13 @@ export default function ProductDetailPage({ params }: { params: { id: string } }
                   )}
                 </div>
 
+                <div className="mt-4">
+                    <Badge variant={canPurchase ? 'default' : 'destructive'}>
+                       {stockStatus}
+                    </Badge>
+                </div>
+
+
                 <div className="mt-2 flex items-center gap-4">
                   <div className="flex items-center">
                     {[...Array(5)].map((_, i) => (
@@ -125,10 +139,10 @@ export default function ProductDetailPage({ params }: { params: { id: string } }
                 </div>
                 
                 <div className="mt-auto pt-6 flex flex-col sm:flex-row gap-4">
-                  <Button size="lg" className="flex-1 bg-green-600 hover:bg-green-700 text-primary-foreground">
+                  <Button size="lg" className="flex-1 bg-green-600 hover:bg-green-700 text-primary-foreground" disabled={!canPurchase}>
                     Add To Cart
                   </Button>
-                  <Button size="lg" className="flex-1">
+                  <Button size="lg" className="flex-1" disabled={!canPurchase}>
                     Buy Now
                   </Button>
                 </div>

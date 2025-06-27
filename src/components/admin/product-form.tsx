@@ -10,7 +10,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
+import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Trash2 } from "lucide-react";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -19,6 +19,7 @@ import Image from "next/image";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Card } from "@/components/ui/card";
 import { useEffect, useState } from "react";
+import { Switch } from "../ui/switch";
 
 const productSchema = z.object({
     id: z.string().optional(),
@@ -30,6 +31,7 @@ const productSchema = z.object({
     category: z.string().min(1, "Category is required"),
     brand: z.string().min(1, "Brand is required"),
     sku: z.string().min(1, "SKU is required"),
+    manageStock: z.boolean().default(true),
     stock: z.coerce.number().min(0, "Stock must be a positive number"),
     supplier: z.string().min(1, "Supplier is required"),
     points: z.coerce.number().optional(),
@@ -63,6 +65,7 @@ export function ProductForm({ product, onSave, onCancel }: ProductFormProps) {
             ...product,
             permalink: product.permalink || '',
             productType: product.productType || 'Physical',
+            manageStock: product.manageStock ?? (product.productType === 'Physical'),
             points: product.points || undefined,
             features: product.features.map(f => ({ value: f })),
             specifications: Object.entries(product.specifications).map(([key, value]) => ({ key, value })),
@@ -78,6 +81,7 @@ export function ProductForm({ product, onSave, onCancel }: ProductFormProps) {
             category: "",
             brand: "",
             sku: "",
+            manageStock: true,
             stock: 0,
             supplier: "",
             points: undefined,
@@ -111,6 +115,7 @@ export function ProductForm({ product, onSave, onCancel }: ProductFormProps) {
 
 
     const productType = form.watch('productType');
+    const manageStock = form.watch('manageStock');
 
     const { fields: featureFields, append: appendFeature, remove: removeFeature } = useFieldArray({
         control,
@@ -146,6 +151,7 @@ export function ProductForm({ product, onSave, onCancel }: ProductFormProps) {
             category: data.category,
             brand: data.brand,
             sku: data.sku,
+            manageStock: data.manageStock,
             stock: data.stock,
             supplier: data.supplier,
             points: data.points,
@@ -183,7 +189,11 @@ export function ProductForm({ product, onSave, onCancel }: ProductFormProps) {
                                 <FormLabel>Product Type</FormLabel>
                                 <FormControl>
                                     <RadioGroup
-                                    onValueChange={field.onChange}
+                                    onValueChange={(value) => {
+                                        field.onChange(value);
+                                        // If switching to digital, disable stock management. If to physical, enable it.
+                                        form.setValue('manageStock', value === 'Physical');
+                                    }}
                                     defaultValue={field.value}
                                     className="flex items-center gap-4"
                                     >
@@ -264,17 +274,40 @@ export function ProductForm({ product, onSave, onCancel }: ProductFormProps) {
                                 <Label htmlFor="originalPrice">Original Price (Optional)</Label>
                                 <Input id="originalPrice" type="number" step="0.01" {...register("originalPrice")} />
                             </div>
-                            <div className="space-y-2">
+                        </div>
+
+                        <Card className="p-4 bg-secondary/50">
+                            <FormField
+                                control={control}
+                                name="manageStock"
+                                render={({ field }) => (
+                                <FormItem className="flex flex-row items-center justify-between">
+                                    <div className="space-y-0.5">
+                                        <FormLabel className="text-base">Manage Stock</FormLabel>
+                                        <FormDescription>
+                                            Enable to track inventory for this product.
+                                        </FormDescription>
+                                    </div>
+                                    <FormControl>
+                                        <Switch
+                                            checked={field.value}
+                                            onCheckedChange={field.onChange}
+                                            disabled={productType === 'Digital'}
+                                        />
+                                    </FormControl>
+                                </FormItem>
+                                )}
+                            />
+                            {manageStock && (
+                                <div className="mt-4 space-y-2">
                                 <Label htmlFor="stock">Stock Quantity</Label>
                                 <Input id="stock" type="number" {...register("stock")} />
                                 {errors.stock && <p className="text-destructive text-sm">{errors.stock.message}</p>}
-                            </div>
-                            <div className="space-y-2">
-                                <Label htmlFor="points">Club Points</Label>
-                                <Input id="points" type="number" {...register("points")} placeholder="e.g. 100" />
-                                {errors.points && <p className="text-destructive text-sm">{errors.points.message}</p>}
-                            </div>
-                        </div>
+                                </div>
+                            )}
+                        </Card>
+
+
                         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                             <FormField
                                 control={control}
@@ -334,6 +367,12 @@ export function ProductForm({ product, onSave, onCancel }: ProductFormProps) {
                                 )}
                             />
                         </div>
+                         <div className="space-y-2">
+                            <Label htmlFor="points">Club Points</Label>
+                            <Input id="points" type="number" {...register("points")} placeholder="e.g. 100" />
+                            {errors.points && <p className="text-destructive text-sm">{errors.points.message}</p>}
+                        </div>
+
 
                         <div className="space-y-2">
                             <Label>Images</Label>
