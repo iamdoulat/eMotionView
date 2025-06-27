@@ -19,7 +19,7 @@ import html2canvas from "html2canvas";
 export default function OrderDetailPage() {
   const params = useParams<{ id: string }>();
   const [order, setOrder] = useState<Order | null | undefined>(undefined);
-  const invoiceRef = useRef<HTMLDivElement>(null);
+  const pdfRef = useRef<HTMLDivElement>(null);
   const id = params.id;
 
   useEffect(() => {
@@ -34,17 +34,14 @@ export default function OrderDetailPage() {
   }, [id]);
 
   const handleDownloadInvoice = () => {
-    const input = invoiceRef.current;
+    const input = pdfRef.current;
     if (!input) {
       return;
     }
 
-    const isDarkMode = document.body.classList.contains('dark');
-
     html2canvas(input, {
       scale: 2,
       useCORS: true,
-      backgroundColor: isDarkMode ? '#111827' : '#ffffff',
     }).then((canvas) => {
       const imgData = canvas.toDataURL('image/png');
       const pdf = new jsPDF('p', 'mm', 'a4');
@@ -93,6 +90,76 @@ export default function OrderDetailPage() {
 
   return (
     <div>
+      {/* Hidden Invoice structure for PDF generation */}
+      <div style={{ position: 'absolute', left: '-9999px', top: 'auto', width: '210mm', padding: '20mm', background: 'white', color: 'black', fontFamily: 'sans-serif' }} ref={pdfRef}>
+        {order && (
+          <div>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', borderBottom: '1px solid #ccc', paddingBottom: '1rem', marginBottom: '1rem' }}>
+              <div>
+                <img src="https://placehold.co/150x50.png" alt="Store Logo" style={{ width: '150px' }} data-ai-hint="logo" />
+                <h1 style={{ fontSize: '1.5rem', fontWeight: 'bold', margin: '0.5rem 0 0.25rem' }}>eMotionView</h1>
+                <p style={{ margin: 0, fontSize: '0.875rem' }}>10/25 Eastern Plaza, Hatirpool, Dhaka-1205</p>
+              </div>
+              <div style={{ textAlign: 'right' }}>
+                <h2 style={{ fontSize: '2rem', fontWeight: 'bold', margin: 0 }}>INVOICE</h2>
+                <p style={{ margin: '0.25rem 0 0' }}><strong>Invoice #:</strong> {order.orderNumber}</p>
+                <p style={{ margin: '0.25rem 0 0' }}><strong>Date:</strong> {new Date(order.date).toLocaleDateString()}</p>
+              </div>
+            </div>
+
+            <div style={{ marginBottom: '2rem' }}>
+              <h3 style={{ fontWeight: 'bold', borderBottom: '1px solid #eee', paddingBottom: '0.5rem', marginBottom: '0.5rem' }}>Customer Address</h3>
+              <p style={{ margin: 0 }}>John Doe</p>
+              <p style={{ margin: 0 }}>123 Main Street</p>
+              <p style={{ margin: 0 }}>Anytown, USA 12345</p>
+            </div>
+
+            <table style={{ width: '100%', borderCollapse: 'collapse', marginBottom: '2rem' }}>
+              <thead>
+                <tr style={{ backgroundColor: '#f0f0f0' }}>
+                  <th style={{ padding: '0.75rem', textAlign: 'left', borderBottom: '1px solid #ddd' }}>Item</th>
+                  <th style={{ padding: '0.75rem', textAlign: 'center', borderBottom: '1px solid #ddd' }}>Quantity</th>
+                  <th style={{ padding: '0.75rem', textAlign: 'right', borderBottom: '1px solid #ddd' }}>Price</th>
+                  <th style={{ padding: '0.75rem', textAlign: 'right', borderBottom: '1px solid #ddd' }}>Total</th>
+                </tr>
+              </thead>
+              <tbody>
+                {order.items.map((item, index) => (
+                  <tr key={index} style={{ borderBottom: '1px solid #eee' }}>
+                    <td style={{ padding: '0.75rem' }}>{item.name}</td>
+                    <td style={{ padding: '0.75rem', textAlign: 'center' }}>{item.quantity}</td>
+                    <td style={{ padding: '0.75rem', textAlign: 'right' }}>${item.price.toFixed(2)}</td>
+                    <td style={{ padding: '0.75rem', textAlign: 'right' }}>${(item.price * item.quantity).toFixed(2)}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+
+            <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: '2rem' }}>
+              <div style={{ width: '50%' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', padding: '0.5rem 0' }}>
+                  <span>Subtotal:</span>
+                  <span>${(order.total - 5).toFixed(2)}</span>
+                </div>
+                <div style={{ display: 'flex', justifyContent: 'space-between', padding: '0.5rem 0' }}>
+                  <span>Shipping:</span>
+                  <span>$5.00</span>
+                </div>
+                <div style={{ display: 'flex', justifyContent: 'space-between', padding: '0.75rem 0', marginTop: '0.5rem', borderTop: '2px solid #333', fontWeight: 'bold', fontSize: '1.25rem' }}>
+                  <span>Total:</span>
+                  <span>${order.total.toFixed(2)}</span>
+                </div>
+              </div>
+            </div>
+
+            <div style={{ textAlign: 'center', marginTop: '3rem', paddingTop: '1rem', borderTop: '1px solid #ccc' }}>
+              <p>Thank you By eMotionView</p>
+            </div>
+          </div>
+        )}
+      </div>
+
+      {/* Visible Part of the Page */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-6">
         <div>
           <h1 className="font-headline text-3xl font-bold text-foreground">Order Details</h1>
@@ -104,7 +171,7 @@ export default function OrderDetailPage() {
         </div>
       </div>
       
-      <div ref={invoiceRef} className="p-1">
+      <div className="p-1">
         <Card>
           <CardHeader>
             <CardTitle>Order Summary</CardTitle>
