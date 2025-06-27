@@ -1,15 +1,22 @@
 
 "use client";
 
+import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
-import { Mail, MessageSquareText, Bot } from "lucide-react";
+import { Mail, MessageSquareText, Bot, Send } from "lucide-react";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import Link from "next/link";
+
+type OtpGateway = "twilio" | "vonage" | "whatsapp";
 
 export default function CommunicationSettingsPage() {
+    const [activeGateway, setActiveGateway] = useState<OtpGateway>("twilio");
+
     const emailNotifications = [
         { id: "email-order-confirmation", label: "Order Confirmation", description: "Sent to customers after they place an order." },
         { id: "email-shipping-update", label: "Shipping Update", description: "Sent when an order's shipping status changes." },
@@ -25,6 +32,38 @@ export default function CommunicationSettingsPage() {
     return (
         <div className="space-y-8">
             <h1 className="text-3xl font-bold tracking-tight">Communication Settings</h1>
+
+            <Card>
+                <CardHeader>
+                    <CardTitle className="flex items-center gap-2"><Send /> SMTP Settings</CardTitle>
+                    <CardDescription>Configure your external SMTP service for sending emails.</CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div className="space-y-2">
+                            <Label htmlFor="smtp-host">SMTP Host</Label>
+                            <Input id="smtp-host" placeholder="smtp.example.com" />
+                        </div>
+                        <div className="space-y-2">
+                            <Label htmlFor="smtp-port">SMTP Port</Label>
+                            <Input id="smtp-port" placeholder="587" />
+                        </div>
+                    </div>
+                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div className="space-y-2">
+                            <Label htmlFor="smtp-user">Username</Label>
+                            <Input id="smtp-user" placeholder="your-username" />
+                        </div>
+                        <div className="space-y-2">
+                            <Label htmlFor="smtp-pass">Password</Label>
+                            <Input id="smtp-pass" type="password" placeholder="••••••••" />
+                        </div>
+                    </div>
+                </CardContent>
+                <CardFooter>
+                    <Button>Save SMTP Settings</Button>
+                </CardFooter>
+            </Card>
 
             <Card>
                 <CardHeader>
@@ -56,21 +95,52 @@ export default function CommunicationSettingsPage() {
 
             <Card>
                 <CardHeader>
-                    <CardTitle className="flex items-center gap-2"><MessageSquareText /> SMS Notifications</CardTitle>
-                    <CardDescription>Configure your SMS provider and manage automated text messages. (Requires a third-party SMS service like Twilio).</CardDescription>
+                    <CardTitle className="flex items-center gap-2"><MessageSquareText /> SMS & OTP Gateway</CardTitle>
+                    <CardDescription>Configure your SMS/OTP provider and manage automated text messages.</CardDescription>
                 </CardHeader>
-                <CardContent className="space-y-6">
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <div className="space-y-2">
-                            <Label htmlFor="sms-sid">Account SID</Label>
-                            <Input id="sms-sid" placeholder="Your SMS Provider Account SID" />
-                        </div>
-                        <div className="space-y-2">
-                            <Label htmlFor="sms-token">Auth Token</Label>
-                            <Input id="sms-token" type="password" placeholder="Your SMS Provider Auth Token" />
-                        </div>
-                    </div>
-                    <div className="space-y-4 rounded-md border p-4">
+                <CardContent>
+                    <Tabs value={activeGateway} onValueChange={(value) => setActiveGateway(value as OtpGateway)}>
+                        <TabsList className="grid w-full grid-cols-3">
+                            <TabsTrigger value="twilio">Twilio</TabsTrigger>
+                            <TabsTrigger value="vonage">Vonage</TabsTrigger>
+                            <TabsTrigger value="whatsapp">WhatsApp OTP</TabsTrigger>
+                        </TabsList>
+                        <TabsContent value="twilio" className="mt-6 space-y-4">
+                            <div className="space-y-2">
+                                <Label htmlFor="twilio-sid">Account SID</Label>
+                                <Input id="twilio-sid" placeholder="ACxxxxxxxxxxxxxxxxxxxxxxxxxxxxx" />
+                            </div>
+                             <div className="space-y-2">
+                                <Label htmlFor="twilio-token">Auth Token</Label>
+                                <Input id="twilio-token" type="password" placeholder="••••••••" />
+                            </div>
+                             <div className="space-y-2">
+                                <Label htmlFor="twilio-number">Twilio Phone Number</Label>
+                                <Input id="twilio-number" placeholder="+15005550006" />
+                            </div>
+                        </TabsContent>
+                        <TabsContent value="vonage" className="mt-6 space-y-4">
+                            <div className="space-y-2">
+                                <Label htmlFor="vonage-key">API Key</Label>
+                                <Input id="vonage-key" placeholder="Your Vonage API Key" />
+                            </div>
+                             <div className="space-y-2">
+                                <Label htmlFor="vonage-secret">API Secret</Label>
+                                <Input id="vonage-secret" type="password" placeholder="••••••••" />
+                            </div>
+                        </TabsContent>
+                         <TabsContent value="whatsapp" className="mt-6 space-y-4">
+                            <div className="space-y-2">
+                                <Label htmlFor="wa-id">Phone Number ID</Label>
+                                <Input id="wa-id" placeholder="Your WhatsApp Business Phone Number ID" />
+                            </div>
+                             <div className="space-y-2">
+                                <Label htmlFor="wa-token">Access Token</Label>
+                                <Input id="wa-token" type="password" placeholder="••••••••" />
+                            </div>
+                        </TabsContent>
+                    </Tabs>
+                     <div className="space-y-4 rounded-md border p-4 mt-6">
                         <h3 className="font-medium mb-4">Customer SMS Alerts</h3>
                          {smsNotifications.map(notification => (
                             <div key={notification.id} className="flex flex-row items-center justify-between">
@@ -81,17 +151,17 @@ export default function CommunicationSettingsPage() {
                     </div>
                 </CardContent>
                  <CardFooter>
-                    <Button>Save SMS Settings</Button>
+                    <Button>Save Gateway Settings</Button>
                 </CardFooter>
             </Card>
             
             <Card>
                 <CardHeader>
-                    <CardTitle className="flex items-center gap-2"><Bot /> Customer Support Method</CardTitle>
-                    <CardDescription>Choose how customers can contact you for support.</CardDescription>
+                    <CardTitle className="flex items-center gap-2"><Bot /> Customer Support</CardTitle>
+                    <CardDescription>Choose how customers can contact you for support and manage chat.</CardDescription>
                 </CardHeader>
-                <CardContent>
-                    <RadioGroup defaultValue="contact-form" className="space-y-2">
+                <CardContent className="space-y-4">
+                     <RadioGroup defaultValue="contact-form" className="space-y-2">
                         <div className="flex items-center space-x-2">
                             <RadioGroupItem value="contact-form" id="contact-form" />
                             <Label htmlFor="contact-form">Standard Contact Form</Label>
@@ -100,7 +170,15 @@ export default function CommunicationSettingsPage() {
                             <RadioGroupItem value="ai-chatbot" id="ai-chatbot" />
                             <Label htmlFor="ai-chatbot">AI-Powered Chatbot</Label>
                         </div>
+                         <div className="flex items-center space-x-2">
+                            <RadioGroupItem value="live-chat" id="live-chat" />
+                            <Label htmlFor="live-chat">Live Chat Support</Label>
+                        </div>
                     </RadioGroup>
+                    <div className="p-4 border rounded-md flex items-center justify-between">
+                        <p className="text-sm font-medium">Open the live chat panel to manage conversations.</p>
+                        <Button asChild><Link href="/admin/chat">Open Chat</Link></Button>
+                    </div>
                 </CardContent>
             </Card>
 

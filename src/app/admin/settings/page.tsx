@@ -1,4 +1,5 @@
 
+
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -12,21 +13,21 @@ export default function AdminSettingsPage() {
        <h1 className="text-3xl font-bold tracking-tight">Settings</h1>
       <Card>
         <CardHeader>
-          <CardTitle>Store Settings</CardTitle>
-          <CardDescription>Manage your store's basic information.</CardDescription>
+          <CardTitle>General Settings</CardTitle>
+          <CardDescription>Manage store details, currency, language, and login settings.</CardDescription>
         </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="space-y-2">
-            <Label htmlFor="store-name">Store Name</Label>
-            <Input id="store-name" defaultValue="eMotionView" />
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="store-email">Contact Email</Label>
-            <Input id="store-email" type="email" defaultValue="contact@emotionview.com" />
-          </div>
+        <CardContent>
+            <p className="text-sm text-muted-foreground">
+                Update your store's core configuration, including localization and authentication methods.
+            </p>
         </CardContent>
         <CardFooter>
-          <Button>Save Store Info</Button>
+          <Button asChild>
+            <Link href="/admin/settings/general">
+                Configure General Settings
+                <ArrowRight className="ml-2 h-4 w-4" />
+            </Link>
+          </Button>
         </CardFooter>
       </Card>
       
@@ -93,7 +94,7 @@ export default function AdminSettingsPage() {
       <Card>
         <CardHeader>
           <CardTitle>Communication</CardTitle>
-          <CardDescription>Configure email notifications and customer support options.</CardDescription>
+          <CardDescription>Configure email notifications, SMS/OTP gateways, and customer support options.</CardDescription>
         </CardHeader>
         <CardContent>
             <p className="text-sm text-muted-foreground">

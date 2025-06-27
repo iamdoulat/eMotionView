@@ -1,4 +1,5 @@
 
+
 "use client"
 
 import Link from "next/link";
@@ -14,6 +15,7 @@ import {
   Home,
   Boxes,
   Award,
+  MessageSquare,
 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from "../ui/card";
 
@@ -25,6 +27,7 @@ const navItems = [
     { href: "/admin/users", label: "Customers", icon: Users },
     { href: "/admin/analytics", label: "Analytics", icon: LineChart },
     { href: "/admin/club-points", label: "Club Points", icon: Award },
+    { href: "/admin/chat", label: "Chat", icon: MessageSquare },
 ];
 
 export function AdminSidebar() {
