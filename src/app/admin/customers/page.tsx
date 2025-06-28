@@ -16,14 +16,17 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { MoreHorizontal, Trash2, Edit, View, Loader2 } from "lucide-react";
 import { format } from 'date-fns';
-import { collection, getDocs } from "firebase/firestore";
+import { collection, getDocs, doc, setDoc, deleteDoc } from "firebase/firestore";
 import { db, docToJSON } from "@/lib/firebase";
+import { useToast } from "@/hooks/use-toast";
 
 export default function AdminCustomersPage() {
   const [customers, setCustomers] = useState<User[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [isSaving, setIsSaving] = useState(false);
   const [customerToEdit, setCustomerToEdit] = useState<User | null>(null);
   const [customerToDelete, setCustomerToDelete] = useState<User | null>(null);
+  const { toast } = useToast();
 
   useEffect(() => {
     const fetchCustomers = async () => {
@@ -34,26 +37,47 @@ export default function AdminCustomersPage() {
             setCustomers(customerList);
         } catch (error) {
             console.error("Failed to fetch customers:", error);
+            toast({
+                variant: 'destructive',
+                title: 'Error Fetching Data',
+                description: 'Could not load customers. Please check your Firestore security rules and connection.',
+            });
         } finally {
             setIsLoading(false);
         }
     }
     fetchCustomers();
-  }, []);
+  }, [toast]);
 
-  const handleSaveChanges = () => {
+  const handleSaveChanges = async () => {
     if (!customerToEdit) return;
-    // In a real app, this would save to the 'customers' collection in Firestore.
-    // For this prototype, we'll just update the local state.
-    setCustomers(customers.map(u => u.id === customerToEdit.id ? customerToEdit : u));
-    setCustomerToEdit(null);
+    setIsSaving(true);
+    try {
+        const docRef = doc(db, 'customers', customerToEdit.id);
+        await setDoc(docRef, customerToEdit, { merge: true });
+        setCustomers(customers.map(u => u.id === customerToEdit.id ? customerToEdit : u));
+        toast({ title: "Success", description: "Customer updated successfully." });
+        setCustomerToEdit(null);
+    } catch (error) {
+        console.error("Error updating customer: ", error);
+        toast({ variant: 'destructive', title: "Error", description: "Could not update customer." });
+    } finally {
+        setIsSaving(false);
+    }
   };
 
-  const handleDeleteUser = () => {
+  const handleDeleteUser = async () => {
     if (!customerToDelete) return;
-     // In a real app, this would delete from the 'customers' collection in Firestore.
-    setCustomers(customers.filter(u => u.id !== customerToDelete.id));
-    setCustomerToDelete(null);
+    try {
+        await deleteDoc(doc(db, 'customers', customerToDelete.id));
+        setCustomers(customers.filter(u => u.id !== customerToDelete.id));
+        toast({ title: "Success", description: "Customer deleted successfully." });
+    } catch (error) {
+        console.error("Error deleting customer: ", error);
+        toast({ variant: 'destructive', title: "Error", description: "Could not delete customer." });
+    } finally {
+        setCustomerToDelete(null);
+    }
   };
 
   return (
@@ -156,17 +180,18 @@ export default function AdminCustomersPage() {
             <div className="space-y-4 py-4">
               <div className="space-y-2">
                 <Label htmlFor="name">Full Name</Label>
-                <Input id="name" value={customerToEdit.name} onChange={(e) => setCustomerToEdit({...customerToEdit, name: e.target.value})} />
+                <Input id="name" value={customerToEdit.name} onChange={(e) => setCustomerToEdit({...customerToEdit, name: e.target.value})} disabled={isSaving}/>
               </div>
               <div className="space-y-2">
                 <Label htmlFor="email">Email</Label>
-                <Input id="email" type="email" value={customerToEdit.email} onChange={(e) => setCustomerToEdit({...customerToEdit, email: e.target.value})} />
+                <Input id="email" type="email" value={customerToEdit.email} onChange={(e) => setCustomerToEdit({...customerToEdit, email: e.target.value})} disabled={isSaving}/>
               </div>
                <div className="space-y-2">
                 <Label htmlFor="status">Status</Label>
                  <Select
                     value={customerToEdit.status}
                     onValueChange={(value: 'Active' | 'Inactive') => setCustomerToEdit({ ...customerToEdit, status: value })}
+                    disabled={isSaving}
                 >
                     <SelectTrigger id="status">
                         <SelectValue placeholder="Select status" />
@@ -184,8 +209,11 @@ export default function AdminCustomersPage() {
             </div>
           )}
           <DialogFooter>
-            <Button variant="ghost" onClick={() => setCustomerToEdit(null)}>Cancel</Button>
-            <Button onClick={handleSaveChanges}>Save Changes</Button>
+            <Button variant="ghost" onClick={() => setCustomerToEdit(null)} disabled={isSaving}>Cancel</Button>
+            <Button onClick={handleSaveChanges} disabled={isSaving}>
+                {isSaving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                Save Changes
+            </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
