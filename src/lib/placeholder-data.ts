@@ -105,8 +105,9 @@ export type Supplier = {
   email: string;
 };
 
-export const products: Omit<Product, 'id'>[] = [
+export const products: Product[] = [
     {
+      id: 'kospet-tank-t2-smartwatch',
       name: 'KOSPET TANK T2 Smartwatch',
       permalink: 'kospet-tank-t2-smartwatch',
       description: 'The KOSPET TANK T2 is a rugged smartwatch designed for durability and outdoor activities, featuring a military-grade build, long battery life, and comprehensive health tracking.',
@@ -140,6 +141,7 @@ export const products: Omit<Product, 'id'>[] = [
       productType: 'Physical',
     },
     {
+      id: 'haylou-solar-plus-rt3-smartwatch',
       name: 'Haylou Solar Plus RT3 Smartwatch',
       permalink: 'haylou-solar-plus-rt3-smartwatch',
       description: 'A stylish and affordable smartwatch with a crisp AMOLED display, Bluetooth phone calls, and extensive health monitoring features.',
@@ -171,6 +173,7 @@ export const products: Omit<Product, 'id'>[] = [
       productType: 'Physical',
     },
     {
+        id: 'soundpeats-air4-wireless-earbuds',
         name: 'Soundpeats Air4 Wireless Earbuds',
         permalink: 'soundpeats-air4-wireless-earbuds',
         description: 'Experience superior sound with Qualcomm aptX Lossless audio, adaptive hybrid active noise cancellation, and long battery life.',
@@ -202,6 +205,7 @@ export const products: Omit<Product, 'id'>[] = [
         productType: 'Physical'
     },
      {
+      id: 'qcy-t13-anc-true-wireless-earbuds',
       name: 'QCY-T13 ANC True Wireless Earbuds',
       permalink: 'qcy-t13-anc-earbuds',
       description: 'Immerse yourself in your music with Active Noise Cancellation and enjoy crystal clear calls with a 4-mic array.',

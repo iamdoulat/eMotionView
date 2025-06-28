@@ -1,9 +1,9 @@
 
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import Link from "next/link";
-import { products, reviews as initialReviews, type Review } from "@/lib/placeholder-data";
+import { products as allProducts, type Review } from "@/lib/placeholder-data";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
@@ -11,20 +11,43 @@ import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle, DialogD
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
-import { Star, MessageSquare, Trash2, CheckCircle, XCircle, Clock } from "lucide-react";
+import { Star, MessageSquare, Trash2, CheckCircle, XCircle, Clock, Loader2 } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Switch } from "@/components/ui/switch";
 import { useToast } from "@/hooks/use-toast";
+import { collection, getDocs, doc, updateDoc, deleteDoc } from 'firebase/firestore';
+import { db, docToJSON } from '@/lib/firebase';
 
 type FilterStatus = "all" | Review['status'];
 
 export default function ReviewsPage() {
-  const [reviews, setReviews] = useState<Review[]>(initialReviews);
+  const [reviews, setReviews] = useState<Review[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
   const [filter, setFilter] = useState<FilterStatus>('all');
   const [reviewToReply, setReviewToReply] = useState<Review | null>(null);
   const [replyText, setReplyText] = useState("");
   const [reviewToDelete, setReviewToDelete] = useState<Review | null>(null);
   const { toast } = useToast();
+
+  useEffect(() => {
+    const fetchReviews = async () => {
+        setIsLoading(true);
+        try {
+            const reviewsSnapshot = await getDocs(collection(db, 'reviews'));
+            const reviewList = reviewsSnapshot.docs.map(doc => docToJSON(doc) as Review);
+            setReviews(reviewList);
+        } catch (error) {
+            console.error("Failed to fetch reviews:", error);
+            toast({
+                variant: 'destructive',
+                title: 'Error Fetching Reviews',
+                description: 'Could not load review data.',
+            });
+        } finally {
+            setIsLoading(false);
+        }
+    };
+    fetchReviews();
+  }, [toast]);
 
   const filteredReviews = useMemo(() => {
     return reviews
@@ -32,23 +55,44 @@ export default function ReviewsPage() {
       .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
   }, [reviews, filter]);
 
-  const handleStatusChange = (reviewId: string, newStatus: boolean) => {
-    setReviews(reviews.map(r => r.id === reviewId ? { ...r, status: newStatus ? 'approved' : 'pending' } : r));
-    toast({
-      title: "Status Updated",
-      description: `Review status has been changed.`,
-    });
+  const handleStatusChange = async (reviewId: string, newStatus: Review['status']) => {
+    const reviewRef = doc(db, 'reviews', reviewId);
+    try {
+      await updateDoc(reviewRef, { status: newStatus });
+      setReviews(reviews.map(r => r.id === reviewId ? { ...r, status: newStatus } : r));
+      toast({
+        title: "Status Updated",
+        description: `Review has been ${newStatus}.`,
+      });
+    } catch (error) {
+      console.error("Error updating review status:", error);
+      toast({
+        variant: "destructive",
+        title: "Update Failed",
+        description: `Could not update the review status.`,
+      });
+    }
   };
 
-  const handleDeleteReview = () => {
+  const handleDeleteReview = async () => {
     if (!reviewToDelete) return;
-    setReviews(reviews.filter(r => r.id !== reviewToDelete.id));
-    setReviewToDelete(null);
-     toast({
-      title: "Review Deleted",
-      description: "The review has been permanently deleted.",
-      variant: "destructive"
-    });
+    const reviewRef = doc(db, 'reviews', reviewToDelete.id);
+    try {
+      await deleteDoc(reviewRef);
+      setReviews(reviews.filter(r => r.id !== reviewToDelete.id));
+      setReviewToDelete(null);
+      toast({
+        title: "Review Deleted",
+        description: "The review has been permanently deleted.",
+      });
+    } catch (error) {
+      console.error("Error deleting review:", error);
+      toast({
+        variant: "destructive",
+        title: "Delete Failed",
+        description: "Could not delete the review.",
+      });
+    }
   };
   
   const handleOpenReplyDialog = (review: Review) => {
@@ -56,28 +100,29 @@ export default function ReviewsPage() {
     setReplyText(review.reply?.text || "");
   };
   
-  const handleSaveReply = () => {
+  const handleSaveReply = async () => {
     if (!reviewToReply) return;
-    setReviews(reviews.map(r => r.id === reviewToReply.id ? { 
-        ...r, 
-        reply: { text: replyText, date: new Date().toISOString(), author: 'Admin' } 
-    } : r));
-    setReviewToReply(null);
-    setReplyText("");
-    toast({
-      title: "Reply Saved",
-      description: "Your reply has been saved successfully.",
-    });
-  };
-
-  const getStatusIcon = (status: Review['status']) => {
-    switch (status) {
-      case 'approved':
-        return <CheckCircle className="h-4 w-4 text-green-500" />;
-      case 'pending':
-        return <Clock className="h-4 w-4 text-yellow-500" />;
-      case 'rejected':
-        return <XCircle className="h-4 w-4 text-red-500" />;
+    const reviewRef = doc(db, 'reviews', reviewToReply.id);
+    const replyData = { text: replyText, date: new Date().toISOString(), author: 'Admin' };
+    try {
+      await updateDoc(reviewRef, { reply: replyData });
+      setReviews(reviews.map(r => r.id === reviewToReply.id ? { 
+          ...r, 
+          reply: replyData
+      } : r));
+      setReviewToReply(null);
+      setReplyText("");
+      toast({
+        title: "Reply Saved",
+        description: "Your reply has been saved successfully.",
+      });
+    } catch (error) {
+      console.error("Error saving reply:", error);
+      toast({
+        variant: "destructive",
+        title: "Reply Failed",
+        description: "Could not save your reply.",
+      });
     }
   };
 
@@ -99,8 +144,12 @@ export default function ReviewsPage() {
           </Tabs>
 
           <div className="space-y-4">
-            {filteredReviews.length > 0 ? filteredReviews.map(review => {
-              const product = products.find(p => p.id === review.productId);
+            {isLoading ? (
+                <div className="flex justify-center items-center p-12">
+                    <Loader2 className="h-8 w-8 animate-spin" />
+                </div>
+            ) : filteredReviews.length > 0 ? filteredReviews.map(review => {
+              const product = allProducts.find(p => p.id === review.productId);
               return (
                 <Card key={review.id} className="p-4">
                   <div className="flex items-start gap-4">
@@ -109,17 +158,20 @@ export default function ReviewsPage() {
                       <AvatarFallback>{review.author.charAt(0)}</AvatarFallback>
                     </Avatar>
                     <div className="flex-1">
-                      <div className="flex items-center justify-between">
+                      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between">
                         <div>
                           <p className="font-semibold">{review.author}</p>
                           <p className="text-sm text-muted-foreground">{new Date(review.date).toLocaleString()}</p>
                         </div>
-                        <div className="flex items-center gap-2">
-                          <Switch 
-                            checked={review.status === 'approved'} 
-                            onCheckedChange={(checked) => handleStatusChange(review.id, checked)}
-                            aria-label="Approve review"
-                          />
+                        <div className="flex items-center gap-2 mt-2 sm:mt-0">
+                           <div className="flex items-center space-x-2">
+                                <Button size="sm" variant={review.status === 'approved' ? 'default' : 'outline'} onClick={() => handleStatusChange(review.id, 'approved')}>
+                                    <CheckCircle className="mr-2 h-4 w-4" /> Approve
+                                </Button>
+                                <Button size="sm" variant={review.status === 'rejected' ? 'destructive' : 'outline'} onClick={() => handleStatusChange(review.id, 'rejected')}>
+                                    <XCircle className="mr-2 h-4 w-4" /> Reject
+                                </Button>
+                            </div>
                            <Button variant="ghost" size="icon" onClick={() => handleOpenReplyDialog(review)}>
                                 <MessageSquare className="h-4 w-4" />
                             </Button>
@@ -138,7 +190,11 @@ export default function ReviewsPage() {
 
                       <div className="text-sm mt-3">
                         <span className="text-muted-foreground">Product: </span>
-                        <Link href={`/products/${product?.id}`} className="font-medium text-primary hover:underline">{product?.name}</Link>
+                        {product ? (
+                          <Link href={`/products/${product.permalink || product.id}`} className="font-medium text-primary hover:underline">{product?.name}</Link>
+                        ) : (
+                          <span className="font-medium text-muted-foreground">Product not found ({review.productId})</span>
+                        )}
                       </div>
 
                       {review.reply && (
@@ -171,7 +227,7 @@ export default function ReviewsPage() {
             <DialogHeader>
                 <DialogTitle>Reply to Review</DialogTitle>
                 <DialogDescription>
-                    Replying to {reviewToReply?.author}'s review of "{products.find(p=>p.id === reviewToReply?.productId)?.name}".
+                    Replying to {reviewToReply?.author}'s review of "{allProducts.find(p=>p.id === reviewToReply?.productId)?.name}".
                 </DialogDescription>
             </DialogHeader>
             <div className="py-4 space-y-4">
