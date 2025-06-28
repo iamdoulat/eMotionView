@@ -27,6 +27,7 @@ export function ProductCard({ product }: ProductCardProps) {
   const { toast } = useToast();
   const [dialogQuantity, setDialogQuantity] = useState(1);
   const [selectedImage, setSelectedImage] = useState(product.images[0]);
+  const [selectedAttributes, setSelectedAttributes] = useState<Record<string, string>>({});
   const isStockManaged = product.manageStock ?? true;
   const canPurchase = !isStockManaged || product.stock > 0;
   const isWished = isInWishlist(product.id);
@@ -63,11 +64,28 @@ export function ProductCard({ product }: ProductCardProps) {
     isWished ? removeFromWishlist(product.id) : addToWishlist(product);
   };
 
+  const handleAttributeSelect = (attributeName: string, value: string) => {
+    setSelectedAttributes(prev => ({
+        ...prev,
+        [attributeName]: value,
+    }));
+  };
+  
+  const colorMap: Record<string, string> = {
+    black: '#000000',
+    white: '#FFFFFF',
+    silver: '#C0C0C0',
+    blue: '#3b82f6',
+    red: '#ef4444',
+    green: '#22c55e',
+  };
+
   return (
     <Dialog onOpenChange={(open) => {
         if (open) {
             setDialogQuantity(1);
             setSelectedImage(product.images[0]);
+            setSelectedAttributes({});
         }
     }}>
       <Card className="group overflow-hidden rounded-lg shadow-sm hover:shadow-lg transition-shadow duration-300 flex flex-col h-full bg-background">
@@ -116,7 +134,7 @@ export function ProductCard({ product }: ProductCardProps) {
               <div className="flex items-center justify-between mt-1">
                   <div className="flex items-center">
                       {[...Array(5)].map((_, i) => (
-                      <Star key={i} className={`h-4 w-4 ${i < Math.round(product.rating) ? 'text-yellow-400' : 'text-gray-300'}`} fill={i < Math.round(product.rating) ? 'currentColor' : 'transparent'} />
+                      <Star key={i} className={`h-4 w-4 ${i < Math.round(product.rating || 0) ? 'text-yellow-400' : 'text-gray-300'}`} fill={i < Math.round(product.rating || 0) ? 'currentColor' : 'transparent'} />
                       ))}
                   </div>
                   <Button size="icon" variant="ghost" className="w-8 h-8 text-muted-foreground hover:text-primary rounded-full hover:bg-primary/10" onClick={handleQuickAddToCart} disabled={!canPurchase}>
@@ -128,7 +146,7 @@ export function ProductCard({ product }: ProductCardProps) {
       </Card>
 
       <DialogContent className="sm:max-w-4xl p-8">
-        <DialogHeader className="p-0 mb-2 sm:text-left text-center">
+        <DialogHeader>
           <DialogTitle className="text-2xl font-bold font-headline leading-snug tracking-tight">{product.name}</DialogTitle>
         </DialogHeader>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8 items-start">
@@ -167,11 +185,11 @@ export function ProductCard({ product }: ProductCardProps) {
               {[...Array(5)].map((_, i) => (
                 <Star
                   key={i}
-                  className={`h-5 w-5 ${i < Math.round(product.rating) ? 'text-yellow-400' : 'text-gray-300'}`}
-                  fill={i < Math.round(product.rating) ? 'currentColor' : 'transparent'}
+                  className={`h-5 w-5 ${i < Math.round(product.rating || 0) ? 'text-yellow-400' : 'text-gray-300'}`}
+                  fill={i < Math.round(product.rating || 0) ? 'currentColor' : 'transparent'}
                 />
               ))}
-              <a href={`/products/${product.permalink || product.id}#reviews`} className="ml-2 text-sm text-muted-foreground hover:text-primary">({product.reviewCount} reviews)</a>
+              <a href={`/products/${product.permalink || product.id}#reviews`} className="ml-2 text-sm text-muted-foreground hover:text-primary">({product.reviewCount || 0} reviews)</a>
             </div>
 
             <p className="text-3xl font-bold text-primary">৳{product.price.toLocaleString()}</p>
@@ -191,14 +209,54 @@ export function ProductCard({ product }: ProductCardProps) {
                 )}
             </ul>
 
-            <div className="mb-6">
-              <p className="text-sm font-medium mb-2">Color:</p>
-              <div className="flex gap-2">
-                  <Button variant="outline" size="icon" className="h-8 w-8 rounded-full border-2 border-primary ring-1 ring-primary ring-offset-2">
-                      <div className="h-5 w-5 rounded-full bg-black" />
-                  </Button>
-              </div>
-            </div>
+            {product.productAttributes && product.productAttributes.length > 0 && (
+                <div className="space-y-4 mb-6">
+                    {product.productAttributes.map((attr) => {
+                        const isColorAttr = attr.name.toLowerCase() === 'color';
+                        return (
+                            <div key={attr.name}>
+                                <Label className="text-sm font-medium mb-2 block">{attr.name}:</Label>
+                                <div className="flex flex-wrap gap-2">
+                                    {attr.values.map((value) => {
+                                        const isSelected = selectedAttributes[attr.name] === value;
+                                        if (isColorAttr) {
+                                            const bgColor = colorMap[value.toLowerCase()] || '#CCCCCC';
+                                            return (
+                                                <button
+                                                    key={value}
+                                                    type="button"
+                                                    title={value}
+                                                    onClick={() => handleAttributeSelect(attr.name, value)}
+                                                    className={cn(
+                                                        "h-8 w-8 rounded-full border-2 p-0.5 flex items-center justify-center",
+                                                        isSelected ? 'border-primary ring-2 ring-primary ring-offset-2' : 'border-gray-200'
+                                                    )}
+                                                >
+                                                    <span
+                                                        className="h-full w-full rounded-full block"
+                                                        style={{ backgroundColor: bgColor }}
+                                                    />
+                                                </button>
+                                            );
+                                        }
+                                        return (
+                                            <Button
+                                                key={value}
+                                                type="button"
+                                                variant={isSelected ? 'default' : 'outline'}
+                                                onClick={() => handleAttributeSelect(attr.name, value)}
+                                                size="sm"
+                                            >
+                                                {value}
+                                            </Button>
+                                        );
+                                    })}
+                                </div>
+                            </div>
+                        );
+                    })}
+                </div>
+            )}
 
              <div className="mb-6">
                 <Label className="text-sm font-medium mb-2 block">Quantity:</Label>
