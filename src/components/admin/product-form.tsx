@@ -36,6 +36,7 @@ const productSchema = z.object({
     manageStock: z.boolean().default(true),
     stock: z.coerce.number().min(0, "Stock must be a positive number"),
     supplier: z.string().min(1, "Supplier is required"),
+    warranty: z.string().optional(),
     points: z.coerce.number().optional(),
     features: z.array(z.object({ value: z.string().min(1, "Feature cannot be empty.") })),
     specifications: z.array(z.object({
@@ -69,6 +70,7 @@ export function ProductForm({ product, onSave, onCancel, isSaving }: ProductForm
             permalink: product.permalink || '',
             productType: product.productType || 'Physical',
             manageStock: product.manageStock ?? (product.productType === 'Physical'),
+            warranty: product.warranty || '',
             points: product.points || undefined,
             features: product.features.map(f => ({ value: f })),
             specifications: Object.entries(product.specifications).map(([key, value]) => ({ key, value })),
@@ -87,6 +89,7 @@ export function ProductForm({ product, onSave, onCancel, isSaving }: ProductForm
             manageStock: true,
             stock: 0,
             supplier: "",
+            warranty: "",
             points: undefined,
             features: [{ value: "" }],
             specifications: [{ key: "", value: "" }],
@@ -224,6 +227,7 @@ export function ProductForm({ product, onSave, onCancel, isSaving }: ProductForm
             manageStock: data.manageStock,
             stock: data.stock,
             supplier: data.supplier,
+            warranty: data.warranty,
             points: data.points,
             productType: data.productType,
             downloadUrl: data.downloadUrl,
@@ -507,6 +511,12 @@ export function ProductForm({ product, onSave, onCancel, isSaving }: ProductForm
                             <Button type="button" variant="outline" size="sm" onClick={() => appendFeature({ value: "" })}>Add Feature</Button>
                         </div>
                         
+                        <div className="space-y-2">
+                            <Label htmlFor="warranty">Warranty Information</Label>
+                            <Input id="warranty" {...register("warranty")} placeholder="e.g. 1 Year Brand Warranty" />
+                            {errors.warranty && <p className="text-destructive text-sm">{errors.warranty.message}</p>}
+                        </div>
+
                         <div className="space-y-2">
                             <Label>Product Attributes</Label>
                             <div className="space-y-4">

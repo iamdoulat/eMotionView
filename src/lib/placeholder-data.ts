@@ -18,6 +18,7 @@ export type Product = {
   stock: number;
   manageStock?: boolean;
   supplier: string;
+  warranty?: string;
   points?: number;
   productType: 'Physical' | 'Digital';
   downloadUrl?: string;
@@ -133,6 +134,7 @@ export const products: Omit<Product, 'id'>[] = [
       sku: 'KSPT-TNK-T2',
       stock: 50,
       supplier: 'KOSPET Direct',
+      warranty: '1 Year Brand Warranty',
       points: 130,
       productType: 'Physical',
     },
@@ -163,6 +165,7 @@ export const products: Omit<Product, 'id'>[] = [
       sku: 'HAY-SOL-RT3',
       stock: 120,
       supplier: 'Haylou Official',
+      warranty: '1 Year Brand Warranty',
       points: 55,
       productType: 'Physical',
     },
@@ -193,6 +196,7 @@ export const products: Omit<Product, 'id'>[] = [
         sku: 'SP-AIR4-BLK',
         stock: 80,
         supplier: 'Soundpeats Global',
+        warranty: '6 Months Warranty',
         points: 80,
         productType: 'Physical'
     },
@@ -225,6 +229,7 @@ export const products: Omit<Product, 'id'>[] = [
       sku: 'QCY-T13-ANC-WHT',
       stock: 250,
       supplier: 'QCY Direct',
+      warranty: '6 Months Warranty',
       points: 35,
       productType: 'Physical'
     },

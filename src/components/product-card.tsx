@@ -26,6 +26,7 @@ export function ProductCard({ product }: ProductCardProps) {
   const { addToWishlist, removeFromWishlist, isInWishlist } = useWishlist();
   const { toast } = useToast();
   const [dialogQuantity, setDialogQuantity] = useState(1);
+  const [selectedImage, setSelectedImage] = useState(product.images[0]);
   const isStockManaged = product.manageStock ?? true;
   const canPurchase = !isStockManaged || product.stock > 0;
   const isWished = isInWishlist(product.id);
@@ -67,7 +68,12 @@ export function ProductCard({ product }: ProductCardProps) {
   }
 
   return (
-    <Dialog onOpenChange={() => setDialogQuantity(1)}>
+    <Dialog onOpenChange={(open) => {
+        if (open) {
+            setDialogQuantity(1);
+            setSelectedImage(product.images[0]);
+        }
+    }}>
       <Card className="group overflow-hidden rounded-lg shadow-sm hover:shadow-lg transition-shadow duration-300 flex flex-col h-full bg-background">
         <CardHeader className="p-0 relative border-b">
           <DialogTrigger asChild>
@@ -127,15 +133,34 @@ export function ProductCard({ product }: ProductCardProps) {
 
       <DialogContent className="sm:max-w-4xl p-8">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8 items-start">
-          <div className="flex items-center justify-center bg-secondary/30 rounded-lg p-4">
-            <Image
-              src={product.images[0]}
-              alt={product.name}
-              width={400}
-              height={400}
-              className="w-full max-w-sm h-auto object-contain rounded-lg"
-              data-ai-hint={`${product.category} product`}
-            />
+          <div className="flex flex-col items-center">
+            <div className="w-full max-w-md aspect-square relative">
+                <Image
+                    src={selectedImage}
+                    alt={product.name}
+                    fill
+                    className="w-full h-full object-contain rounded-lg"
+                    data-ai-hint={`${product.category} product`}
+                />
+            </div>
+            <div className="flex gap-2 mt-4">
+                {product.images.map((img, index) => (
+                    <button
+                        key={index}
+                        onClick={() => setSelectedImage(img)}
+                        className={`w-16 h-16 rounded-md border-2 p-1 ${selectedImage === img ? 'border-primary' : 'border-transparent'}`}
+                    >
+                        <Image
+                            src={img}
+                            alt={`${product.name} thumbnail ${index + 1}`}
+                            width={60}
+                            height={60}
+                            className="w-full h-full object-contain"
+                            data-ai-hint={`${product.category} product`}
+                        />
+                    </button>
+                ))}
+            </div>
           </div>
           <div className="flex flex-col h-full">
             <h2 className="text-2xl font-bold font-headline mb-2">{product.name}</h2>
@@ -159,10 +184,12 @@ export function ProductCard({ product }: ProductCardProps) {
                         <span>{feature}</span>
                     </li>
                 ))}
-                <li className="flex items-center gap-2">
-                    <CheckCircle className="h-4 w-4 text-primary" />
-                    <span>3 Months Brand Warranty</span>
-                </li>
+                 {product.warranty && (
+                    <li className="flex items-center gap-2">
+                        <CheckCircle className="h-4 w-4 text-primary" />
+                        <span>{product.warranty}</span>
+                    </li>
+                )}
             </ul>
 
             <div className="mb-6">

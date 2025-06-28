@@ -14,6 +14,7 @@ import { Star, Heart, ShieldCheck, Plus, Minus } from 'lucide-react';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { cn } from '@/lib/utils';
+import Link from 'next/link';
 
 export function ProductDetailsClient({ product }: { product: Product }) {
   const { toast } = useToast();
@@ -58,6 +59,16 @@ export function ProductDetailsClient({ product }: { product: Product }) {
         ...prev,
         [attributeName]: value,
     }));
+  };
+  
+  const colorMap: Record<string, string> = {
+    black: '#000000',
+    white: '#FFFFFF',
+    silver: '#C0C0C0',
+    blue: '#3b82f6',
+    red: '#ef4444',
+    green: '#22c55e',
+    // add more if needed
   };
 
   return (
@@ -104,21 +115,35 @@ export function ProductDetailsClient({ product }: { product: Product }) {
               <span>{feature}</span>
             </li>
           ))}
-           <li className="flex items-center gap-2 font-medium">
+           {product.warranty && (
+             <li className="flex items-center gap-2 font-medium">
               <ShieldCheck className="h-4 w-4 text-primary" />
-              <span>1 Year Brand Warranty</span>
+              <span>{product.warranty}</span>
             </li>
+           )}
         </ul>
 
-        <div className="mt-4 flex items-baseline gap-2">
-          <p className="text-3xl font-bold text-primary">৳{product.price.toFixed(2)}</p>
-          {product.originalPrice && (
-             <p className="text-xl text-muted-foreground line-through">৳{product.originalPrice.toFixed(2)}</p>
-          )}
-          {product.discountPercentage && (
-            <Badge variant="destructive">{product.discountPercentage}% OFF</Badge>
-          )}
+        <div className="mt-4 flex flex-wrap items-center gap-x-4 gap-y-2">
+            <p className="text-3xl font-bold text-primary">৳{product.price.toFixed(2)}</p>
+            {product.originalPrice && (
+                <p className="text-xl text-muted-foreground line-through">৳{product.originalPrice.toFixed(2)}</p>
+            )}
+            {product.discountPercentage && (
+                <Badge variant="destructive">{product.discountPercentage}% OFF</Badge>
+            )}
+            <div className="flex items-center gap-1">
+                {[...Array(5)].map((_, i) => (
+                    <Star key={i} className={`h-5 w-5 ${i < Math.round(product.rating) ? 'text-yellow-400 fill-yellow-400' : 'text-gray-300'}`} />
+                ))}
+            </div>
+            <button 
+                onClick={handleWishlistClick}
+                aria-label={isWished ? 'Remove from wishlist' : 'Add to wishlist'}
+            >
+                <Heart className={cn("h-6 w-6 transition-colors text-muted-foreground hover:text-destructive", isWished && "fill-destructive text-destructive")} />
+            </button>
         </div>
+
 
         <div className="mt-4">
             <Badge variant={canPurchase ? 'default' : 'destructive'}>
@@ -126,47 +151,51 @@ export function ProductDetailsClient({ product }: { product: Product }) {
             </Badge>
         </div>
 
-
-        <div className="mt-2 flex items-center gap-4">
-          <div className="flex items-center">
-            {[...Array(5)].map((_, i) => (
-              <Star
-                key={i}
-                className={`h-5 w-5 ${i < Math.round(product.rating) ? 'text-yellow-400 fill-yellow-400' : 'text-gray-300'}`}
-              />
-            ))}
-          </div>
-          <button 
-            className="text-muted-foreground hover:text-primary"
-            onClick={handleWishlistClick}
-            aria-label={isWished ? 'Remove from wishlist' : 'Add to wishlist'}
-          >
-            <Heart className={cn("h-6 w-6 transition-colors", isWished && "fill-destructive text-destructive")} />
-          </button>
-        </div>
-
         {product.productAttributes && product.productAttributes.length > 0 && (
             <div className="mt-6 space-y-4">
-                {product.productAttributes.map((attr) => (
-                    <div key={attr.name}>
-                        <Label className="text-sm font-medium mb-2 block">{attr.name}:</Label>
-                        <div className="flex flex-wrap gap-2">
-                            {attr.values.map((value) => {
-                                const isSelected = selectedAttributes[attr.name] === value;
-                                return (
-                                    <Button
-                                        key={value}
-                                        variant={isSelected ? 'default' : 'outline'}
-                                        onClick={() => handleAttributeSelect(attr.name, value)}
-                                        size="sm"
-                                    >
-                                        {value}
-                                    </Button>
-                                );
-                            })}
+                {product.productAttributes.map((attr) => {
+                    const isColorAttr = attr.name.toLowerCase() === 'color';
+                    return (
+                        <div key={attr.name}>
+                            <Label className="text-sm font-medium mb-2 block">{attr.name}:</Label>
+                             <div className="flex flex-wrap gap-2">
+                                {attr.values.map((value) => {
+                                    const isSelected = selectedAttributes[attr.name] === value;
+                                    if (isColorAttr) {
+                                        const bgColor = colorMap[value.toLowerCase()] || '#CCCCCC';
+                                        return (
+                                            <button
+                                                key={value}
+                                                type="button"
+                                                title={value}
+                                                onClick={() => handleAttributeSelect(attr.name, value)}
+                                                className={cn(
+                                                    "h-8 w-8 rounded-full border-2 p-0.5 flex items-center justify-center",
+                                                    isSelected ? 'border-primary ring-2 ring-primary ring-offset-2' : 'border-gray-200'
+                                                )}
+                                            >
+                                                <span
+                                                    className="h-full w-full rounded-full block"
+                                                    style={{ backgroundColor: bgColor }}
+                                                />
+                                            </button>
+                                        );
+                                    }
+                                    return (
+                                        <Button
+                                            key={value}
+                                            variant={isSelected ? 'default' : 'outline'}
+                                            onClick={() => handleAttributeSelect(attr.name, value)}
+                                            size="sm"
+                                        >
+                                            {value}
+                                        </Button>
+                                    );
+                                })}
+                            </div>
                         </div>
-                    </div>
-                ))}
+                    );
+                })}
             </div>
         )}
 
