@@ -12,6 +12,9 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Separator } from '@/components/ui/separator';
 import { useToast } from '@/hooks/use-toast';
+import { useAuth } from '@/hooks/use-auth';
+import { collection, addDoc } from 'firebase/firestore';
+import { db } from '@/lib/firebase';
 
 interface ReviewsProps {
   productId: string;
@@ -24,27 +27,64 @@ export function Reviews({ reviews, productId }: ReviewsProps) {
   const [hoverRating, setHoverRating] = useState(0);
   const [title, setTitle] = useState('');
   const [comment, setComment] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const { toast } = useToast();
+  const { user, isLoading } = useAuth();
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    // In a real app, you would submit this data to your backend
-    console.log({
-      productId,
-      rating,
-      title,
-      comment,
-      status: 'pending' // New reviews should be pending
-    });
+    if (!user) {
+        toast({
+            variant: "destructive",
+            title: "Not Logged In",
+            description: "You must be logged in to submit a review."
+        });
+        return;
+    }
 
-    // Reset form and show a confirmation toast
-    setRating(0);
-    setTitle('');
-    setComment('');
-    toast({
-        title: "Review Submitted",
-        description: "Thank you! Your review is pending approval."
-    })
+    if (rating === 0 || !title || !comment) {
+        toast({
+            variant: "destructive",
+            title: "Missing Information",
+            description: "Please provide a rating, title, and comment."
+        });
+        return;
+    }
+
+    setIsSubmitting(true);
+    
+    try {
+      const newReview = {
+        productId,
+        userId: user.uid,
+        author: user.displayName || 'Anonymous',
+        avatar: user.photoURL || `https://placehold.co/100x100.png?text=${user.displayName?.charAt(0) || 'A'}`,
+        rating,
+        title,
+        comment,
+        date: new Date().toISOString(),
+        status: 'pending'
+      };
+
+      await addDoc(collection(db, 'reviews'), newReview);
+      
+      setRating(0);
+      setTitle('');
+      setComment('');
+      toast({
+          title: "Review Submitted",
+          description: "Thank you! Your review is pending approval."
+      });
+    } catch (error) {
+        console.error("Error submitting review:", error);
+        toast({
+            variant: "destructive",
+            title: "Submission Failed",
+            description: "Could not submit your review. Please try again."
+        });
+    } finally {
+        setIsSubmitting(false);
+    }
   };
   
   const approvedReviews = reviews.filter(r => r.status === 'approved');
@@ -97,7 +137,9 @@ export function Reviews({ reviews, productId }: ReviewsProps) {
             </div>
           </CardContent>
           <CardFooter>
-              <Button type="submit">Submit Review</Button>
+              <Button type="submit" disabled={isLoading || isSubmitting}>
+                {isSubmitting ? 'Submitting...' : 'Submit Review'}
+              </Button>
           </CardFooter>
         </form>
       </Card>

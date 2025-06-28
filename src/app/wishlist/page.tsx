@@ -12,20 +12,16 @@ import { useCart } from '@/hooks/use-cart';
 import { useToast } from '@/hooks/use-toast';
 
 export default function WishlistPage() {
-  const { wishlistItems, removeFromWishlist, isInitialized } = useWishlist();
+  const { wishlistItems, removeFromWishlist, isInitialized, isLoading } = useWishlist();
   const { addToCart } = useCart();
   const { toast } = useToast();
 
   const handleMoveToCart = (product: Product) => {
-    addToCart(product.id, 1);
+    addToCart(product, 1);
     removeFromWishlist(product.id);
-    toast({
-      title: "Moved to Cart",
-      description: `${product.name} has been moved to your cart.`,
-    });
   };
 
-  if (!isInitialized) {
+  if (!isInitialized || isLoading) {
     return (
         <div className="container mx-auto px-4 py-8 flex justify-center items-center min-h-[calc(100vh-16rem)]">
             <Loader2 className="h-8 w-8 animate-spin text-primary" />
@@ -48,7 +44,7 @@ export default function WishlistPage() {
           {wishlistItems.map((product) => (
             <Card key={product.id} className="group relative overflow-hidden">
               <CardHeader className="p-0">
-                <Link href={`/products/${product.id}`}>
+                <Link href={`/products/${product.permalink || product.id}`}>
                   <Image
                     src={product.images[0]}
                     alt={product.name}
@@ -65,7 +61,7 @@ export default function WishlistPage() {
               </CardHeader>
               <CardContent className="p-4">
                 <CardTitle className="text-base font-headline mb-2 h-10 line-clamp-2">
-                  <Link href={`/products/${product.id}`} className="hover:text-primary transition-colors">{product.name}</Link>
+                  <Link href={`/products/${product.permalink || product.id}`} className="hover:text-primary transition-colors">{product.name}</Link>
                 </CardTitle>
                 <p className="text-lg font-bold text-primary">৳{product.price.toFixed(2)}</p>
               </CardContent>
