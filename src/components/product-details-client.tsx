@@ -131,10 +131,15 @@ export function ProductDetailsClient({ product }: { product: Product }) {
             {product.discountPercentage && (
                 <Badge variant="destructive">{product.discountPercentage}% OFF</Badge>
             )}
-            <div className="flex items-center gap-1">
+            <div className="flex items-center gap-2">
+              <div className="flex items-center gap-1">
                 {[...Array(5)].map((_, i) => (
-                    <Star key={i} className={`h-5 w-5 ${i < Math.round(product.rating) ? 'text-yellow-400' : 'text-gray-300'}`} fill={i < Math.round(product.rating) ? 'currentColor' : 'transparent'} />
+                  <Star key={i} className={`h-5 w-5 ${i < Math.round(product.rating) ? 'text-yellow-400' : 'text-gray-300'}`} fill={i < Math.round(product.rating) ? 'currentColor' : 'transparent'} />
                 ))}
+              </div>
+              <a href="#reviews" className="text-sm text-muted-foreground hover:text-primary">
+                ({product.reviewCount || 0} reviews)
+              </a>
             </div>
             <button 
                 onClick={handleWishlistClick}

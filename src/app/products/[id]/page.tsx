@@ -117,7 +117,7 @@ export default async function ProductDetailPage({ params }: { params: { id: stri
                 </CardContent>
               </Card>
             </TabsContent>
-            <TabsContent value="reviews" className="mt-6">
+            <TabsContent value="reviews" id="reviews" className="mt-6">
               <Reviews productId={product.id} reviews={productReviews} averageRating={product.rating} />
             </TabsContent>
             <TabsContent value="questions" className="mt-6">
