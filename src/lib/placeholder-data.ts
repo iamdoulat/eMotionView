@@ -60,6 +60,7 @@ export type Order = {
     productType: 'Physical' | 'Digital';
     downloadUrl?: string;
     digitalProductNote?: string;
+    permalink?: string;
   }[];
 };
 

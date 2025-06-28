@@ -193,7 +193,7 @@ export default function OrderDetailPage() {
                       <Image src={item.image} alt={item.name} width={64} height={64} className="rounded-md" data-ai-hint="product" />
                       <div>
                         {item.productType === 'Physical' ? (
-                            <Link href={`/products/${item.productId}`} className="font-medium hover:text-primary">{item.name}</Link>
+                            <Link href={`/products/${item.permalink || item.productId}`} className="font-medium hover:text-primary">{item.name}</Link>
                         ) : (
                             <span className="font-medium">{item.name}</span>
                         )}

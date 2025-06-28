@@ -71,7 +71,7 @@ export function ProductCard({ product }: ProductCardProps) {
       <Card className="group overflow-hidden rounded-lg shadow-sm hover:shadow-lg transition-shadow duration-300 flex flex-col h-full bg-background">
         <CardHeader className="p-0 relative border-b">
           <DialogTrigger asChild>
-            <Link href={`/products/${product.id}`} className="block aspect-square bg-secondary/30 cursor-pointer">
+            <Link href={`/products/${product.permalink || product.id}`} className="block aspect-square bg-secondary/30 cursor-pointer">
               <Image
                 src={product.images[0]}
                 alt={product.name}
@@ -99,7 +99,7 @@ export function ProductCard({ product }: ProductCardProps) {
         </CardHeader>
         <CardContent className="p-3 flex-grow flex flex-col">
           <h3 className="text-sm font-medium h-10 line-clamp-2">
-            <Link href={`/products/${product.id}`} className="hover:text-primary">
+            <Link href={`/products/${product.permalink || product.id}`} className="hover:text-primary">
               {product.name}
             </Link>
           </h3>
@@ -147,7 +147,7 @@ export function ProductCard({ product }: ProductCardProps) {
                   className={`h-5 w-5 ${i < Math.round(product.rating) ? 'text-yellow-400 fill-yellow-400' : 'text-gray-300'}`}
                 />
               ))}
-              <a href={`/products/${product.id}#reviews`} className="ml-2 text-sm text-muted-foreground hover:text-primary">({product.reviewCount} reviews)</a>
+              <a href={`/products/${product.permalink || product.id}#reviews`} className="ml-2 text-sm text-muted-foreground hover:text-primary">({product.reviewCount} reviews)</a>
             </div>
 
             <p className="text-3xl font-bold text-primary">৳{product.price.toLocaleString()}</p>
@@ -208,7 +208,7 @@ export function ProductCard({ product }: ProductCardProps) {
             <div className="flex flex-col sm:flex-row gap-4 mt-auto">
               <Button size="lg" className="flex-1" onClick={handleDialogAddToCart} disabled={!canPurchase}>Add to cart</Button>
               <Button size="lg" className="flex-1 bg-accent text-accent-foreground hover:bg-accent/90" asChild>
-                <Link href={`/products/${product.id}`}>View Details</Link>
+                <Link href={`/products/${product.permalink || product.id}`}>View Details</Link>
               </Button>
             </div>
           </div>

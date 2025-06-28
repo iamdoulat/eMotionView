@@ -6,23 +6,27 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Table, TableBody, TableCell, TableRow } from "@/components/ui/table"
 import Link from 'next/link';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { doc, getDoc, collection, query, where, getDocs } from 'firebase/firestore';
+import { collection, query, where, getDocs, limit } from 'firebase/firestore';
 import { db, docToJSON } from '@/lib/firebase';
 import type { Product, Review } from '@/lib/placeholder-data';
 import { Reviews } from '@/components/reviews';
 import { ProductDetailsClient } from '@/components/product-details-client';
 
-export default async function ProductDetailPage({ params }: { params: { id: string } }) {
-  const productRef = doc(db, 'products', params.id);
-  const productSnap = await getDoc(productRef);
+export default async function ProductDetailPage({ params }: { params: { id: string } }) { // The `id` param is now the permalink
+  const permalink = params.id;
+  const productsCollection = collection(db, 'products');
+  const q = query(productsCollection, where("permalink", "==", permalink), limit(1));
+  const productQuerySnapshot = await getDocs(q);
 
-  if (!productSnap.exists()) {
+  if (productQuerySnapshot.empty) {
     notFound();
   }
 
+  const productSnap = productQuerySnapshot.docs[0];
   const product = docToJSON(productSnap) as Product;
 
-  const reviewsQuery = query(collection(db, 'reviews'), where('productId', '==', params.id));
+  // The product ID is still needed for fetching reviews.
+  const reviewsQuery = query(collection(db, 'reviews'), where('productId', '==', product.id));
   const reviewsSnapshot = await getDocs(reviewsQuery);
   const productReviews = reviewsSnapshot.docs.map(docToJSON) as Review[];
 
@@ -34,7 +38,7 @@ export default async function ProductDetailPage({ params }: { params: { id: stri
             { label: 'Home', href: '/' },
             { label: 'Products', href: '/products' },
             { label: product.category, href: `/products?category=${product.category}` },
-            { label: product.name, href: `/products/${product.id}` },
+            { label: product.name, href: `/products/${product.permalink}` },
           ]}
         />
         

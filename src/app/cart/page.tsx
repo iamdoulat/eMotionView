@@ -70,7 +70,7 @@ export default function CartPage() {
                         />
                       </TableCell>
                       <TableCell className="font-medium">
-                        <Link href={`/products/${item.id}`} className="hover:text-primary">{item.name}</Link>
+                        <Link href={`/products/${item.permalink || item.id}`} className="hover:text-primary">{item.name}</Link>
                         <p className="text-sm text-muted-foreground">{item.brand}</p>
                       </TableCell>
                       <TableCell className="text-center">

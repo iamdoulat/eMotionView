@@ -73,6 +73,7 @@ export default function CheckoutPage() {
             productType: item.productType,
             downloadUrl: item.downloadUrl,
             digitalProductNote: item.digitalProductNote,
+            permalink: item.permalink,
         })),
     };
 

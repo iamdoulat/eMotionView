@@ -196,7 +196,7 @@ export default function AdminProductsPage() {
                         <DropdownMenuContent align="end">
                           <DropdownMenuLabel>Actions</DropdownMenuLabel>
                           <DropdownMenuItem asChild>
-                            <Link href={`/products/${product.id}`} target="_blank">
+                            <Link href={`/products/${product.permalink || product.id}`} target="_blank">
                               <View className="mr-2 h-4 w-4" />
                               View
                             </Link>
