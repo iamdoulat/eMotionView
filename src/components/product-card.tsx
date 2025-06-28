@@ -8,7 +8,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Star, ShoppingCart, CheckCircle, Plus, Minus, Heart } from 'lucide-react';
-import { Dialog, DialogContent, DialogTrigger } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { useCart } from '@/hooks/use-cart';
 import { useToast } from '@/hooks/use-toast';
 import { useState } from 'react';
@@ -159,7 +159,9 @@ export function ProductCard({ product }: ProductCardProps) {
             </div>
           </div>
           <div className="flex flex-col h-full">
-            <h2 className="text-2xl font-bold font-headline mb-2">{product.name}</h2>
+            <DialogHeader className="p-0 mb-2 sm:text-left text-center">
+                <DialogTitle className="text-2xl font-bold font-headline leading-snug tracking-tight">{product.name}</DialogTitle>
+            </DialogHeader>
             
             <div className="flex items-center mb-4">
               {[...Array(5)].map((_, i) => (
@@ -240,3 +242,4 @@ export function ProductCard({ product }: ProductCardProps) {
     </Dialog>
   );
 }
+
