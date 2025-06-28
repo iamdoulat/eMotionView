@@ -102,42 +102,12 @@ export type Supplier = {
   email: string;
 };
 
-export const categories: Category[] = [
-  { id: 'cat-1', name: 'Wearables', description: 'Smartwatches and other wearable technology.' },
-  { id: 'cat-2', name: 'Audio', description: 'Headphones, earbuds, and speakers.' },
-  { id: 'cat-3', name: 'Smart Home', description: 'Connected devices for your home.' },
-  { id: 'cat-4', name: 'Accessories', description: 'Chargers, cables, power banks, and more.' },
-  { id: 'cat-5', name: 'Smartphones', description: 'The latest mobile phones.' },
-  { id: 'cat-6', name: 'Laptops', description: 'Portable computers for work and play.' },
-  { id: 'cat-7', name: 'Drones', description: 'Flying cameras and recreational drones.' },
-  { id: 'cat-8', name: 'Digital Products', description: 'Downloadable products and services.' },
-];
-
-export const brands: Brand[] = [
-  { id: 'brand-1', name: 'Haylou', logo: 'https://placehold.co/100x40.png' },
-  { id: 'brand-2', name: 'Mibro', logo: 'https://placehold.co/100x40.png' },
-  { id: 'brand-3', name: 'Amazfit', logo: 'https://placehold.co/100x40.png' },
-  { id: 'brand-4', name: 'KOSPET', logo: 'https://placehold.co/100x40.png' },
-  { id: 'brand-5', name: 'EnerMax', logo: 'https://placehold.co/100x40.png' },
-  { id: 'brand-6', name: 'Guardian Tech', logo: 'https://placehold.co/100x40.png' },
-  { id: 'brand-7', name: 'Studio Creations', logo: 'https://placehold.co/100x40.png' },
-];
-
-export const attributes: Attribute[] = [
-  { id: 'attr-1', name: 'Color', values: ['Black', 'White', 'Silver', 'Gold', 'Blue', 'Red'] },
-  { id: 'attr-2', name: 'Storage', values: ['128GB', '256GB', '512GB', '1TB'] },
-  { id: 'attr-3', name: 'Size', values: ['Small', 'Medium', 'Large'] },
-];
-
-export const suppliers: Supplier[] = [
-  { id: 'sup-1', name: 'Haylou Direct', contactPerson: 'Alex Green', email: 'alex@hayloudirect.com' },
-  { id: 'sup-2', name: 'Mibro Inc.', contactPerson: 'Brenda Smith', email: 'brenda@mibro.com' },
-  { id: 'sup-3', name: 'Global Imports', contactPerson: 'Charles Davis', email: 'sales@globalimports.net' },
-  { id: 'sup-4', name: 'Studio Creations', contactPerson: 'Digital Team', email: 'digital@studiocreations.com' },
-];
-
-
+// This data is now fetched from Firestore. These arrays are kept for type reference if needed.
 export const products: Product[] = [];
 export const reviews: Review[] = [];
 export const orders: Order[] = [];
 export const users: User[] = [];
+export const categories: Category[] = [];
+export const brands: Brand[] = [];
+export const attributes: Attribute[] = [];
+export const suppliers: Supplier[] = [];

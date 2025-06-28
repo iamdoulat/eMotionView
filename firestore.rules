@@ -1,48 +1,51 @@
 
 rules_version = '2';
+
 service cloud.firestore {
   match /databases/{database}/documents {
-    
-    // Helper function to check if the authenticated user has an 'Admin' role.
-    function isRequestingUserAdmin() {
-      // Check if the user is authenticated and if their user document exists and has the role 'Admin'.
-      return request.auth != null && 
-             exists(/databases/$(database)/documents/users/$(request.auth.uid)) &&
-             get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'Admin';
+
+    function isUserAuthenticated() {
+      return request.auth != null;
     }
 
-    // Products can be read by anyone. Only Admins can write.
+    // Check if a user is an admin by seeing if a document with their UID exists in the 'admins' collection.
+    // This is a secure and non-recursive way to check for roles.
+    function isUserAdmin() {
+      return isUserAuthenticated() && exists(/databases/$(database)/documents/admins/$(request.auth.uid));
+    }
+
+    // Products: Publicly readable/listable, only admins can write
     match /products/{productId} {
-      allow get, list: if true;
-      allow write: if isRequestingUserAdmin();
+      allow list, read: if true;
+      allow write: if isUserAdmin();
     }
 
-    // Reviews can be read by anyone. Authenticated users can create them. Admins can moderate.
+    // Reviews: Publicly readable/listable, only authenticated users can create, only admins or owners can update/delete
     match /reviews/{reviewId} {
-      allow get, list: if true;
-      allow create: if request.auth != null;
-      allow update, delete: if isRequestingUserAdmin();
+      allow list, read: if true;
+      allow create: if isUserAuthenticated() && request.resource.data.userId == request.auth.uid;
+      allow update, delete: if isUserAdmin() || (isUserAuthenticated() && resource.data.userId == request.auth.uid);
     }
 
-    // Users collection rules
+    // Users:
     match /users/{userId} {
-      // Authenticated users can create their own user document upon sign-up.
-      allow create: if request.auth != null && request.auth.uid == userId;
-      // Users can read and update their own data.
-      allow get, update: if request.auth != null && request.auth.uid == userId;
-      // Admins have full read/write access to all user documents.
-      allow read, write: if isRequestingUserAdmin();
+      // An admin can perform any action on any user document.
+      allow list, read, write, delete: if isUserAdmin();
+      
+      // An authenticated user can read and update their OWN document. They cannot create new user docs here (that's done via auth trigger) or delete.
+      allow read, update: if isUserAuthenticated() && request.auth.uid == userId;
     }
 
-    // Orders collection rules
+    // Orders: Users can only access their own orders. Admins can access all orders.
     match /orders/{orderId} {
-      // An authenticated user can create an order for themselves.
-      // We enforce that the 'userId' in the document matches the creator's UID.
-      allow create: if request.auth != null && request.resource.data.userId == request.auth.uid;
-      // A user can read/update their own orders.
-      allow get, update: if request.auth != null && resource.data.userId == request.auth.uid;
-      // Admins have full read/write access to all orders.
-      allow read, write: if isRequestingUserAdmin();
+      allow read, write: if (isUserAuthenticated() && resource.data.userId == request.auth.uid) || isUserAdmin();
+      allow create: if isUserAuthenticated() && request.resource.data.userId == request.auth.uid;
+      allow list: if isUserAdmin();
+    }
+
+    // Admins collection: Only readable by other admins.
+    match /admins/{userId} {
+      allow read, list: if isUserAdmin();
     }
   }
 }
