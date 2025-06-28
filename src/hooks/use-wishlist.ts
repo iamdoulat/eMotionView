@@ -1,11 +1,10 @@
 
 "use client";
 
-import { useState, useEffect, useCallback, useMemo } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import type { Product } from '@/lib/placeholder-data';
-import { products } from '@/lib/placeholder-data';
 
-const getWishlistFromStorage = (): string[] => {
+const getWishlistFromStorage = (): Product[] => {
   if (typeof window === 'undefined') {
     return [];
   }
@@ -18,7 +17,7 @@ const getWishlistFromStorage = (): string[] => {
   }
 };
 
-const saveWishlistToStorage = (wishlist: string[]) => {
+const saveWishlistToStorage = (wishlist: Product[]) => {
   if (typeof window === 'undefined') {
     return;
   }
@@ -31,16 +30,16 @@ const saveWishlistToStorage = (wishlist: string[]) => {
 };
 
 export function useWishlist() {
-  const [wishlist, setWishlist] = useState<string[]>([]);
+  const [wishlistItems, setWishlistItems] = useState<Product[]>([]);
   const [isInitialized, setIsInitialized] = useState(false);
 
   useEffect(() => {
-    setWishlist(getWishlistFromStorage());
+    setWishlistItems(getWishlistFromStorage());
     setIsInitialized(true);
   }, []);
 
   const onStorageChange = useCallback(() => {
-    setWishlist(getWishlistFromStorage());
+    setWishlistItems(getWishlistFromStorage());
   }, []);
 
   useEffect(() => {
@@ -50,32 +49,27 @@ export function useWishlist() {
     };
   }, [onStorageChange]);
 
-  const wishlistItems = useMemo(() => {
-    return wishlist.map(id => products.find(p => p.id === id)).filter((p): p is Product => !!p);
-  }, [wishlist]);
-
-  const addToWishlist = (productId: string) => {
+  const addToWishlist = (product: Product) => {
     const currentWishlist = getWishlistFromStorage();
-    if (!currentWishlist.includes(productId)) {
-      const updatedWishlist = [...currentWishlist, productId];
-      setWishlist(updatedWishlist);
+    if (!currentWishlist.some(p => p.id === product.id)) {
+      const updatedWishlist = [...currentWishlist, product];
+      setWishlistItems(updatedWishlist);
       saveWishlistToStorage(updatedWishlist);
     }
   };
 
   const removeFromWishlist = (productId: string) => {
     const currentWishlist = getWishlistFromStorage();
-    const updatedWishlist = currentWishlist.filter(id => id !== productId);
-    setWishlist(updatedWishlist);
+    const updatedWishlist = currentWishlist.filter(p => p.id !== productId);
+    setWishlistItems(updatedWishlist);
     saveWishlistToStorage(updatedWishlist);
   };
   
   const isInWishlist = (productId: string) => {
-      return wishlist.includes(productId);
+      return wishlistItems.some(p => p.id === productId);
   }
 
   return {
-    wishlist,
     wishlistItems,
     addToWishlist,
     removeFromWishlist,

@@ -1,0 +1,32 @@
+
+rules_version = '2';
+
+service firebase.storage {
+  match /b/{bucket}/o {
+
+    // Helper function to check if user is an admin
+    function isAdmin() {
+      // Check if the user is authenticated and their role is 'Admin' in Firestore
+      return request.auth != null &&
+             firestore.get(/databases/(default)/documents/users/$(request.auth.uid)).data.role == 'Admin';
+    }
+    
+    // Product images are publically readable, but only admins can write
+    match /products/{allPaths=**} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
+    // User avatars can be read by anyone
+    // but can only be written by the owner of that avatar, or an admin
+    match /avatars/{userId}/{allPaths=**} {
+      allow read: if true;
+      allow write: if request.auth.uid == userId || isAdmin();
+    }
+    
+    // By default, only admins can write to any other path
+    match /{allPaths=**} {
+        allow write: if isAdmin();
+    }
+  }
+}

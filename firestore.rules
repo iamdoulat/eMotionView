@@ -1,0 +1,48 @@
+
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    
+    // Helper function to check if the authenticated user has an 'Admin' role.
+    function isRequestingUserAdmin() {
+      // Check if the user is authenticated and if their user document exists and has the role 'Admin'.
+      return request.auth != null && 
+             exists(/databases/$(database)/documents/users/$(request.auth.uid)) &&
+             get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'Admin';
+    }
+
+    // Products can be read by anyone. Only Admins can write.
+    match /products/{productId} {
+      allow get, list: if true;
+      allow write: if isRequestingUserAdmin();
+    }
+
+    // Reviews can be read by anyone. Authenticated users can create them. Admins can moderate.
+    match /reviews/{reviewId} {
+      allow get, list: if true;
+      allow create: if request.auth != null;
+      allow update, delete: if isRequestingUserAdmin();
+    }
+
+    // Users collection rules
+    match /users/{userId} {
+      // Authenticated users can create their own user document upon sign-up.
+      allow create: if request.auth != null && request.auth.uid == userId;
+      // Users can read and update their own data.
+      allow get, update: if request.auth != null && request.auth.uid == userId;
+      // Admins have full read/write access to all user documents.
+      allow read, write: if isRequestingUserAdmin();
+    }
+
+    // Orders collection rules
+    match /orders/{orderId} {
+      // An authenticated user can create an order for themselves.
+      // We enforce that the 'userId' in the document matches the creator's UID.
+      allow create: if request.auth != null && request.resource.data.userId == request.auth.uid;
+      // A user can read/update their own orders.
+      allow get, update: if request.auth != null && resource.data.userId == request.auth.uid;
+      // Admins have full read/write access to all orders.
+      allow read, write: if isRequestingUserAdmin();
+    }
+  }
+}

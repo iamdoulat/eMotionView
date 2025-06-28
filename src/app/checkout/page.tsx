@@ -12,34 +12,56 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Separator } from '@/components/ui/separator';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
+import { onAuthStateChanged, type User } from 'firebase/auth';
+import { auth } from '@/lib/firebase';
+import { useToast } from '@/hooks/use-toast';
 
 export default function CheckoutPage() {
   const router = useRouter();
+  const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(false);
   const { cart, subtotal, clearCart, isInitialized } = useCart();
+  const [user, setUser] = useState<User | null>(null);
   
   const shipping = cart.length > 0 ? 5.00 : 0;
   const total = subtotal + shipping;
 
-  // This is the critical fix:
-  // Redirect to cart if it's empty, but NOT while we are processing an order.
-  // This prevents the race condition where the page tries to redirect to /cart
-  // at the same time it's trying to redirect to /checkout/thank-you.
   useEffect(() => {
-    if (isInitialized && cart.length === 0 && !isLoading) {
+    const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
+        if (currentUser) {
+            setUser(currentUser);
+        } else {
+            router.replace('/sign-in');
+        }
+    });
+    return () => unsubscribe();
+  }, [router]);
+
+  useEffect(() => {
+    if (isInitialized && user && cart.length === 0 && !isLoading) {
       router.replace('/cart');
     }
-  }, [isInitialized, cart, router, isLoading]);
+  }, [isInitialized, user, cart, router, isLoading]);
 
   const handlePlaceOrder = () => {
+    if (!user) {
+        toast({
+            variant: 'destructive',
+            title: 'Authentication Error',
+            description: 'You must be logged in to place an order.',
+        });
+        router.push('/sign-in');
+        return;
+    }
     setIsLoading(true);
 
     const newOrder: Order = {
         id: `order-${Date.now()}`,
+        userId: user.uid,
         orderNumber: `USA-${Math.floor(Math.random() * 900000) + 100000}`,
         date: new Date().toISOString(),
-        customerName: 'John Doe', // Hardcoded for prototype
-        customerAvatar: 'https://placehold.co/40x40.png',
+        customerName: user.displayName || 'John Doe',
+        customerAvatar: user.photoURL || 'https://placehold.co/40x40.png',
         status: 'Pending',
         total: total,
         items: cart.map(item => ({
@@ -54,7 +76,6 @@ export default function CheckoutPage() {
         })),
     };
 
-    // Simulate API call and order creation
     setTimeout(() => {
         try {
             const existingOrders: Order[] = JSON.parse(localStorage.getItem('newOrders') || '[]');
@@ -65,14 +86,17 @@ export default function CheckoutPage() {
             router.push(`/checkout/thank-you?orderId=${newOrder.id}`);
         } catch (error) {
             console.error("Failed to place order:", error);
-            // Handle error, e.g., show a toast message
+            toast({
+                variant: 'destructive',
+                title: 'Order Failed',
+                description: 'There was a problem placing your order. Please try again.',
+            });
             setIsLoading(false);
         }
     }, 1500);
   };
   
-  // Loading state while cart is initializing or if cart is empty before the effect redirects
-  if (!isInitialized || (cart.length === 0 && !isLoading)) {
+  if (!isInitialized || !user || (cart.length === 0 && !isLoading)) {
     return (
       <div className="container mx-auto px-4 py-8 flex justify-center items-center min-h-[calc(100vh-16rem)]">
         <Loader2 className="h-8 w-8 animate-spin text-primary" />

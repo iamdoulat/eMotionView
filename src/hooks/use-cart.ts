@@ -3,7 +3,6 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import type { Product } from '@/lib/placeholder-data';
-import { products } from '@/lib/placeholder-data';
 
 export interface CartItem extends Product {
   quantity: number;
@@ -56,12 +55,11 @@ export function useCart() {
     };
   }, [onStorageChange]);
 
-  const addToCart = (productId: string, quantity: number = 1) => {
+  const addToCart = (product: Product, quantity: number = 1) => {
     const currentCart = getCartFromStorage();
-    const product = products.find(p => p.id === productId);
     if (!product) return;
 
-    const existingItemIndex = currentCart.findIndex(item => item.id === productId);
+    const existingItemIndex = currentCart.findIndex(item => item.id === product.id);
     let updatedCart;
 
     if (existingItemIndex > -1) {

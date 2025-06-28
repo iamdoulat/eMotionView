@@ -1,13 +1,18 @@
 import { ProductCard } from '@/components/product-card';
-import { products } from '@/lib/placeholder-data';
+import type { Product } from '@/lib/placeholder-data';
 import { Input } from '@/components/ui/input';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Label } from '@/components/ui/label';
 import { Slider } from '@/components/ui/slider';
 import { Button } from '@/components/ui/button';
+import { collection, getDocs } from 'firebase/firestore';
+import { db, docToJSON } from '@/lib/firebase';
 
-export default function ProductsPage() {
+export default async function ProductsPage() {
+  const productsSnapshot = await getDocs(collection(db, 'products'));
+  const products = productsSnapshot.docs.map(docToJSON) as Product[];
+
   const categories = [...new Set(products.map(p => p.category))];
   const brands = [...new Set(products.map(p => p.brand))];
   

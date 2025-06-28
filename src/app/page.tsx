@@ -3,17 +3,39 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { Button } from '@/components/ui/button';
 import { ProductCard } from '@/components/product-card';
-import { products } from '@/lib/placeholder-data';
+import type { Product } from '@/lib/placeholder-data';
 import { ArrowRight, Star, Tag, Truck } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 import { CategoryMenu } from '@/components/category-menu';
 import { Carousel, CarouselContent, CarouselItem } from '@/components/ui/carousel';
+import { collection, getDocs, limit, query, where } from 'firebase/firestore';
+import { db, docToJSON } from '@/lib/firebase';
 
-export default function HomePage() {
-  const newArrivals = products.slice(0, 6);
-  const popularProducts = products.slice(0, 6);
-  const smartWatches = products.filter(p => p.category === 'Wearables').slice(0, 6);
-  const headphones = products.filter(p => p.category === 'Audio').slice(0, 6);
+
+export default async function HomePage() {
+  const productsCollection = collection(db, 'products');
+
+  const newArrivalsQuery = query(productsCollection, limit(6));
+  const popularProductsQuery = query(productsCollection, limit(6));
+  const smartWatchesQuery = query(productsCollection, where('category', '==', 'Wearables'), limit(6));
+  const headphonesQuery = query(productsCollection, where('category', '==', 'Audio'), limit(6));
+
+  const [
+    newArrivalsSnapshot,
+    popularProductsSnapshot,
+    smartWatchesSnapshot,
+    headphonesSnapshot
+  ] = await Promise.all([
+    getDocs(newArrivalsQuery),
+    getDocs(popularProductsQuery),
+    getDocs(smartWatchesQuery),
+    getDocs(headphonesQuery),
+  ]);
+
+  const newArrivals = newArrivalsSnapshot.docs.map(docToJSON) as Product[];
+  const popularProducts = popularProductsSnapshot.docs.map(docToJSON) as Product[];
+  const smartWatches = smartWatchesSnapshot.docs.map(docToJSON) as Product[];
+  const headphones = headphonesSnapshot.docs.map(docToJSON) as Product[];
 
   const mainNavLinks = [
     { href: "#", label: "Campaign" },

@@ -41,7 +41,7 @@ export function ProductCard({ product }: ProductCardProps) {
       });
       return;
     }
-    addToCart(product.id, 1);
+    addToCart(product, 1);
     toast({
       title: "Added to Cart",
       description: `1 x ${product.name} has been added to your cart.`,
@@ -49,7 +49,7 @@ export function ProductCard({ product }: ProductCardProps) {
   };
   
   const handleDialogAddToCart = () => {
-    addToCart(product.id, dialogQuantity);
+    addToCart(product, dialogQuantity);
     toast({
       title: "Added to Cart",
       description: `${dialogQuantity} x ${product.name} has been added to your cart.`,
@@ -59,7 +59,7 @@ export function ProductCard({ product }: ProductCardProps) {
   const handleWishlistClick = (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
-    isWished ? removeFromWishlist(product.id) : addToWishlist(product.id);
+    isWished ? removeFromWishlist(product.id) : addToWishlist(product);
     toast({
         title: isWished ? "Removed from Wishlist" : "Added to Wishlist",
         description: product.name,
@@ -150,7 +150,7 @@ export function ProductCard({ product }: ProductCardProps) {
               <a href={`/products/${product.id}#reviews`} className="ml-2 text-sm text-muted-foreground hover:text-primary">({product.reviewCount} reviews)</a>
             </div>
 
-            <p className="text-3xl font-bold text-primary mb-4">৳{product.price.toLocaleString()}</p>
+            <p className="text-3xl font-bold text-primary">৳{product.price.toLocaleString()}</p>
 
             <ul className="space-y-2 text-sm text-foreground mb-6">
                 {product.features.slice(0, 4).map((feature, index) => (
