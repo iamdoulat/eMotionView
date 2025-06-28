@@ -82,10 +82,10 @@ export default async function ProductDetailPage({ params }: { params: { id: stri
           <div className="lg:col-span-3 hidden lg:block">
             <Link href="#">
                <Image
-                  src="https://placehold.co/300x700.png"
+                  src="https://placehold.co/300x600.png"
                   alt="Advertisement"
                   width={300}
-                  height={700}
+                  height={600}
                   className="w-full h-auto object-cover rounded-lg"
                   data-ai-hint="product advertisement"
                 />

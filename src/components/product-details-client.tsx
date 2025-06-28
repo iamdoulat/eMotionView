@@ -80,7 +80,7 @@ export function ProductDetailsClient({ product }: { product: Product }) {
               src={selectedImage}
               alt={product.name}
               fill
-              className="w-full h-full object-contain transition-transform duration-300 group-hover:scale-110"
+              className="w-full h-full object-contain transition-transform duration-300 group-hover:scale-125"
               data-ai-hint={`${product.category} product`}
             />
           </div>
