@@ -345,8 +345,8 @@ export function Header() {
   return (
     <header className="sticky top-0 z-50 w-full bg-background/95 backdrop-blur-sm shadow-md" ref={searchWrapperRef}>
       {/* Top Bar */}
-      <div className={cn("border-b-2 border-accent/30 bg-secondary/50 text-black font-bold transition-all duration-300 overflow-hidden", isScrolled ? 'max-h-0' : 'max-h-10 py-2')}>
-        <div className="container mx-auto flex h-full items-center justify-between px-4 text-sm">
+      <div className={cn("border-b-2 border-accent/50 bg-secondary/50 text-black font-bold transition-all duration-300 overflow-hidden text-sm py-2.5", isScrolled ? 'max-h-0 py-0' : 'max-h-10')}>
+        <div className="container mx-auto flex h-full items-center justify-between px-4">
           <div>
             <span>Biggest Smart Gadget & SmartPhone Collection</span>
           </div>
