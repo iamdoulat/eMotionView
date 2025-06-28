@@ -12,7 +12,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Loader2, Trash2 } from "lucide-react";
+import { Loader2, Trash2, XCircle } from "lucide-react";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { DialogFooter } from "@/components/ui/dialog";
 import Image from "next/image";
@@ -20,6 +20,8 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Card } from "@/components/ui/card";
 import { useEffect, useState } from "react";
 import { Switch } from "../ui/switch";
+import { storage } from "@/lib/firebase";
+import { ref, uploadBytes, getDownloadURL, deleteObject } from "firebase/storage";
 
 const productSchema = z.object({
     id: z.string().optional(),
@@ -54,7 +56,7 @@ type ProductFormData = z.infer<typeof productSchema>;
 
 interface ProductFormProps {
     product?: Product | null;
-    onSave: (data: Product) => void;
+    onSave: (data: Product) => Promise<void>;
     onCancel: () => void;
     isSaving?: boolean;
 }
@@ -97,6 +99,10 @@ export function ProductForm({ product, onSave, onCancel, isSaving }: ProductForm
     });
 
     const { register, handleSubmit, control, formState: { errors }, watch, setValue } = form;
+
+    const [imagePreviews, setImagePreviews] = useState<string[]>(product?.images || []);
+    const [filesToUpload, setFilesToUpload] = useState<File[]>([]);
+    const [imagesToRemove, setImagesToRemove] = useState<string[]>([]);
 
     const [isPermalinkManuallyEdited, setIsPermalinkManuallyEdited] = useState(!!product?.id);
     const [isSkuManuallyEdited, setIsSkuManuallyEdited] = useState(!!product?.id);
@@ -153,7 +159,51 @@ export function ProductForm({ product, onSave, onCancel, isSaving }: ProductForm
 
     const skuRegister = register("sku");
 
-    const onSubmit: SubmitHandler<ProductFormData> = (data) => {
+    const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        if (e.target.files) {
+            const newFiles = Array.from(e.target.files);
+            setFilesToUpload(prev => [...prev, ...newFiles]);
+
+            const newPreviews = newFiles.map(file => URL.createObjectURL(file));
+            setImagePreviews(prev => [...prev, ...newPreviews]);
+        }
+    };
+
+    const handleRemoveImage = (urlToRemove: string) => {
+        if (urlToRemove.startsWith('blob:')) {
+            const blobIndex = imagePreviews.filter(p => p.startsWith('blob:')).indexOf(urlToRemove);
+            setFilesToUpload(files => files.filter((_, i) => i !== blobIndex));
+        } else {
+            setImagesToRemove(prev => [...prev, urlToRemove]);
+        }
+        setImagePreviews(previews => previews.filter(p => p !== urlToRemove));
+    };
+
+    const onSubmit: SubmitHandler<ProductFormData> = async (data) => {
+        const uploadedImageUrls = await Promise.all(
+            filesToUpload.map(async (file) => {
+                const storageRef = ref(storage, `products/${Date.now()}-${file.name}`);
+                await uploadBytes(storageRef, file);
+                return getDownloadURL(storageRef);
+            })
+        );
+        
+        await Promise.all(
+            imagesToRemove.map(async (url) => {
+                try {
+                    const storageRef = ref(storage, url);
+                    await deleteObject(storageRef);
+                } catch (error: any) {
+                    if (error.code !== 'storage/object-not-found') {
+                        console.error("Error deleting image from storage: ", error);
+                    }
+                }
+            })
+        );
+
+        const existingUrlsLeft = imagePreviews.filter(p => !p.startsWith('blob:'));
+        const finalImageUrls = [...existingUrlsLeft, ...uploadedImageUrls];
+        
         const specObject: Record<string, string> = {};
         data.specifications.forEach(spec => {
             if (spec.key) {
@@ -183,10 +233,10 @@ export function ProductForm({ product, onSave, onCancel, isSaving }: ProductForm
             id: product?.id || data.id || "",
             rating: product?.rating || 0,
             reviewCount: product?.reviewCount || 0,
-            images: product?.images || ['https://placehold.co/600x600.png'],
+            images: finalImageUrls.length > 0 ? finalImageUrls : ['https://placehold.co/600x600.png'],
             discountPercentage: data.originalPrice && data.price < data.originalPrice ? Math.round(((data.originalPrice - data.price) / data.originalPrice) * 100) : undefined,
         };
-        onSave(transformedData);
+        await onSave(transformedData);
     };
 
     return (
@@ -281,6 +331,30 @@ export function ProductForm({ product, onSave, onCancel, isSaving }: ProductForm
                             <Label htmlFor="description">Description</Label>
                             <Textarea id="description" {...register("description")} />
                             {errors.description && <p className="text-destructive text-sm">{errors.description.message}</p>}
+                        </div>
+
+                        <div className="space-y-2">
+                            <Label>Images</Label>
+                            <Input id="images" type="file" multiple onChange={handleFileChange} accept="image/*" className="block" disabled={isSaving} />
+                            {isSaving && <p className="text-sm text-primary flex items-center gap-2 mt-2"><Loader2 className="animate-spin" /> Uploading images, please wait...</p>}
+                            {imagePreviews.length > 0 && (
+                                <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 gap-4 mt-4">
+                                    {imagePreviews.map((src, index) => (
+                                        <div key={index} className="relative group aspect-square">
+                                            <Image src={src} alt={`Product image ${index + 1}`} fill className="object-cover rounded-md border" />
+                                            <button
+                                                type="button"
+                                                onClick={() => handleRemoveImage(src)}
+                                                className="absolute -top-2 -right-2 bg-destructive text-destructive-foreground rounded-full p-0.5 opacity-0 group-hover:opacity-100 transition-opacity"
+                                                disabled={isSaving}
+                                            >
+                                                <XCircle className="h-5 w-5" />
+                                                <span className="sr-only">Remove image</span>
+                                            </button>
+                                        </div>
+                                    ))}
+                                </div>
+                            )}
                         </div>
 
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -390,16 +464,6 @@ export function ProductForm({ product, onSave, onCancel, isSaving }: ProductForm
                             <Label htmlFor="points">Club Points</Label>
                             <Input id="points" type="number" {...register("points")} placeholder="e.g. 100" />
                             {errors.points && <p className="text-destructive text-sm">{errors.points.message}</p>}
-                        </div>
-
-
-                        <div className="space-y-2">
-                            <Label>Images</Label>
-                            <div className="grid grid-cols-3 gap-2">
-                                {product?.images?.map((img, index) => <Image key={index} src={img} alt="product" width={100} height={100} className="rounded-md" data-ai-hint="product image" />)}
-                            </div>
-                            <Input type="file" multiple />
-                            <p className="text-sm text-muted-foreground">Image upload is for demonstration only.</p>
                         </div>
 
                         <div className="space-y-2">
