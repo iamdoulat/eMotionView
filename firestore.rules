@@ -4,48 +4,63 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
+    // Helper Functions
     function isUserAuthenticated() {
       return request.auth != null;
     }
 
-    // Check if a user is an admin by seeing if a document with their UID exists in the 'admins' collection.
-    // This is a secure and non-recursive way to check for roles.
     function isUserAdmin() {
-      return isUserAuthenticated() && exists(/databases/$(database)/documents/admins/$(request.auth.uid));
+      // Check if the authenticated user has an 'Admin' role in the 'users' collection.
+      return isUserAuthenticated() && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'Admin';
+    }
+    
+    function isOwner(userId) {
+      return isUserAuthenticated() && request.auth.uid == userId;
     }
 
-    // Products: Publicly readable/listable, only admins can write
-    match /products/{productId} {
-      allow list, read: if true;
+    // Public Collections (Read-Only for everyone)
+    match /products/{docId} {
+      allow read: if true;
       allow write: if isUserAdmin();
     }
-
-    // Reviews: Publicly readable/listable, only authenticated users can create, only admins or owners can update/delete
+    match /brands/{docId} {
+      allow read: if true;
+      allow write: if isUserAdmin();
+    }
+    match /categories/{docId} {
+      allow read: if true;
+      allow write: if isUserAdmin();
+    }
+    match /attributes/{docId} {
+      allow read: if true;
+      allow write: if isUserAdmin();
+    }
+    match /suppliers/{docId} {
+      allow read: if true;
+      allow write: if isUserAdmin();
+    }
+    
+    // Reviews: Publicly readable, but only logged-in users can create. Admins can moderate.
     match /reviews/{reviewId} {
-      allow list, read: if true;
-      allow create: if isUserAuthenticated() && request.resource.data.userId == request.auth.uid;
-      allow update, delete: if isUserAdmin() || (isUserAuthenticated() && resource.data.userId == request.auth.uid);
+      allow read: if true;
+      allow create: if isUserAuthenticated();
+      allow update, delete: if isUserAdmin();
     }
 
-    // Users:
+    // Users Collection (for Staff/Admins)
+    // Only admins can create/delete staff. Staff members can read/update their own profile.
     match /users/{userId} {
-      // An admin can perform any action on any user document.
-      allow list, read, write, delete: if isUserAdmin();
-      
-      // An authenticated user can read and update their OWN document. They cannot create new user docs here (that's done via auth trigger) or delete.
-      allow read, update: if isUserAuthenticated() && request.auth.uid == userId;
-    }
-
-    // Orders: Users can only access their own orders. Admins can access all orders.
-    match /orders/{orderId} {
-      allow read, write: if (isUserAuthenticated() && resource.data.userId == request.auth.uid) || isUserAdmin();
-      allow create: if isUserAuthenticated() && request.resource.data.userId == request.auth.uid;
+      allow read, update: if isOwner(userId) || isUserAdmin();
+      allow create, delete: if isUserAdmin();
       allow list: if isUserAdmin();
     }
-
-    // Admins collection: Only readable by other admins.
-    match /admins/{userId} {
-      allow read, list: if isUserAdmin();
+    
+    // Customers Collection
+    // Customers can create, read, and update their own document. Admins can manage all customer documents.
+    match /customers/{userId} {
+      allow create: if isOwner(userId);
+      allow read, update: if isOwner(userId) || isUserAdmin();
+      allow delete, list: if isUserAdmin();
     }
   }
 }

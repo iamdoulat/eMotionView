@@ -18,6 +18,7 @@ export default function ProfilePage() {
     const [name, setName] = useState('');
     const [email, setEmail] = useState('');
     const [mobile, setMobile] = useState('');
+    const [userCollection, setUserCollection] = useState<'customers' | 'users' | null>(null);
 
     const [isLoading, setIsLoading] = useState(true);
     const [isSaving, setIsSaving] = useState(false);
@@ -27,16 +28,32 @@ export default function ProfilePage() {
         const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
             if (currentUser) {
                 setUser(currentUser);
-                const userDocRef = doc(db, "users", currentUser.uid);
-                const userDocSnap = await getDoc(userDocRef);
+                
+                // Try fetching from 'customers' first
+                const customerDocRef = doc(db, "customers", currentUser.uid);
+                let userDocSnap = await getDoc(customerDocRef);
+                let collectionName: 'customers' | 'users' | null = 'customers';
+
+                if (!userDocSnap.exists()) {
+                    // If not a customer, check if they are a staff/admin in 'users'
+                    const userDocRef = doc(db, "users", currentUser.uid);
+                    userDocSnap = await getDoc(userDocRef);
+                    collectionName = 'users';
+                }
+
                 if (userDocSnap.exists()) {
+                    setUserCollection(collectionName as 'customers' | 'users');
                     const userData = userDocSnap.data();
                     setName(userData.name || '');
                     setEmail(userData.email || '');
                     setMobile(userData.mobileNumber || '');
+                } else {
+                    // User exists in Auth but not in Firestore collections, maybe a new signup didn't complete
+                    setUserCollection(null);
                 }
             } else {
                 setUser(null);
+                setUserCollection(null);
             }
             setIsLoading(false);
         });
@@ -44,13 +61,13 @@ export default function ProfilePage() {
     }, []);
 
     const handleSave = async () => {
-        if (!user) {
-            toast({ variant: 'destructive', title: 'Not Authenticated', description: 'You must be logged in to save changes.' });
+        if (!user || !userCollection) {
+            toast({ variant: 'destructive', title: 'Error', description: 'Could not find user data to update. Please try again.' });
             return;
         }
         setIsSaving(true);
         try {
-            const userDocRef = doc(db, "users", user.uid);
+            const userDocRef = doc(db, userCollection, user.uid);
             await setDoc(userDocRef, {
                 name: name,
                 email: email, // Note: This doesn't change Firebase Auth email for login

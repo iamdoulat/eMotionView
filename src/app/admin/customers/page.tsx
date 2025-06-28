@@ -1,8 +1,8 @@
 
 "use client"
 
-import { useState, useMemo } from "react";
-import { users as initialUsers, type User } from "@/lib/placeholder-data";
+import { useState, useEffect } from "react";
+import { type User } from "@/lib/placeholder-data";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -14,26 +14,46 @@ import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { MoreHorizontal, Trash2, Edit, View } from "lucide-react";
+import { MoreHorizontal, Trash2, Edit, View, Loader2 } from "lucide-react";
 import { format } from 'date-fns';
+import { collection, getDocs } from "firebase/firestore";
+import { db, docToJSON } from "@/lib/firebase";
 
 export default function AdminCustomersPage() {
-  const [users, setUsers] = useState<User[]>(initialUsers);
-  const [userToEdit, setUserToEdit] = useState<User | null>(null);
-  const [userToDelete, setUserToDelete] = useState<User | null>(null);
+  const [customers, setCustomers] = useState<User[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [customerToEdit, setCustomerToEdit] = useState<User | null>(null);
+  const [customerToDelete, setCustomerToDelete] = useState<User | null>(null);
 
-  const customerUsers = useMemo(() => users.filter(user => user.role === 'Customer'), [users]);
+  useEffect(() => {
+    const fetchCustomers = async () => {
+        setIsLoading(true);
+        try {
+            const customersSnapshot = await getDocs(collection(db, 'customers'));
+            const customerList = customersSnapshot.docs.map(doc => docToJSON(doc) as User);
+            setCustomers(customerList);
+        } catch (error) {
+            console.error("Failed to fetch customers:", error);
+        } finally {
+            setIsLoading(false);
+        }
+    }
+    fetchCustomers();
+  }, []);
 
   const handleSaveChanges = () => {
-    if (!userToEdit) return;
-    setUsers(users.map(u => u.id === userToEdit.id ? userToEdit : u));
-    setUserToEdit(null);
+    if (!customerToEdit) return;
+    // In a real app, this would save to the 'customers' collection in Firestore.
+    // For this prototype, we'll just update the local state.
+    setCustomers(customers.map(u => u.id === customerToEdit.id ? customerToEdit : u));
+    setCustomerToEdit(null);
   };
 
   const handleDeleteUser = () => {
-    if (!userToDelete) return;
-    setUsers(users.filter(u => u.id !== userToDelete.id));
-    setUserToDelete(null);
+    if (!customerToDelete) return;
+     // In a real app, this would delete from the 'customers' collection in Firestore.
+    setCustomers(customers.filter(u => u.id !== customerToDelete.id));
+    setCustomerToDelete(null);
   };
 
   return (
@@ -58,7 +78,13 @@ export default function AdminCustomersPage() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {customerUsers.map((user) => (
+              {isLoading ? (
+                <TableRow>
+                    <TableCell colSpan={6} className="h-24 text-center">
+                        <Loader2 className="h-6 w-6 animate-spin mx-auto" />
+                    </TableCell>
+                </TableRow>
+              ) : customers.length > 0 ? customers.map((user) => (
                 <TableRow key={user.id}>
                   <TableCell>
                     <div className="flex items-center gap-4">
@@ -96,12 +122,12 @@ export default function AdminCustomersPage() {
                             <View className="mr-2 h-4 w-4" />
                             View Details
                         </DropdownMenuItem>
-                        <DropdownMenuItem onClick={() => setUserToEdit(user)}>
+                        <DropdownMenuItem onClick={() => setCustomerToEdit(user)}>
                             <Edit className="mr-2 h-4 w-4" />
                             Edit
                         </DropdownMenuItem>
                         <DropdownMenuSeparator />
-                        <DropdownMenuItem className="text-destructive" onClick={() => setUserToDelete(user)}>
+                        <DropdownMenuItem className="text-destructive" onClick={() => setCustomerToDelete(user)}>
                             <Trash2 className="mr-2 h-4 w-4" />
                             Delete
                         </DropdownMenuItem>
@@ -109,32 +135,38 @@ export default function AdminCustomersPage() {
                     </DropdownMenu>
                   </TableCell>
                 </TableRow>
-              ))}
+              )) : (
+                 <TableRow>
+                    <TableCell colSpan={6} className="h-24 text-center">
+                        No customers found.
+                    </TableCell>
+                </TableRow>
+              )}
             </TableBody>
           </Table>
         </CardContent>
       </Card>
       
-      <Dialog open={!!userToEdit} onOpenChange={(open) => !open && setUserToEdit(null)}>
+      <Dialog open={!!customerToEdit} onOpenChange={(open) => !open && setCustomerToEdit(null)}>
         <DialogContent>
           <DialogHeader>
             <DialogTitle>Edit Customer</DialogTitle>
           </DialogHeader>
-          {userToEdit && (
+          {customerToEdit && (
             <div className="space-y-4 py-4">
               <div className="space-y-2">
                 <Label htmlFor="name">Full Name</Label>
-                <Input id="name" value={userToEdit.name} onChange={(e) => setUserToEdit({...userToEdit, name: e.target.value})} />
+                <Input id="name" value={customerToEdit.name} onChange={(e) => setCustomerToEdit({...customerToEdit, name: e.target.value})} />
               </div>
               <div className="space-y-2">
                 <Label htmlFor="email">Email</Label>
-                <Input id="email" type="email" value={userToEdit.email} onChange={(e) => setUserToEdit({...userToEdit, email: e.target.value})} />
+                <Input id="email" type="email" value={customerToEdit.email} onChange={(e) => setCustomerToEdit({...customerToEdit, email: e.target.value})} />
               </div>
                <div className="space-y-2">
                 <Label htmlFor="status">Status</Label>
                  <Select
-                    value={userToEdit.status}
-                    onValueChange={(value: 'Active' | 'Inactive') => setUserToEdit({ ...userToEdit, status: value })}
+                    value={customerToEdit.status}
+                    onValueChange={(value: 'Active' | 'Inactive') => setCustomerToEdit({ ...customerToEdit, status: value })}
                 >
                     <SelectTrigger id="status">
                         <SelectValue placeholder="Select status" />
@@ -147,27 +179,27 @@ export default function AdminCustomersPage() {
               </div>
               <div className="space-y-2">
                 <Label htmlFor="role">Role</Label>
-                <p className="text-sm p-2 bg-secondary rounded-md border">{userToEdit.role}</p>
+                <p className="text-sm p-2 bg-secondary rounded-md border">{customerToEdit.role}</p>
               </div>
             </div>
           )}
           <DialogFooter>
-            <Button variant="ghost" onClick={() => setUserToEdit(null)}>Cancel</Button>
+            <Button variant="ghost" onClick={() => setCustomerToEdit(null)}>Cancel</Button>
             <Button onClick={handleSaveChanges}>Save Changes</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
       
-      <AlertDialog open={!!userToDelete} onOpenChange={(open) => !open && setUserToDelete(null)}>
+      <AlertDialog open={!!customerToDelete} onOpenChange={(open) => !open && setCustomerToDelete(null)}>
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
             <AlertDialogDescription>
-              This action cannot be undone. This will permanently delete the customer account for {userToDelete?.name}.
+              This action cannot be undone. This will permanently delete the customer account for {customerToDelete?.name}.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel onClick={() => setUserToDelete(null)}>Cancel</AlertDialogCancel>
+            <AlertDialogCancel onClick={() => setCustomerToDelete(null)}>Cancel</AlertDialogCancel>
             <AlertDialogAction onClick={handleDeleteUser} className="bg-destructive hover:bg-destructive/90">Delete</AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

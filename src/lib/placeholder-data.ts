@@ -230,8 +230,10 @@ export const products: Omit<Product, 'id'>[] = [
 ];
 export const reviews: Omit<Review, 'id' | 'productId'>[] = [];
 export const orders: Omit<Order, 'id'>[] = [];
-export const users: Omit<User, 'id' | 'uid'>[] = [
+
+const allUsers: Omit<User, 'id'>[] = [
     {
+        uid: 'admin_user_seed_uid',
         name: 'Admin User',
         email: 'admin@example.com',
         avatar: 'https://placehold.co/100x100.png',
@@ -242,6 +244,7 @@ export const users: Omit<User, 'id' | 'uid'>[] = [
         points: 1000
     },
     {
+        uid: 'manager_user_seed_uid',
         name: 'Manager User',
         email: 'manager@example.com',
         avatar: 'https://placehold.co/100x100.png',
@@ -252,6 +255,7 @@ export const users: Omit<User, 'id' | 'uid'>[] = [
         points: 500
     },
      {
+        uid: 'customer_olivia_seed_uid',
         name: 'Olivia Martin',
         email: 'olivia.martin@email.com',
         avatar: 'https://placehold.co/100x100.png',
@@ -262,6 +266,7 @@ export const users: Omit<User, 'id' | 'uid'>[] = [
         points: 250
     },
     {
+        uid: 'customer_jackson_seed_uid',
         name: 'Jackson Lee',
         email: 'jackson.lee@email.com',
         avatar: 'https://placehold.co/100x100.png',
@@ -272,6 +277,7 @@ export const users: Omit<User, 'id' | 'uid'>[] = [
         points: 120
     },
      {
+        uid: 'customer_isabella_seed_uid',
         name: 'Isabella Nguyen',
         email: 'isabella.nguyen@email.com',
         avatar: 'https://placehold.co/100x100.png',
@@ -282,6 +288,12 @@ export const users: Omit<User, 'id' | 'uid'>[] = [
         points: 0
     }
 ];
+
+export const users = allUsers;
+export const staffUsers = allUsers.filter(u => u.role !== 'Customer');
+export const customerUsers = allUsers.filter(u => u.role === 'Customer');
+
+
 export const categories: Omit<Category, 'id'>[] = [
     { name: 'Wearables', description: 'Smartwatches and fitness trackers.' },
     { name: 'Audio', description: 'Headphones, earbuds, and speakers.' },

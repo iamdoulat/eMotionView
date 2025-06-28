@@ -48,8 +48,8 @@ export default function SignUpPage() {
       // Set display name in Firebase Auth
       await updateProfile(user, { displayName: values.name });
 
-      // Create a user document in Firestore
-      await setDoc(doc(db, "users", user.uid), {
+      // Create a user document in the 'customers' collection
+      await setDoc(doc(db, "customers", user.uid), {
         uid: user.uid,
         name: values.name,
         email: values.email,
