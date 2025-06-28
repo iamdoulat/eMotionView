@@ -1,8 +1,7 @@
 
-
 "use client"
 
-import React, { useState, useEffect, useRef } from "react"
+import React, { useState, useEffect, useRef, useCallback } from "react"
 import Link from "next/link"
 import Image from "next/image"
 import { useRouter } from "next/navigation"
@@ -61,18 +60,23 @@ export function Header() {
   const [isSearchLoading, setIsSearchLoading] = useState(false);
   const [isSearchFocused, setIsSearchFocused] = useState(false);
   const searchWrapperRef = useRef<HTMLElement>(null);
+  
+  const handleScroll = useCallback(() => {
+    setIsScrolled(window.scrollY > 80);
+  }, []);
 
   useEffect(() => {
-    const handleScroll = () => setIsScrolled(window.scrollY > 80);
     window.addEventListener("scroll", handleScroll);
+    return () => window.removeEventListener("scroll", handleScroll);
+  }, [handleScroll]);
 
+  useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (user) => {
         setCurrentUser(user);
         setIsAuthLoading(false);
     });
 
     return () => {
-      window.removeEventListener("scroll", handleScroll);
       unsubscribe();
     };
   }, []);
@@ -459,3 +463,5 @@ export function Header() {
     </header>
   )
 }
+
+    
