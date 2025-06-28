@@ -132,14 +132,17 @@ export function ProductCard({ product }: ProductCardProps) {
                   )}
               </div>
               <div className="flex items-center justify-between mt-1">
+                <div className="flex items-center gap-1">
                   <div className="flex items-center">
-                      {[...Array(5)].map((_, i) => (
+                    {[...Array(5)].map((_, i) => (
                       <Star key={i} className={`h-4 w-4 ${i < Math.round(product.rating || 0) ? 'text-yellow-400' : 'text-gray-300'}`} fill={i < Math.round(product.rating || 0) ? 'currentColor' : 'transparent'} />
-                      ))}
+                    ))}
                   </div>
-                  <Button size="icon" variant="ghost" className="w-8 h-8 text-muted-foreground hover:text-primary rounded-full hover:bg-primary/10" onClick={handleQuickAddToCart} disabled={!canPurchase}>
-                      <ShoppingCart className="h-5 w-5" />
-                  </Button>
+                  <span className="text-xs text-muted-foreground">({product.reviewCount || 0})</span>
+                </div>
+                <Button size="icon" variant="ghost" className="w-8 h-8 text-muted-foreground hover:text-primary rounded-full hover:bg-primary/10" onClick={handleQuickAddToCart} disabled={!canPurchase}>
+                    <ShoppingCart className="h-5 w-5" />
+                </Button>
               </div>
           </div>
         </CardContent>
