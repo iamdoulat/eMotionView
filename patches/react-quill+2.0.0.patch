@@ -1,102 +1,12 @@
+patch-package
 --- a/node_modules/react-quill/lib/index.js
 +++ b/node_modules/react-quill/lib/index.js
-@@ -4,6 +4,7 @@
- 	PropTypes = require('prop-types'),
- 	Component = require('react').Component,
- 	findDOMNode = require('react-dom').findDOMNode,
-+	createRef = require('react').createRef,
- 	Quill = require('quill'),
- 	T = PropTypes,
- 	isEqual = require('lodash/isEqual'),
-@@ -29,6 +30,7 @@
- 	displayName: 'ReactQuill',
- 
- 	propTypes: {
-+		forwardedRef: T.any,
- 		id: T.string,
- 		className: T.string,
- 		style: T.object,
-@@ -62,6 +64,7 @@
- 	/*
- 	Methods
- 	*/
-+
- 
- 	/*
- 	Initializes the editor, if it is not already initialized.
-@@ -107,6 +110,7 @@
- 
- 		this.setState({
- 			editor: editor,
-+			generation: (this.state.generation || 0) + 1,
- 		});
+@@ -432,7 +432,7 @@
  	},
  
-@@ -213,7 +217,7 @@
+ 	getEditingArea: function getEditingArea() {
+-		return _reactDom2.default.findDOMNode(this.editingArea);
++		return this.editingArea;
  	},
  
- 	getEditingArea: function() {
--		return findDOMNode(this.editingArea);
-+		return this.editingArea.current;
- 	},
- 
- 	getEditor: function() {
-@@ -262,6 +266,7 @@
- 
- 	renderEditingArea: function() {
- 		var children = this.props.children;
-+		var forwardedRef = this.props.forwardedRef;
- 		var properties = {
- 			ref: this.setEditingAreaRef,
- 			className: 'ql-editor',
-@@ -274,17 +279,23 @@
- 		}
- 
- 		var customElement = React.isValidElement(children)
--			? React.cloneElement(children, properties)
-+			? React.cloneElement(
-+				children,
-+				{ ...properties, ref: forwardedRef ? forwardedRef : this.editingArea }
-+			)
- 			: React.createElement('div', properties);
- 
- 		return customElement;
- 	},
- 
- 	render: function() {
--		return React.createElement('div', {
--			id: this.props.id,
-+		return React.createElement('div', { id: this.props.id,
-+			// Passing false to prevent React from setting incorrect ref.
-+			// The ref is set directly on the custom editing area.
-+			ref: false,
- 			style: this.props.style,
- 			className: ['quill'].concat(this.props.className).filter(Boolean).join(' '),
--			onKeyPress: this.props.onKeyPress,
--			onKeyDown: this.props.onKeyDown,
--			onKeyUp: this.props.onKeyUp
-+			onKeyPress: this.onKeyPress,
-+			onKeyDown: this.onKeyDown,
-+			onKeyUp: this.onKeyUp
- 		}, this.renderToolbar(), this.renderEditingArea());
- 	},
- 
-@@ -317,11 +328,17 @@
- 		this.state = {
- 			editor: null,
- 			value: this.isControlled() ? this.props.value : this.props.defaultValue,
-+			generation: 0,
- 		};
-+
-+		this.editingArea = createRef();
- 	},
- 
--	/* jshint ignore:start */
- });
-+
-+ReactQuill.defaultProps.forwardedRef = null;
-+
-+/* jshint ignore:start */
- 
- // Mixin for a component that owns a Quill editor.
- ReactQuill.Mixin = {
+ 	getEditor: function getEditor() {
