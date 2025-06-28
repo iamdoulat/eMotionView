@@ -14,28 +14,15 @@ import { db, docToJSON } from '@/lib/firebase';
 
 export default async function HomePage() {
   const productsCollection = collection(db, 'products');
-
-  const newArrivalsQuery = query(productsCollection, limit(6));
-  const popularProductsQuery = query(productsCollection, limit(6));
-  const smartWatchesQuery = query(productsCollection, where('category', '==', 'Wearables'), limit(6));
-  const headphonesQuery = query(productsCollection, where('category', '==', 'Audio'), limit(6));
-
-  const [
-    newArrivalsSnapshot,
-    popularProductsSnapshot,
-    smartWatchesSnapshot,
-    headphonesSnapshot
-  ] = await Promise.all([
-    getDocs(newArrivalsQuery),
-    getDocs(popularProductsQuery),
-    getDocs(smartWatchesQuery),
-    getDocs(headphonesQuery),
-  ]);
-
-  const newArrivals = newArrivalsSnapshot.docs.map(docToJSON) as Product[];
-  const popularProducts = popularProductsSnapshot.docs.map(docToJSON) as Product[];
-  const smartWatches = smartWatchesSnapshot.docs.map(docToJSON) as Product[];
-  const headphones = headphonesSnapshot.docs.map(docToJSON) as Product[];
+  const allProductsSnapshot = await getDocs(productsCollection);
+  const allProducts = allProductsSnapshot.docs.map(docToJSON) as Product[];
+  
+  // This is a simplified approach for demonstration. 
+  // In a production app, you'd likely have more specific queries or data fields.
+  const newArrivals = allProducts.slice(0, 6);
+  const popularProducts = [...allProducts].sort((a, b) => (b.reviewCount || 0) - (a.reviewCount || 0)).slice(0, 6);
+  const smartWatches = allProducts.filter(p => p.category === 'Wearables').slice(0, 6);
+  const headphones = allProducts.filter(p => p.category === 'Audio').slice(0, 6);
 
   const mainNavLinks = [
     { href: "#", label: "Campaign" },
