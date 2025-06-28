@@ -221,10 +221,10 @@ export function Header() {
   const CartButton = ({ className }: { className?: string }) => (
     <Button variant="ghost" size="icon" asChild className={cn("relative", className)}>
       <Link href="/cart" aria-label="Shopping Cart">
-        <ShoppingCart className="h-8 w-8" />
+        <ShoppingCart className="h-9 w-9" />
         {isCartInitialized && (
           <Badge className="absolute -top-1 -right-1 h-5 w-5 justify-center rounded-full p-0 text-xs bg-blue-600 text-primary-foreground hover:bg-blue-700 border-none">
-            {cartCount}
+            {cartCount > 0 ? cartCount : 0}
           </Badge>
         )}
       </Link>
