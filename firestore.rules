@@ -1,63 +1,80 @@
 
 rules_version = '2';
+
 service cloud.firestore {
   match /databases/{database}/documents {
 
-    // ===== Helper Functions =====
-    function isAuth() {
+    // == Helper Functions ==
+    function isSignedIn() {
       return request.auth != null;
     }
-    function isUserId(userId) {
-      return isAuth() && request.auth.uid == userId;
+    
+    function isOwner(userId) {
+      return request.auth.uid == userId;
     }
-    function isAdmin() {
-      // Check if user is an Admin
-      return isAuth() && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'Admin';
-    }
-    function isStaff() {
-      // Check if user document exists in the 'users' collection (admins, managers, staff)
-      return isAuth() && exists(/databases/$(database)/documents/users/$(request.auth.uid));
-    }
-
-    // ===== Public Collections (read-only for all, write for admin) =====
-    match /products/{docId}      { allow read: if true; allow write: if isAdmin(); }
-    match /categories/{docId}    { allow read: if true; allow write: if isAdmin(); }
-    match /brands/{docId}        { allow read: if true; allow write: if isAdmin(); }
-    match /attributes/{docId}    { allow read: if true; allow write: if isAdmin(); }
-    match /suppliers/{docId}     { allow read: if true; allow write: if isAdmin(); }
-
-    // ===== Reviews =====
-    // Anyone can read approved reviews. Staff can read all for moderation.
-    // Any authenticated user can create. Staff can update (approve/reply). Admins can delete.
-    match /reviews/{reviewId} {
-      allow read: if resource.data.status == 'approved' || isStaff();
-      allow create: if isAuth() && request.resource.data.userId == request.auth.uid;
-      allow update: if isStaff();
-      allow delete: if isAdmin();
+    
+    // Checks if the requesting user has an Admin/Manager/Staff role in the 'users' collection.
+    // The `exists()` check is crucial. It prevents errors for users (like customers)
+    // who do not have a document in the 'users' collection.
+    function isRequestingUserStaff() {
+      return isSignedIn() && exists(/databases/$(database)/documents/users/$(request.auth.uid)) &&
+             get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role in ['Admin', 'Manager', 'Staff'];
     }
 
-    // ===== Staff Users =====
-    // Staff can read other staff members' data. Users can only update their own data. Admins can update/delete any.
+    // Checks if the requesting user has an Admin role.
+    function isRequestingUserAdmin() {
+      return isSignedIn() && exists(/databases/$(database)/documents/users/$(request.auth.uid)) &&
+             get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'Admin';
+    }
+
+    // == Collection Rules ==
+
+    // USERS (Staff, Admins, Managers)
     match /users/{userId} {
-      allow read: if isStaff();
-      allow create: if isAdmin();
-      allow update: if isUserId(userId) || isAdmin();
-      allow delete: if isAdmin();
+      // Who can read? The user themselves, or any staff member.
+      allow read: if isOwner(userId) || isRequestingUserStaff();
+      // Who can list? Only staff members.
+      allow list: if isRequestingUserStaff();
+      // Who can write? The user themselves, or an Admin.
+      allow write: if isOwner(userId) || isRequestingUserAdmin();
     }
-
-    // ===== Customers =====
-    // Customers can read/update their own data. Staff can read all customer data. Admins can update/delete any.
-    match /customers/{userId} {
-      allow read: if isUserId(userId) || isStaff();
-      allow create: if isUserId(userId);
-      allow update: if isUserId(userId) || isAdmin();
-      allow delete: if isAdmin();
+    
+    // CUSTOMERS
+    match /customers/{customerId} {
+      // Who can read? The customer themselves, or any staff member.
+      allow read: if isOwner(customerId) || isRequestingUserStaff();
+      // Who can list? Only staff members.
+      allow list: if isRequestingUserStaff();
+      // Who can create? Any signed-in user (for sign-up).
+      allow create: if isSignedIn();
+      // Who can update? The customer themselves.
+      allow update: if isOwner(customerId);
+      // Who can delete? Only Admins.
+      allow delete: if isRequestingUserAdmin();
     }
-
-    // ===== Wishlists =====
-    // Users can only access their own wishlist.
+    
+    // PRODUCTS & PUBLIC DATA (Categories, Brands, etc.)
+    // Anyone can read products and related metadata. Only staff can write.
+    match /{collection}/{docId} 
+      where collection in ['products', 'categories', 'brands', 'attributes', 'suppliers'] {
+        allow read: if true;
+        allow write: if isRequestingUserStaff();
+    }
+    
+    // REVIEWS
+    match /reviews/{reviewId} {
+      // Who can read? Everyone (for approved reviews). The app filters by status.
+      allow read: if true;
+      // Who can create? Any signed-in user.
+      allow create: if isSignedIn();
+      // Who can update/delete? Only staff (for moderation).
+      allow update, delete: if isRequestingUserStaff();
+    }
+    
+    // WISHLISTS
     match /wishlists/{userId} {
-      allow read, write: if isUserId(userId);
+      // A user can only access their own wishlist.
+      allow read, write: if isOwner(userId);
     }
   }
 }
