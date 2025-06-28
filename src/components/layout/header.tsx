@@ -101,7 +101,7 @@ export function Header() {
       const productResults: SearchResult[] = products
         .filter(p => p.name.toLowerCase().includes(query))
         .slice(0, 5)
-        .map(p => ({ type: 'Product', name: p.name, href: `/products/${p.id}`, image: p.images[0] }));
+        .map(p => ({ type: 'Product', name: p.name, href: `/products/${p.permalink || p.id}`, image: p.images[0] }));
 
       const categoryResults: SearchResult[] = categories
         .filter(c => c.name.toLowerCase().includes(query))
@@ -222,7 +222,7 @@ export function Header() {
     <Button variant="ghost" size="icon" asChild className={cn("relative", className)}>
       <Link href="/cart" aria-label="Shopping Cart">
         <ShoppingCart className="h-8 w-8" />
-        {isCartInitialized && cartCount > 0 && (
+        {isCartInitialized && (
           <Badge className="absolute -top-1 -right-1 h-5 w-5 justify-center rounded-full p-0 text-xs bg-blue-600 text-primary-foreground hover:bg-blue-700 border-none">
             {cartCount}
           </Badge>
