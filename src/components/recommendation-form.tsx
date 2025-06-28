@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState } from 'react';
@@ -5,7 +6,7 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { getProductRecommendations, GetProductRecommendationsOutput } from '@/ai/flows/product-recommendations';
-import { products as productCatalogData } from '@/lib/placeholder-data';
+import type { Product } from '@/lib/placeholder-data';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
@@ -20,12 +21,12 @@ const formSchema = z.object({
   }),
 });
 
-const productCatalogString = productCatalogData.map(p => `- ${p.name}: ${p.description}`).join('\n');
-
-export function RecommendationForm() {
+export function RecommendationForm({ allProducts }: { allProducts: Product[] }) {
   const [recommendation, setRecommendation] = useState<GetProductRecommendationsOutput | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  const productCatalogString = allProducts.map(p => `- ${p.name}: ${p.description}`).join('\n');
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -53,7 +54,7 @@ export function RecommendationForm() {
     }
   }
 
-  const recommendedProducts = productCatalogData.filter(p => recommendation?.recommendedProducts.includes(p.name));
+  const recommendedProducts = allProducts.filter(p => recommendation?.recommendedProducts.includes(p.name));
 
   return (
     <div>

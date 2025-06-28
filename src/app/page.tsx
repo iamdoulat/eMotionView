@@ -10,12 +10,16 @@ import { CategoryMenu } from '@/components/category-menu';
 import { Carousel, CarouselContent, CarouselItem } from '@/components/ui/carousel';
 import { collection, getDocs, limit, query, where } from 'firebase/firestore';
 import { db, docToJSON } from '@/lib/firebase';
+import { enrichProductsWithReviews } from '@/lib/product-utils';
 
 
 export default async function HomePage() {
   const productsCollection = collection(db, 'products');
   const allProductsSnapshot = await getDocs(productsCollection);
-  const allProducts = allProductsSnapshot.docs.map(docToJSON) as Product[];
+  let allProducts = allProductsSnapshot.docs.map(docToJSON) as Product[];
+  
+  // Enrich products with review data
+  allProducts = await enrichProductsWithReviews(allProducts);
   
   // This is a simplified approach for demonstration. 
   // In a production app, you'd likely have more specific queries or data fields.

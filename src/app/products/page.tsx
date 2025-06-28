@@ -1,3 +1,4 @@
+
 import { ProductCard } from '@/components/product-card';
 import type { Product } from '@/lib/placeholder-data';
 import { Input } from '@/components/ui/input';
@@ -8,10 +9,14 @@ import { Slider } from '@/components/ui/slider';
 import { Button } from '@/components/ui/button';
 import { collection, getDocs } from 'firebase/firestore';
 import { db, docToJSON } from '@/lib/firebase';
+import { enrichProductsWithReviews } from '@/lib/product-utils';
 
 export default async function ProductsPage() {
   const productsSnapshot = await getDocs(collection(db, 'products'));
-  const products = productsSnapshot.docs.map(docToJSON) as Product[];
+  let products = productsSnapshot.docs.map(docToJSON) as Product[];
+  
+  // Enrich products with review data
+  products = await enrichProductsWithReviews(products);
 
   const categories = [...new Set(products.map(p => p.category))];
   const brands = [...new Set(products.map(p => p.brand))];

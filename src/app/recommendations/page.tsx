@@ -1,6 +1,15 @@
-import { RecommendationForm } from '@/components/recommendation-form';
 
-export default function RecommendationsPage() {
+import { RecommendationForm } from '@/components/recommendation-form';
+import { collection, getDocs } from 'firebase/firestore';
+import { db, docToJSON } from '@/lib/firebase';
+import type { Product } from '@/lib/placeholder-data';
+import { enrichProductsWithReviews } from '@/lib/product-utils';
+
+export default async function RecommendationsPage() {
+  const productsSnapshot = await getDocs(collection(db, 'products'));
+  let products = productsSnapshot.docs.map(docToJSON) as Product[];
+  products = await enrichProductsWithReviews(products);
+
   return (
     <div className="container mx-auto px-4 py-8">
       <header className="text-center mb-12">
@@ -12,7 +21,7 @@ export default function RecommendationsPage() {
         </p>
       </header>
       <main>
-        <RecommendationForm />
+        <RecommendationForm allProducts={products} />
       </main>
     </div>
   );
