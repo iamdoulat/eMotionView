@@ -88,7 +88,7 @@ export function ProductCard({ product }: ProductCardProps) {
             setSelectedAttributes({});
         }
     }}>
-      <Card className="group overflow-hidden rounded-lg shadow-md hover:shadow-lg transition-shadow duration-300 flex flex-col h-full bg-background">
+      <Card className="group overflow-hidden rounded-lg shadow-md hover:shadow-xl transition-shadow duration-300 flex flex-col h-full bg-background">
         <CardHeader className="p-0 relative border-b">
           <DialogTrigger asChild>
             <div className="block aspect-square bg-secondary/30 cursor-pointer overflow-hidden">
@@ -97,7 +97,7 @@ export function ProductCard({ product }: ProductCardProps) {
                 alt={product.name}
                 width={300}
                 height={300}
-                className="w-full h-full object-contain p-4 group-hover:scale-105 transition-transform duration-300"
+                className="w-full h-full object-contain p-4 group-hover:scale-110 transition-transform duration-300"
                 data-ai-hint={`${product.category} product`}
               />
             </div>

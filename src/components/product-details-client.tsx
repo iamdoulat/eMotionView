@@ -75,12 +75,12 @@ export function ProductDetailsClient({ product }: { product: Product }) {
     <div className="grid md:grid-cols-2 gap-8 bg-card p-6 rounded-lg border">
       {/* Image Gallery */}
       <div className="flex flex-col items-center">
-          <div className="w-full max-w-md aspect-square relative">
+          <div className="w-full max-w-md aspect-square relative group bg-secondary/30 rounded-lg overflow-hidden">
             <Image
               src={selectedImage}
               alt={product.name}
               fill
-              className="w-full h-full object-contain rounded-lg"
+              className="w-full h-full object-contain transition-transform duration-300 group-hover:scale-110"
               data-ai-hint={`${product.category} product`}
             />
           </div>
