@@ -211,7 +211,8 @@ export function ProductForm({ product, onSave, onCancel, isSaving }: ProductForm
             }
         });
 
-        const transformedData: Product = {
+        const productDataForFirestore = {
+            id: product?.id || "",
             name: data.name,
             permalink: data.permalink,
             description: data.description,
@@ -225,18 +226,27 @@ export function ProductForm({ product, onSave, onCancel, isSaving }: ProductForm
             supplier: data.supplier,
             points: data.points,
             productType: data.productType,
-            downloadUrl: data.downloadUrl || undefined,
-            digitalProductNote: data.digitalProductNote || undefined,
+            downloadUrl: data.downloadUrl,
+            digitalProductNote: data.digitalProductNote,
             productAttributes: data.productAttributes,
             features: data.features.map(f => f.value),
             specifications: specObject,
-            id: product?.id || data.id || "",
+            images: finalImageUrls.length > 0 ? finalImageUrls : ['https://placehold.co/600x600.png'],
+            discountPercentage: (data.originalPrice && data.price < data.originalPrice)
+                ? Math.round(((data.originalPrice - data.price) / data.originalPrice) * 100)
+                : undefined,
             rating: product?.rating || 0,
             reviewCount: product?.reviewCount || 0,
-            images: finalImageUrls.length > 0 ? finalImageUrls : ['https://placehold.co/600x600.png'],
-            discountPercentage: data.originalPrice && data.price < data.originalPrice ? Math.round(((data.originalPrice - data.price) / data.originalPrice) * 100) : undefined,
         };
-        await onSave(transformedData);
+
+        // Clean the object: remove any top-level keys with an 'undefined' value before saving.
+        Object.keys(productDataForFirestore).forEach(key => {
+            if ((productDataForFirestore as any)[key] === undefined) {
+                delete (productDataForFirestore as any)[key];
+            }
+        });
+
+        await onSave(productDataForFirestore as Product);
     };
 
     return (
