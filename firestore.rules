@@ -4,63 +4,71 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
-    // Helper Functions
-    function isUserAuthenticated() {
-      return request.auth != null;
-    }
-
+    // Helper function to check if a user is an admin.
+    // An admin is defined by their UID existing as a document ID in the 'admins' collection.
     function isUserAdmin() {
-      // Check if the authenticated user has an 'Admin' role in the 'users' collection.
-      return isUserAuthenticated() && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'Admin';
-    }
-    
-    function isOwner(userId) {
-      return isUserAuthenticated() && request.auth.uid == userId;
+      return exists(/databases/$(database)/documents/admins/$(request.auth.uid));
     }
 
-    // Public Collections (Read-Only for everyone)
-    match /products/{docId} {
-      allow read: if true;
-      allow write: if isUserAdmin();
-    }
-    match /brands/{docId} {
-      allow read: if true;
-      allow write: if isUserAdmin();
-    }
-    match /categories/{docId} {
-      allow read: if true;
-      allow write: if isUserAdmin();
-    }
-    match /attributes/{docId} {
-      allow read: if true;
-      allow write: if isUserAdmin();
-    }
-    match /suppliers/{docId} {
-      allow read: if true;
-      allow write: if isUserAdmin();
-    }
-    
-    // Reviews: Publicly readable, but only logged-in users can create. Admins can moderate.
-    match /reviews/{reviewId} {
-      allow read: if true;
-      allow create: if isUserAuthenticated();
-      allow update, delete: if isUserAdmin();
+    // Helper function to check if a user is staff.
+    // A staff member has a document in the 'users' collection.
+    function isStaff() {
+      return exists(/databases/$(database)/documents/users/$(request.auth.uid));
     }
 
-    // Users Collection (for Staff/Admins)
-    // Only admins can create/delete staff. Staff members can read/update their own profile.
+    // Collection: admins
+    // Only other admins can see who is an admin.
+    match /admins/{adminId} {
+      allow read, write: if isUserAdmin();
+    }
+
+    // Collection: users (for Staff, Managers, Admins)
     match /users/{userId} {
-      allow read, update: if isOwner(userId) || isUserAdmin();
+      // Staff and Admins can see the list of other staff members.
+      allow list, get: if isStaff();
+      // Only Admins can create or delete staff members.
       allow create, delete: if isUserAdmin();
-      allow list: if isUserAdmin();
+      // An admin or the user themselves can update a profile.
+      allow update: if isUserAdmin() || (request.auth != null && request.auth.uid == userId);
+    }
+
+    // Collection: customers
+    match /customers/{customerId} {
+      // Admins can manage any customer record.
+      allow read, write: if isUserAdmin();
+      // Customers can read, create, and update their own document.
+      allow get, create, update: if request.auth != null && request.auth.uid == customerId;
     }
     
-    // Customers Collection
-    // Customers can create, read, and update their own document. Admins can manage all customer documents.
-    match /customers/{userId} {
-      allow create: if isOwner(userId);
-      allow read, update: if isOwner(userId) || isUserAdmin();
-      allow delete, list: if isUserAdmin();
+    // Collections for product catalog info are public.
+    match /products/{docId} { allow get, list: if true; }
+    match /categories/{docId} { allow get, list: if true; }
+    match /brands/{docId} { allow get, list: if true; }
+    match /attributes/{docId} { allow get, list: if true; }
+    match /suppliers/{docId} { allow get, list: if true; }
+
+    // Collection: reviews
+    match /reviews/{reviewId} {
+      // Anyone can read approved reviews.
+      allow get: if resource.data.status == 'approved';
+      // Staff can read all reviews for moderation.
+      allow list: if isStaff();
+      // Admins can manage all reviews.
+      allow write: if isUserAdmin();
+      // Authenticated users can create reviews.
+      allow create: if request.auth != null;
+    }
+
+    // Collection: orders
+    match /orders/{orderId} {
+      // Admins and staff can read any order.
+      allow list, get: if isStaff();
+      // Customers can only read their own orders.
+      allow get: if request.auth != null && resource.data.userId == request.auth.uid;
+      // Customers can create orders for themselves.
+      allow create: if request.auth != null && request.resource.data.userId == request.auth.uid;
+      // Admins and staff can update orders (e.g., to change status).
+      allow update: if isStaff();
     }
   }
 }
