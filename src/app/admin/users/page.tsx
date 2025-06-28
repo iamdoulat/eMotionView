@@ -1,8 +1,8 @@
 
 "use client"
 
-import { useState, useMemo } from "react";
-import { users as initialUsers, type User } from "@/lib/placeholder-data";
+import { useState, useMemo, useEffect } from "react";
+import { type User } from "@/lib/placeholder-data";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -14,24 +14,46 @@ import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { MoreHorizontal, Trash2, Edit, View } from "lucide-react";
+import { MoreHorizontal, Trash2, Edit, View, Loader2 } from "lucide-react";
 import { format } from 'date-fns';
+import { collection, getDocs } from "firebase/firestore";
+import { db, docToJSON } from "@/lib/firebase";
 
 export default function AdminUsersPage() {
-  const [users, setUsers] = useState<User[]>(initialUsers);
+  const [users, setUsers] = useState<User[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
   const [userToEdit, setUserToEdit] = useState<User | null>(null);
   const [userToDelete, setUserToDelete] = useState<User | null>(null);
+
+  useEffect(() => {
+    const fetchUsers = async () => {
+        setIsLoading(true);
+        try {
+            const usersSnapshot = await getDocs(collection(db, 'users'));
+            const userList = usersSnapshot.docs.map(doc => docToJSON(doc) as User);
+            setUsers(userList);
+        } catch (error) {
+            console.error("Failed to fetch users:", error);
+        } finally {
+            setIsLoading(false);
+        }
+    }
+    fetchUsers();
+  }, []);
 
   const staffUsers = useMemo(() => users.filter(user => user.role !== 'Customer'), [users]);
 
   const handleSaveChanges = () => {
     if (!userToEdit) return;
+    // In a real app, you would save this to Firestore here.
+    // For this prototype, we'll just update the local state.
     setUsers(users.map(u => u.id === userToEdit.id ? userToEdit : u));
     setUserToEdit(null);
   };
 
   const handleDeleteUser = () => {
     if (!userToDelete) return;
+     // In a real app, you would delete this from Firestore here.
     setUsers(users.filter(u => u.id !== userToDelete.id));
     setUserToDelete(null);
   };
@@ -58,7 +80,13 @@ export default function AdminUsersPage() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {staffUsers.map((user) => (
+              {isLoading ? (
+                <TableRow>
+                    <TableCell colSpan={6} className="h-24 text-center">
+                        <Loader2 className="h-6 w-6 animate-spin mx-auto" />
+                    </TableCell>
+                </TableRow>
+              ) : staffUsers.length > 0 ? staffUsers.map((user) => (
                 <TableRow key={user.id}>
                   <TableCell>
                     <div className="flex items-center gap-4">
@@ -109,7 +137,13 @@ export default function AdminUsersPage() {
                     </DropdownMenu>
                   </TableCell>
                 </TableRow>
-              ))}
+              )) : (
+                <TableRow>
+                    <TableCell colSpan={6} className="h-24 text-center">
+                        No staff members found.
+                    </TableCell>
+                </TableRow>
+              )}
             </TableBody>
           </Table>
         </CardContent>
