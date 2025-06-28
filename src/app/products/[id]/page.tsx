@@ -42,10 +42,24 @@ export default async function ProductDetailPage({ params }: { params: { id: stri
 
   const product = docToJSON(productSnap) as Product;
 
-  // The product ID is still needed for fetching reviews.
+  // Fetch reviews and calculate the most up-to-date rating on the server
   const reviewsQuery = query(collection(db, 'reviews'), where('productId', '==', product.id));
   const reviewsSnapshot = await getDocs(reviewsQuery);
   const productReviews = reviewsSnapshot.docs.map(docToJSON) as Review[];
+
+  const approvedReviews = productReviews.filter(r => r.status === 'approved');
+  const reviewCount = approvedReviews.length;
+  const averageRating = reviewCount > 0 
+    ? approvedReviews.reduce((acc, review) => acc + review.rating, 0) / reviewCount
+    : 0;
+  
+  // Pass the calculated rating to the client component
+  const productWithCalculatedRating = {
+    ...product,
+    rating: averageRating,
+    reviewCount,
+  };
+
 
   return (
     <div className="bg-background">
@@ -61,7 +75,7 @@ export default async function ProductDetailPage({ params }: { params: { id: stri
         
         <div className="mt-6 grid grid-cols-1 lg:grid-cols-12 gap-8">
           <div className="lg:col-span-9">
-            <ProductDetailsClient product={product} />
+            <ProductDetailsClient product={productWithCalculatedRating} />
           </div>
           
           {/* Right Ad */}
@@ -118,7 +132,7 @@ export default async function ProductDetailPage({ params }: { params: { id: stri
               </Card>
             </TabsContent>
             <TabsContent value="reviews" id="reviews" className="mt-6">
-              <Reviews productId={product.id} reviews={productReviews} averageRating={product.rating} />
+              <Reviews productId={product.id} reviews={productReviews} averageRating={averageRating} />
             </TabsContent>
             <TabsContent value="questions" className="mt-6">
               <Card>
