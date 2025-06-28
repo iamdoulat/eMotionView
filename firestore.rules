@@ -2,74 +2,72 @@ rules_version = '2';
 
 service cloud.firestore {
   match /databases/{database}/documents {
-    
-    // Helper function to check for Admin role from a separate admins collection.
-    // This is a secure way to manage roles without recursion issues.
-    function isUserAdmin(userId) {
-      return exists(/databases/$(database)/documents/admins/$(userId));
-    }
-    
-    // Helper function to check if the user is authenticated.
-    function isSignedIn() {
+  
+    // --- Helper Functions ---
+    function isUserAuthenticated() {
       return request.auth != null;
     }
+
+    // Function to check if the requesting user is a staff member or admin.
+    // It safely gets the user's own data from the 'users' collection to check their role.
+    function isStaffOrAdmin() {
+      if (!isUserAuthenticated()) {
+        return false;
+      }
+      // This is a safe way to check a user's role without causing recursion.
+      // We are getting the document of the *requesting user*, not the document they are trying to access.
+      let userDoc = get(/databases/$(database)/documents/users/$(request.auth.uid));
+      return userDoc != null && (
+        userDoc.data.role == 'Admin' || 
+        userDoc.data.role == 'Manager' || 
+        userDoc.data.role == 'Staff'
+      );
+    }
+
+    // Function to check if the user is a full Admin.
+    function isAdmin() {
+       if (!isUserAuthenticated()) {
+        return false;
+      }
+      let userDoc = get(/databases/$(database)/documents/users/$(request.auth.uid));
+      return userDoc != null && userDoc.data.role == 'Admin';
+    }
     
-    // Helper function to check if the user is the owner of a document.
-    function isOwner(userId) {
-      return request.auth.uid == userId;
+    // --- Collection Rules ---
+
+    // Public read access for products, categories, brands, reviews
+    match /{collectionName in ['products', 'categories', 'brands', 'reviews']}/{docId} {
+      allow get, list: if true;
+      // Writing is restricted to Admins
+      allow write: if isAdmin();
     }
 
-    // --- PUBLIC COLLECTIONS ---
-    // These collections are readable by anyone, including unauthenticated users.
-    match /products/{productId} {
-      allow read: if true;
-    }
-    match /categories/{categoryId} {
-      allow read: if true;
-    }
-    match /brands/{brandId} {
-      allow read: if true;
-    }
-     match /suppliers/{supplierId} {
-      allow read: if true;
-    }
-     match /attributes/{attributeId} {
-      allow read: if true;
-    }
-    match /reviews/{reviewId} {
-      // Anyone can read approved reviews. Admins can read any review.
-      allow read: if resource.data.status == 'approved' || isUserAdmin(request.auth.uid);
-      // Any signed-in user can create a review.
-      allow create: if isSignedIn();
-      // Admins can update/delete reviews.
-      allow update, delete: if isUserAdmin(request.auth.uid);
-    }
-
-    // --- CUSTOMER-SPECIFIC COLLECTIONS ---
+    // Customers collection
     match /customers/{userId} {
-      // A user can create their own customer document during sign-up.
-      allow create: if isSignedIn() && isOwner(userId);
-      
-      // A customer can read/update their own data.
-      // Admins have full access to any customer's data.
-      allow read, update: if isOwner(userId) || isUserAdmin(request.auth.uid);
-      allow delete: if isUserAdmin(request.auth.uid);
-      
-      // Admins can list all customers for the admin panel.
-      allow list: if isUserAdmin(request.auth.uid);
+      // Any authenticated user can create their own customer document during sign-up
+      allow create: if isUserAuthenticated() && request.auth.uid == userId;
+      // Customers can read/update their own data
+      allow get, update: if isUserAuthenticated() && request.auth.uid == userId;
+      // Admins/Staff can access any customer data
+      allow list, get, update, delete: if isStaffOrAdmin();
     }
     
-    // --- STAFF/ADMIN COLLECTIONS ---
+    // Users (Staff) collection
     match /users/{userId} {
-        // Only admins can manage staff members (create, read, update, delete, list).
-        allow read, write, list: if isUserAdmin(request.auth.uid);
+      // A user can read their own document. Staff can read any other staff document.
+      allow get: if isUserAuthenticated() && (request.auth.uid == userId || isStaffOrAdmin());
+      // Only Staff can list all users.
+      allow list: if isStaffOrAdmin();
+      // Only Admins can create, update, or delete staff members.
+      allow create, update, delete: if isAdmin();
     }
 
-    // --- ADMINS COLLECTION ---
-    // Secures the collection that defines who is an admin.
-    match /admins/{userId} {
-      // Only other admins can see who is an admin or make someone an admin.
-      allow read, write: if isUserAdmin(request.auth.uid);
+    // Orders collection
+    match /orders/{orderId} {
+      // Users can create and read their own orders.
+      allow create, get: if isUserAuthenticated() && request.resource.data.userId == request.auth.uid;
+      // Staff can view all orders.
+      allow get, list, update: if isStaffOrAdmin();
     }
   }
 }

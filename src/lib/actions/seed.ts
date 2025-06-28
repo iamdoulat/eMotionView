@@ -62,7 +62,8 @@ export async function seedDatabase() {
         for (const { name, data } of collectionsToSeed) {
             if (await isCollectionEmpty(name)) {
                 data.forEach((item) => {
-                    const docRef = doc(collection(db, name));
+                    // Use the item's predefined ID if it exists, otherwise generate one
+                    const docRef = item.id ? doc(db, name, item.id) : doc(collection(db, name));
                     batch.set(docRef, item);
                 });
                 seededCount += data.length;
