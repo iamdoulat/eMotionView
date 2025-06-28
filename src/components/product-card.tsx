@@ -5,7 +5,7 @@ import Image from 'next/image';
 import Link from 'next/link';
 import type { Product } from '@/lib/placeholder-data';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardFooter } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Star, ShoppingCart, CheckCircle, Plus, Minus, Heart } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
@@ -116,7 +116,7 @@ export function ProductCard({ product }: ProductCardProps) {
               <div className="flex items-center justify-between mt-1">
                   <div className="flex items-center">
                       {[...Array(5)].map((_, i) => (
-                      <Star key={i} className={`h-4 w-4 ${i < Math.round(product.rating) ? 'text-yellow-400 fill-yellow-400' : 'text-gray-300'}`} />
+                      <Star key={i} className={`h-4 w-4 ${i < Math.round(product.rating) ? 'text-yellow-400' : 'text-gray-300'}`} fill={i < Math.round(product.rating) ? 'currentColor' : 'transparent'} />
                       ))}
                   </div>
                   <Button size="icon" variant="ghost" className="w-8 h-8 text-muted-foreground hover:text-primary rounded-full hover:bg-primary/10" onClick={handleQuickAddToCart} disabled={!canPurchase}>
@@ -128,6 +128,9 @@ export function ProductCard({ product }: ProductCardProps) {
       </Card>
 
       <DialogContent className="sm:max-w-4xl p-8">
+        <DialogHeader className="p-0 mb-2 sm:text-left text-center">
+          <DialogTitle className="text-2xl font-bold font-headline leading-snug tracking-tight">{product.name}</DialogTitle>
+        </DialogHeader>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8 items-start">
           <div className="flex flex-col items-center">
             <div className="w-full max-w-md aspect-square relative">
@@ -159,15 +162,13 @@ export function ProductCard({ product }: ProductCardProps) {
             </div>
           </div>
           <div className="flex flex-col h-full">
-            <DialogHeader className="p-0 mb-2 sm:text-left text-center">
-                <DialogTitle className="text-2xl font-bold font-headline leading-snug tracking-tight">{product.name}</DialogTitle>
-            </DialogHeader>
             
             <div className="flex items-center mb-4">
               {[...Array(5)].map((_, i) => (
                 <Star
                   key={i}
-                  className={`h-5 w-5 ${i < Math.round(product.rating) ? 'text-yellow-400 fill-yellow-400' : 'text-gray-300'}`}
+                  className={`h-5 w-5 ${i < Math.round(product.rating) ? 'text-yellow-400' : 'text-gray-300'}`}
+                  fill={i < Math.round(product.rating) ? 'currentColor' : 'transparent'}
                 />
               ))}
               <a href={`/products/${product.permalink || product.id}#reviews`} className="ml-2 text-sm text-muted-foreground hover:text-primary">({product.reviewCount} reviews)</a>
@@ -242,4 +243,3 @@ export function ProductCard({ product }: ProductCardProps) {
     </Dialog>
   );
 }
-

@@ -106,7 +106,8 @@ export function Reviews({ reviews, productId }: ReviewsProps) {
                   return (
                     <Star
                       key={i}
-                      className={`h-6 w-6 cursor-pointer transition-colors ${starValue <= (hoverRating || rating) ? 'text-yellow-400 fill-yellow-400' : 'text-gray-300'}`}
+                      className={`h-6 w-6 cursor-pointer transition-colors ${starValue <= (hoverRating || rating) ? 'text-yellow-400' : 'text-gray-300'}`}
+                      fill={starValue <= (hoverRating || rating) ? 'currentColor' : 'transparent'}
                       onMouseEnter={() => setHoverRating(starValue)}
                       onClick={() => setRating(starValue)}
                     />
@@ -170,7 +171,8 @@ export function Reviews({ reviews, productId }: ReviewsProps) {
                     {[...Array(5)].map((_, i) => (
                       <Star
                         key={i}
-                        className={`h-4 w-4 ${i < review.rating ? 'text-yellow-400 fill-yellow-400' : 'text-gray-300'}`}
+                        className={`h-4 w-4 ${i < review.rating ? 'text-yellow-400' : 'text-gray-300'}`}
+                        fill={i < review.rating ? 'currentColor' : 'transparent'}
                       />
                     ))}
                   </div>
