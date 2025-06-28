@@ -1,12 +1,11 @@
-patch-package
 --- a/node_modules/react-quill/lib/index.js
 +++ b/node_modules/react-quill/lib/index.js
-@@ -432,7 +432,7 @@
- 	},
- 
- 	getEditingArea: function getEditingArea() {
+@@ -497,7 +497,7 @@
+ 	 * Returns the DOM node for the editor's editing area.
+ 	 */
+ 	ReactQuill.prototype.getEditingArea = function getEditingArea() {
 -		return _reactDom2.default.findDOMNode(this.editingArea);
-+		return this.editingArea;
- 	},
++		return this.editingArea.current;
+ 	};
  
- 	getEditor: function getEditor() {
+ 	/**
