@@ -1,8 +1,11 @@
 
+
 "use client";
 
-import { useState } from "react";
-import { products as initialProducts, type Product } from "@/lib/placeholder-data";
+import { useState, useEffect } from "react";
+import type { Product } from "@/lib/placeholder-data";
+import { collection, getDocs } from "firebase/firestore";
+import { db, docToJSON } from "@/lib/firebase";
 import Image from "next/image";
 import Link from "next/link";
 import {
@@ -47,14 +50,26 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { MoreHorizontal, PlusCircle, Edit, Trash2, View } from "lucide-react";
+import { MoreHorizontal, PlusCircle, Edit, Trash2, View, Loader2 } from "lucide-react";
 import { ProductForm } from "@/components/admin/product-form";
 
 export default function AdminProductsPage() {
-  const [products, setProducts] = useState<Product[]>(initialProducts);
+  const [products, setProducts] = useState<Product[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
   const [productToEdit, setProductToEdit] = useState<Product | null>(null);
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [productToDelete, setProductToDelete] = useState<Product | null>(null);
+
+  useEffect(() => {
+    const fetchProducts = async () => {
+        setIsLoading(true);
+        const productsSnapshot = await getDocs(collection(db, 'products'));
+        const productList = productsSnapshot.docs.map(doc => docToJSON(doc) as Product);
+        setProducts(productList);
+        setIsLoading(false);
+    }
+    fetchProducts();
+  }, []);
 
   const handleOpenForm = (product?: Product) => {
     setProductToEdit(product || null);
@@ -115,7 +130,13 @@ export default function AdminProductsPage() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {products.map((product) => {
+              {isLoading ? (
+                <TableRow>
+                    <TableCell colSpan={7} className="text-center h-24">
+                        <Loader2 className="h-6 w-6 animate-spin mx-auto" />
+                    </TableCell>
+                </TableRow>
+              ) : products.length > 0 ? products.map((product) => {
                 const isStockManaged = product.manageStock ?? true;
                 const isInStock = !isStockManaged || product.stock > 0;
                 
@@ -133,7 +154,7 @@ export default function AdminProductsPage() {
                     </TableCell>
                     <TableCell className="font-medium">{product.name}</TableCell>
                     <TableCell>
-                      <Badge variant={isInStock ? "default" : "destructive"}>
+                      <Badge variant={isInStock ? 'default' : "destructive"}>
                         {isInStock ? "In Stock" : "Out of Stock"}
                       </Badge>
                     </TableCell>
@@ -167,7 +188,13 @@ export default function AdminProductsPage() {
                     </TableCell>
                   </TableRow>
                 )
-              })}
+              }) : (
+                 <TableRow>
+                    <TableCell colSpan={7} className="text-center h-24">
+                        No products found. Consider seeding the database from the dashboard.
+                    </TableCell>
+                </TableRow>
+              )}
             </TableBody>
           </Table>
         </CardContent>

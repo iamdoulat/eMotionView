@@ -1,3 +1,4 @@
+
 "use client"
 
 import { useEffect, useState } from "react"
@@ -9,9 +10,10 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card"
-import { DollarSign, Users, CreditCard, Activity } from "lucide-react"
+import { DollarSign, Users, CreditCard, Activity, Database } from "lucide-react"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Skeleton } from "@/components/ui/skeleton"
+import { SeedButton } from "@/components/admin/seed-button"
 
 const initialData = [
   { name: "Jan", total: 0 },
@@ -57,7 +59,10 @@ export default function AdminDashboardPage() {
 
   return (
     <div className="space-y-4">
-      <h1 className="text-3xl font-bold tracking-tight">Dashboard</h1>
+      <div className="flex justify-between items-center">
+        <h1 className="text-3xl font-bold tracking-tight">Dashboard</h1>
+        <SeedButton />
+      </div>
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
