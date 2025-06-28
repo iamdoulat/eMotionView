@@ -63,14 +63,38 @@ export default function ReviewsPage() {
       .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
   }, [reviews, filter]);
 
+  const updateProductStats = async (productId: string, currentReviews: Review[]) => {
+    const productReviews = currentReviews.filter(r => r.productId === productId);
+    const approvedProductReviews = productReviews.filter(r => r.status === 'approved');
+
+    const reviewCount = approvedProductReviews.length;
+    const averageRating = reviewCount > 0
+        ? approvedProductReviews.reduce((sum, r) => sum + r.rating, 0) / reviewCount
+        : 0;
+
+    const productRef = doc(db, 'products', productId);
+    await updateDoc(productRef, {
+        reviewCount: reviewCount,
+        rating: averageRating,
+    });
+  };
+
   const handleStatusChange = async (reviewId: string, newStatus: Review['status']) => {
+    const reviewToUpdate = reviews.find(r => r.id === reviewId);
+    if (!reviewToUpdate) return;
+    const { productId } = reviewToUpdate;
+
     const reviewRef = doc(db, 'reviews', reviewId);
     try {
       await updateDoc(reviewRef, { status: newStatus });
-      setReviews(reviews.map(r => r.id === reviewId ? { ...r, status: newStatus } : r));
+      const updatedReviews = reviews.map(r => r.id === reviewId ? { ...r, status: newStatus } : r);
+      setReviews(updatedReviews);
+
+      await updateProductStats(productId, updatedReviews);
+
       toast({
         title: "Status Updated",
-        description: `Review has been ${newStatus}.`,
+        description: `Review has been ${newStatus} and product stats updated.`,
       });
     } catch (error) {
       console.error("Error updating review status:", error);
@@ -84,14 +108,20 @@ export default function ReviewsPage() {
 
   const handleDeleteReview = async () => {
     if (!reviewToDelete) return;
+    const { productId } = reviewToDelete;
+    
     const reviewRef = doc(db, 'reviews', reviewToDelete.id);
     try {
       await deleteDoc(reviewRef);
-      setReviews(reviews.filter(r => r.id !== reviewToDelete.id));
+      const updatedReviews = reviews.filter(r => r.id !== reviewToDelete.id);
+      setReviews(updatedReviews);
       setReviewToDelete(null);
+
+      await updateProductStats(productId, updatedReviews);
+
       toast({
         title: "Review Deleted",
-        description: "The review has been permanently deleted.",
+        description: "The review has been permanently deleted and product stats updated.",
       });
     } catch (error) {
       console.error("Error deleting review:", error);
@@ -201,9 +231,9 @@ export default function ReviewsPage() {
                         {product ? (
                           <Link href={`/products/${product.permalink || product.id}`} className="font-medium text-primary hover:underline" target="_blank">{product?.name}</Link>
                         ) : (
-                          <Link href={`/products/${review.productId}`} className="font-medium text-destructive hover:underline" target="_blank">
+                          <span className="font-medium text-destructive">
                             Product not found ({review.productId})
-                          </Link>
+                          </span>
                         )}
                       </div>
 
