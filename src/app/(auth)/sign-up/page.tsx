@@ -54,7 +54,6 @@ export default function SignUpPage() {
         name: values.name,
         email: values.email,
         role: 'Customer',
-        createdAt: new Date().toISOString(),
         status: 'Active',
         avatar: `https://placehold.co/100x100.png?text=${values.name.charAt(0)}`,
         lastLogin: new Date().toISOString(),

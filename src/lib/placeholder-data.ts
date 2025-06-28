@@ -71,7 +71,6 @@ export type User = {
   mobileNumber?: string;
   avatar: string;
   registeredDate: string;
-  createdAt?: string;
   status: 'Active' | 'Inactive';
   lastLogin: string;
   role: 'Admin' | 'Manager' | 'Staff' | 'Customer';
