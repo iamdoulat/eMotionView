@@ -1,14 +1,14 @@
 
 "use client"
 
-import React, { useState, useEffect, useRef, useCallback } from "react"
+import React, { useState, useEffect, useRef } from "react"
 import Link from "next/link"
 import Image from "next/image"
 import { useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet"
-import { Search, ShoppingCart, Menu, Phone, User, MapPin, Heart, LayoutGrid, LogOut, Package, Tag, Building, ChevronsRight, Boxes } from "lucide-react"
+import { Search, ShoppingCart, Menu, Phone, User, Heart, LayoutGrid, LogOut, Package, Tag, Building, ChevronsRight, Boxes, MapPin } from "lucide-react"
 import { Badge } from "@/components/ui/badge"
 import { cn } from "@/lib/utils"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
@@ -19,8 +19,6 @@ import { useCart } from "@/hooks/use-cart"
 import { auth } from "@/lib/firebase"
 import { onAuthStateChanged, signOut, type User as FirebaseUser } from "firebase/auth"
 import { Skeleton } from "../ui/skeleton"
-import { useIsMobile } from "@/hooks/use-mobile"
-import { useHasMounted } from "@/hooks/use-has-mounted"
 
 const categoryLinks = [
     { name: 'Smart Watches', href: '/products?category=Wearables' },
@@ -51,9 +49,6 @@ export function Header() {
   const router = useRouter();
   const { cartCount, isInitialized: isCartInitialized } = useCart();
   
-  const hasMounted = useHasMounted();
-  const isMobile = useIsMobile();
-
   // Search state
   const [searchTerm, setSearchTerm] = useState('');
   const [searchResults, setSearchResults] = useState<SearchResult[]>([]);
@@ -61,28 +56,24 @@ export function Header() {
   const [isSearchFocused, setIsSearchFocused] = useState(false);
   const searchWrapperRef = useRef<HTMLElement>(null);
   
-  const handleScroll = useCallback(() => {
-    setIsScrolled(window.scrollY > 10);
-  }, []);
-
   useEffect(() => {
+    const handleScroll = () => {
+      setIsScrolled(window.scrollY > 10);
+    };
     window.addEventListener("scroll", handleScroll);
     return () => window.removeEventListener("scroll", handleScroll);
-  }, [handleScroll]);
+  }, []);
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (user) => {
         setCurrentUser(user);
         setIsAuthLoading(false);
     });
-
-    return () => {
-      unsubscribe();
-    };
+    return () => unsubscribe();
   }, []);
 
   useEffect(() => {
-    function handleClickOutside(event: MouseEvent) {
+    const handleClickOutside = (event: MouseEvent) => {
       if (searchWrapperRef.current && !searchWrapperRef.current.contains(event.target as Node)) {
         setIsSearchFocused(false);
       }
@@ -155,21 +146,7 @@ export function Header() {
     (acc[result.type] = acc[result.type] || []).push(result);
     return acc;
   }, {} as Record<string, SearchResult[]>);
-
-  if (!hasMounted) {
-    return (
-      <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur-sm">
-        <div className="container mx-auto flex h-16 items-center justify-between px-4 md:h-20">
-          <Skeleton className="h-8 w-32" />
-          <div className="flex items-center gap-4">
-            <Skeleton className="h-10 w-10 rounded-full" />
-            <Skeleton className="h-10 w-24 hidden md:block" />
-          </div>
-        </div>
-      </header>
-    );
-  }
-
+  
   const searchInput = (
     <Input 
       type="search" 
@@ -264,7 +241,7 @@ export function Header() {
                 </Button>
             </>
         ) : (
-            <button onClick={handleLogout} className="flex items-center gap-1 hover:text-primary text-xs">
+            <button onClick={handleLogout} className="flex items-center gap-1 hover:text-primary text-sm">
                 <LogOut className="h-4 w-4" />
                 Logout
             </button>
@@ -276,20 +253,57 @@ export function Header() {
             <Link href="/sign-in"><User className="mr-2 h-4 w-4" /> Login / Sign Up</Link>
         </Button>
     ) : (
-        <Link href="/sign-in" className="flex items-center gap-1 hover:text-primary">
+        <Link href="/sign-in" className="flex items-center gap-1 hover:text-primary text-sm">
             <User className="h-4 w-4" />
             Login
         </Link>
     )
   }
 
-  if (isMobile) {
-    return (
-       <header className="sticky top-0 z-50 w-full bg-background/95 backdrop-blur-sm shadow-md" ref={searchWrapperRef}>
-        <div className="container mx-auto flex h-16 items-center justify-between px-4 border-b">
+  return (
+    <header className="sticky top-0 z-50 w-full bg-background/95 backdrop-blur-sm shadow-md" ref={searchWrapperRef}>
+      {/* Top Bar (Desktop only) */}
+      <div className={cn(
+          "hidden border-b bg-secondary/50 transition-all duration-300 overflow-hidden md:block",
+          isScrolled ? 'max-h-0 py-0 border-transparent' : 'max-h-12 pt-3 pb-2.5 border-border'
+      )}>
+        <div className="container mx-auto flex h-full items-center justify-between px-4">
+          <div className="font-bold text-sm">
+            <span>Biggest Smart Gadget & SmartPhone Collection</span>
+          </div>
+          <div className="flex items-center gap-4 text-sm">
+            <a href="tel:09677460460" className="flex items-center gap-1 hover:text-primary">
+              <Phone className="h-4 w-4" />
+              09677460460
+            </a>
+            <span className="text-muted-foreground">|</span>
+             <AccountLinks />
+             <span className="text-muted-foreground">|</span>
+             <Link href="/track-order" className="flex items-center gap-1 hover:text-primary">
+                <MapPin className="h-4 w-4" />
+                Order Track
+            </Link>
+          </div>
+        </div>
+      </div>
+      
+      {/* ======================================================= */}
+      {/* Main Header - Unified for Mobile and Desktop            */}
+      {/* Uses responsive classes to show/hide/rearrange elements */}
+      {/* ======================================================= */}
+      
+      {/* Main Bar */}
+      <div className={cn(
+        "container mx-auto flex items-center justify-between gap-4 px-4 transition-all duration-300",
+        "h-16 md:h-20", // Base heights for mobile and desktop
+        isScrolled && "md:h-16" // Scrolled height for desktop
+      )}>
+        {/* --- Left Group --- */}
+        <div className="flex flex-shrink-0 items-center gap-2">
+          {/* Mobile Menu Trigger */}
           <Sheet>
             <SheetTrigger asChild>
-              <Button variant="ghost" size="icon">
+              <Button variant="ghost" size="icon" className="md:hidden">
                 <Menu className="h-6 w-6" />
                 <span className="sr-only">Toggle Menu</span>
               </Button>
@@ -320,59 +334,10 @@ export function Header() {
               </ScrollArea>
             </SheetContent>
           </Sheet>
-          <Link href="/" className="flex items-center gap-2">
-            <span className="font-bold font-headline text-xl text-foreground">eMotionView</span>
-          </Link>
-          <CartButton />
-        </div>
-        <div className="px-4 py-3 border-b relative">
-          <form>
-            <div className="relative">
-              {searchInput}
-              {searchButton}
-            </div>
-          </form>
-          {isSearchFocused && searchTerm.length >= 3 && 
-            <div className="absolute top-full left-0 right-0 px-4 pb-4 bg-background">
-              {searchResultsPanel}
-            </div>
-          }
-        </div>
-      </header>
-    )
-  }
 
-  return (
-    <header className="sticky top-0 z-50 w-full bg-background/95 backdrop-blur-sm shadow-md" ref={searchWrapperRef}>
-      {/* Top Bar */}
-      <div className={cn("border-b bg-secondary/50 transition-all duration-300 overflow-hidden text-sm pt-3 pb-2.5", isScrolled ? 'max-h-0 py-0 border-transparent' : 'max-h-12 border-border')}>
-        <div className="container mx-auto flex h-full items-center justify-between px-4">
-          <div className="font-bold">
-            <span>Biggest Smart Gadget & SmartPhone Collection</span>
-          </div>
-          <div className="flex items-center gap-4">
-            <a href="tel:09677460460" className="flex items-center gap-1 hover:text-primary">
-              <Phone className="h-4 w-4" />
-              09677460460
-            </a>
-            <span className="text-muted-foreground">|</span>
-             <AccountLinks />
-             <span className="text-muted-foreground">|</span>
-             <Link href="/track-order" className="flex items-center gap-1 hover:text-primary">
-                <MapPin className="h-4 w-4" />
-                Order Track
-            </Link>
-          </div>
-        </div>
-      </div>
-      
-      {/* Unified Main Header */}
-      <div className="border-b">
-        <div className={cn("container mx-auto flex items-center justify-between gap-4 px-4 transition-all duration-300", isScrolled ? 'h-16' : 'h-20')}>
-          
-          <div className="flex items-center gap-4">
-            <Link href="/" className="flex items-center gap-2 flex-shrink-0">
-              <Image 
+          {/* Desktop Logo */}
+          <Link href="/" className="hidden items-center gap-2 md:flex">
+             <Image 
                 src="https://placehold.co/50x50/FFFFFF/000000.png" 
                 alt="eMotionView Logo" 
                 width={isScrolled ? 32 : 40} 
@@ -383,9 +348,10 @@ export function Header() {
               <span className={cn("font-bold font-headline text-foreground transition-all duration-300", isScrolled ? 'text-xl' : 'text-2xl')}>
                 eMotionView
               </span>
-            </Link>
-            
-            <div className={cn("hidden lg:flex items-center transition-opacity duration-300", isScrolled ? 'opacity-100' : 'opacity-0 pointer-events-none')}>
+          </Link>
+
+          {/* Desktop Category Dropdown (appears on scroll) */}
+          <div className={cn("hidden lg:flex items-center transition-opacity duration-300", isScrolled ? 'opacity-100' : 'opacity-0 pointer-events-none')}>
               <DropdownMenu>
                   <DropdownMenuTrigger asChild>
                       <Button>
@@ -402,56 +368,78 @@ export function Header() {
                   </DropdownMenuContent>
               </DropdownMenu>
             </div>
-          </div>
+        </div>
 
-          <div className="flex-1 flex justify-center px-4 relative">
-            <form className={cn("w-full transition-all duration-300", isScrolled ? 'max-w-lg' : 'max-w-2xl')}>
-              <div className="relative">
-                {searchInput}
-                {searchButton}
+        {/* --- Center Group --- */}
+        <div className="flex flex-1 justify-center items-center md:px-4">
+            {/* Mobile Logo (acts as a spacer on small screens) */}
+             <Link href="/" className="flex items-center gap-2 md:hidden">
+              <span className="font-bold font-headline text-xl text-foreground">eMotionView</span>
+            </Link>
+
+            {/* Desktop Search */}
+            <div className="w-full max-w-2xl hidden md:block">
+              <div className={cn("w-full transition-all duration-300", isScrolled ? 'max-w-lg' : 'max-w-2xl')}>
+                  <form className="relative" onSubmit={(e) => e.preventDefault()}>
+                      {searchInput}
+                      {searchButton}
+                  </form>
+                  {isSearchFocused && searchTerm.length >= 3 && searchResultsPanel}
               </div>
-            </form>
-            {isSearchFocused && searchTerm.length >= 3 && searchResultsPanel}
-          </div>
-
-          <div className="flex items-center justify-end gap-1">
-            <Button variant="ghost" size="icon" asChild className={cn("hidden lg:inline-flex transition-opacity duration-300", isScrolled ? 'opacity-100' : 'opacity-0 pointer-events-none')}>
-                <Link href="/wishlist">
-                    <Heart className="h-6 w-6" />
-                    <span className="sr-only">Wishlist</span>
-                </Link>
-            </Button>
-            <CartButton />
-            <div className={cn("hidden lg:inline-flex items-center transition-opacity duration-300", isScrolled ? 'opacity-100' : 'opacity-0 pointer-events-none')}>
-              <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                        <Button variant="ghost" size="icon" aria-label="Account">
-                            <User className="h-6 w-6" />
-                        </Button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end">
-                        {isAuthLoading ? (
-                            <DropdownMenuItem disabled>Loading...</DropdownMenuItem>
-                        ) : currentUser ? (
-                            <>
-                                <DropdownMenuItem asChild>
-                                    <Link href="/account">My Account</Link>
-                                </DropdownMenuItem>
-                                <DropdownMenuItem onClick={handleLogout}>
-                                    Logout
-                                </DropdownMenuItem>
-                            </>
-                        ) : (
-                            <DropdownMenuItem asChild>
-                                <Link href="/sign-in">Sign In</Link>
-                            </DropdownMenuItem>
-                        )}
-                    </DropdownMenuContent>
-                </DropdownMenu>
             </div>
+        </div>
+        
+        {/* --- Right Group --- */}
+        <div className="flex flex-shrink-0 items-center justify-end gap-1">
+          <Button variant="ghost" size="icon" asChild className="hidden lg:inline-flex">
+              <Link href="/wishlist">
+                  <Heart className="h-6 w-6" />
+                  <span className="sr-only">Wishlist</span>
+              </Link>
+          </Button>
+
+          <CartButton />
+          
+          <div className="hidden lg:inline-flex items-center">
+            <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                      <Button variant="ghost" size="icon" aria-label="Account">
+                          <User className="h-6 w-6" />
+                      </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end">
+                      {isAuthLoading ? (
+                          <DropdownMenuItem disabled>Loading...</DropdownMenuItem>
+                      ) : currentUser ? (
+                          <>
+                              <DropdownMenuItem asChild>
+                                  <Link href="/account">My Account</Link>
+                              </DropdownMenuItem>
+                              <DropdownMenuItem onClick={handleLogout}>
+                                  Logout
+                              </DropdownMenuItem>
+                          </>
+                      ) : (
+                          <DropdownMenuItem asChild>
+                              <Link href="/sign-in">Sign In</Link>
+                          </DropdownMenuItem>
+                      )}
+                  </DropdownMenuContent>
+              </DropdownMenu>
           </div>
         </div>
+      </div>
+
+      {/* Mobile Search Bar */}
+      <div className="container mx-auto px-4 py-3 border-t relative md:hidden">
+          <form className="relative" onSubmit={(e) => e.preventDefault()}>
+             {searchInput}
+             {searchButton}
+          </form>
+          {isSearchFocused && searchTerm.length >= 3 && searchResultsPanel}
       </div>
     </header>
   )
 }
+
+    
