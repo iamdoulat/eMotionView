@@ -8,7 +8,6 @@ import type { Product } from "@/lib/placeholder-data";
 import { categories, brands, suppliers, attributes } from "@/lib/placeholder-data";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -22,6 +21,7 @@ import { useEffect, useState } from "react";
 import { Switch } from "../ui/switch";
 import { storage } from "@/lib/firebase";
 import { ref, uploadBytes, getDownloadURL, deleteObject } from "firebase/storage";
+import { RichTextEditor } from "./rich-text-editor";
 
 const productSchema = z.object({
     id: z.string().optional(),
@@ -297,7 +297,11 @@ export function ProductForm({ product, onSave, onCancel, isSaving }: ProductForm
                                 </div>
                                 <div className="space-y-2">
                                     <Label htmlFor="digitalProductNote">Download Note for Customer</Label>
-                                    <Textarea id="digitalProductNote" {...register("digitalProductNote")} placeholder="e.g. Your download link will expire in 48 hours." />
+                                    <RichTextEditor
+                                        value={watch('digitalProductNote') || ''}
+                                        onChange={(value) => setValue('digitalProductNote', value)}
+                                        placeholder="e.g. Your download link will expire in 48 hours."
+                                    />
                                     {errors.digitalProductNote && <p className="text-destructive text-sm">{errors.digitalProductNote.message}</p>}
                                 </div>
                             </div>
@@ -339,8 +343,22 @@ export function ProductForm({ product, onSave, onCancel, isSaving }: ProductForm
 
                         <div className="space-y-2">
                             <Label htmlFor="description">Description</Label>
-                            <Textarea id="description" {...register("description")} />
-                            {errors.description && <p className="text-destructive text-sm">{errors.description.message}</p>}
+                             <FormField
+                                control={control}
+                                name="description"
+                                render={({ field }) => (
+                                    <FormItem>
+                                        <FormControl>
+                                            <RichTextEditor
+                                                value={field.value}
+                                                onChange={field.onChange}
+                                                placeholder="Write a detailed description for the product..."
+                                            />
+                                        </FormControl>
+                                        <FormMessage />
+                                    </FormItem>
+                                )}
+                            />
                         </div>
 
                         <div className="space-y-2">

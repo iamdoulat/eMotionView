@@ -93,7 +93,10 @@ export default async function ProductDetailPage({ params }: { params: { id: stri
             <TabsContent value="description" className="mt-6">
                <Card>
                 <CardContent className="pt-6">
-                  <p className="text-muted-foreground">{product.description}</p>
+                  <div
+                    className="prose prose-sm sm:prose-base dark:prose-invert max-w-none"
+                    dangerouslySetInnerHTML={{ __html: product.description }}
+                  />
                 </CardContent>
               </Card>
             </TabsContent>
