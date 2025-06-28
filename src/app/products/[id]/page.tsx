@@ -6,23 +6,40 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Table, TableBody, TableCell, TableRow } from "@/components/ui/table"
 import Link from 'next/link';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { collection, query, where, getDocs, limit } from 'firebase/firestore';
+import { collection, query, where, getDocs, limit, doc, getDoc, type DocumentSnapshot } from 'firebase/firestore';
 import { db, docToJSON } from '@/lib/firebase';
 import type { Product, Review } from '@/lib/placeholder-data';
 import { Reviews } from '@/components/reviews';
 import { ProductDetailsClient } from '@/components/product-details-client';
 
-export default async function ProductDetailPage({ params }: { params: { id: string } }) { // The `id` param is now the permalink
-  const permalink = params.id;
+export default async function ProductDetailPage({ params }: { params: { id: string } }) {
+  const slug = params.id;
   const productsCollection = collection(db, 'products');
-  const q = query(productsCollection, where("permalink", "==", permalink), limit(1));
-  const productQuerySnapshot = await getDocs(q);
+  let productSnap: DocumentSnapshot | undefined = undefined;
 
-  if (productQuerySnapshot.empty) {
+  // Try finding by permalink first
+  const permalinkQuery = query(productsCollection, where("permalink", "==", slug), limit(1));
+  const permalinkSnapshot = await getDocs(permalinkQuery);
+
+  if (!permalinkSnapshot.empty) {
+    productSnap = permalinkSnapshot.docs[0];
+  } else {
+    // If not found by permalink, try by document ID. This can fail if the slug is not a valid doc ID.
+    try {
+      const docRef = doc(db, "products", slug);
+      const docSnap = await getDoc(docRef);
+      if (docSnap.exists()) {
+        productSnap = docSnap;
+      }
+    } catch (error) {
+      console.log(`Could not find product by ID '${slug}', it might not be a valid document ID.`);
+    }
+  }
+
+  if (!productSnap) {
     notFound();
   }
 
-  const productSnap = productQuerySnapshot.docs[0];
   const product = docToJSON(productSnap) as Product;
 
   // The product ID is still needed for fetching reviews.

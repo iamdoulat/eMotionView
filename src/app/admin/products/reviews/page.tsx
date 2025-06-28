@@ -3,7 +3,7 @@
 
 import { useState, useMemo, useEffect } from "react";
 import Link from "next/link";
-import { products as allProducts, type Review } from "@/lib/placeholder-data";
+import type { Product, Review } from "@/lib/placeholder-data";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
@@ -21,6 +21,7 @@ type FilterStatus = "all" | Review['status'];
 
 export default function ReviewsPage() {
   const [reviews, setReviews] = useState<Review[]>([]);
+  const [allProducts, setAllProducts] = useState<Product[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [filter, setFilter] = useState<FilterStatus>('all');
   const [reviewToReply, setReviewToReply] = useState<Review | null>(null);
@@ -29,24 +30,31 @@ export default function ReviewsPage() {
   const { toast } = useToast();
 
   useEffect(() => {
-    const fetchReviews = async () => {
+    const fetchData = async () => {
         setIsLoading(true);
         try {
-            const reviewsSnapshot = await getDocs(collection(db, 'reviews'));
+            const [reviewsSnapshot, productsSnapshot] = await Promise.all([
+                getDocs(collection(db, 'reviews')),
+                getDocs(collection(db, 'products'))
+            ]);
+
             const reviewList = reviewsSnapshot.docs.map(doc => docToJSON(doc) as Review);
+            const productList = productsSnapshot.docs.map(doc => docToJSON(doc) as Product);
+
             setReviews(reviewList);
+            setAllProducts(productList);
         } catch (error) {
-            console.error("Failed to fetch reviews:", error);
+            console.error("Failed to fetch data:", error);
             toast({
                 variant: 'destructive',
-                title: 'Error Fetching Reviews',
-                description: 'Could not load review data.',
+                title: 'Error Fetching Data',
+                description: 'Could not load review and product data.',
             });
         } finally {
             setIsLoading(false);
         }
     };
-    fetchReviews();
+    fetchData();
   }, [toast]);
 
   const filteredReviews = useMemo(() => {
@@ -191,9 +199,11 @@ export default function ReviewsPage() {
                       <div className="text-sm mt-3">
                         <span className="text-muted-foreground">Product: </span>
                         {product ? (
-                          <Link href={`/products/${product.permalink || product.id}`} className="font-medium text-primary hover:underline">{product?.name}</Link>
+                          <Link href={`/products/${product.permalink || product.id}`} className="font-medium text-primary hover:underline" target="_blank">{product?.name}</Link>
                         ) : (
-                          <span className="font-medium text-muted-foreground">Product not found ({review.productId})</span>
+                          <Link href={`/products/${review.productId}`} className="font-medium text-destructive hover:underline" target="_blank">
+                            Product not found ({review.productId})
+                          </Link>
                         )}
                       </div>
 
