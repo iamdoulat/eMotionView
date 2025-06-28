@@ -62,7 +62,7 @@ export function Header() {
   const searchWrapperRef = useRef<HTMLElement>(null);
   
   const handleScroll = useCallback(() => {
-    setIsScrolled(window.scrollY > 80);
+    setIsScrolled(window.scrollY > 10);
   }, []);
 
   useEffect(() => {
@@ -174,7 +174,7 @@ export function Header() {
     <Input 
       type="search" 
       placeholder="Search products, brands..." 
-      className={cn("rounded-full h-10 pr-11 md:h-12 md:pr-14")} 
+      className={cn("rounded-full h-10 pr-11 md:h-12 md:pr-14 border border-accent focus:ring-1 focus:ring-accent")} 
       value={searchTerm}
       onChange={(e) => setSearchTerm(e.target.value)}
       onFocus={() => setIsSearchFocused(true)}
@@ -285,7 +285,7 @@ export function Header() {
 
   if (isMobile) {
     return (
-       <header className="sticky top-0 z-50 w-full bg-background/95 backdrop-blur-sm" ref={searchWrapperRef}>
+       <header className="sticky top-0 z-50 w-full bg-background/95 backdrop-blur-sm shadow-md" ref={searchWrapperRef}>
         <div className="container mx-auto flex h-16 items-center justify-between px-4 border-b">
           <Sheet>
             <SheetTrigger asChild>
@@ -343,12 +343,12 @@ export function Header() {
   }
 
   return (
-    <header className="sticky top-0 z-50 w-full bg-background/95 backdrop-blur-sm" ref={searchWrapperRef}>
-      {/* Top Bar (hides on scroll) */}
-      <div className={cn("bg-secondary/50 text-black transition-all duration-300", isScrolled ? 'h-0 opacity-0 overflow-hidden' : 'h-8')}>
+    <header className="sticky top-0 z-50 w-full bg-background/95 backdrop-blur-sm shadow-md" ref={searchWrapperRef}>
+      {/* Top Bar */}
+      <div className={cn("border-b bg-secondary/50 text-black transition-all duration-300 overflow-hidden", isScrolled ? 'max-h-0' : 'max-h-8')}>
         <div className="container mx-auto flex h-full items-center justify-between px-4 text-xs">
           <div>
-            <span>Biggest Smart Gadget & SmartPhone Collection</span>
+            <span className="font-semibold">Biggest Smart Gadget & SmartPhone Collection</span>
           </div>
           <div className="flex items-center gap-4">
             <a href="tel:09677460460" className="flex items-center gap-1 hover:text-primary">
@@ -366,37 +366,26 @@ export function Header() {
         </div>
       </div>
       
-      {/* Normal Header (Unscrolled) */}
-      <div className={cn("border-b", isScrolled ? 'hidden' : 'block')}>
-        <div className="container mx-auto h-20 items-center justify-between gap-4 px-4 flex">
-          <Link href="/" className="flex items-center gap-2 flex-shrink-0">
-            <Image src="https://placehold.co/50x50/FFFFFF/000000.png" alt="eMotionView Logo" width={40} height={40} data-ai-hint="logo globe"/>
-            <span className="font-bold font-headline text-2xl text-foreground">eMotionView</span>
-          </Link>
-          <div className="flex flex-1 justify-center px-8 relative">
-            <form className="w-full max-w-2xl">
-              <div className="relative">
-                {searchInput}
-                {searchButton}
-              </div>
-            </form>
-            {isSearchFocused && searchTerm.length >= 3 && searchResultsPanel}
-          </div>
-          <div className="flex items-center justify-end">
-            <CartButton />
-          </div>
-        </div>
-      </div>
-
-      {/* Sticky Header (Scrolled) */}
-      <div className={cn("border-b shadow-md", isScrolled ? 'block' : 'hidden')}>
-        <div className="container mx-auto h-16 items-center justify-between gap-4 px-4 flex">
+      {/* Unified Main Header */}
+      <div className="border-b">
+        <div className={cn("container mx-auto flex items-center justify-between gap-4 px-4 transition-all duration-300", isScrolled ? 'h-16' : 'h-20')}>
+          
+          <div className="flex items-center gap-4">
             <Link href="/" className="flex items-center gap-2 flex-shrink-0">
-                <Image src="https://placehold.co/50x50/FFFFFF/000000.png" alt="eMotionView Logo" width={32} height={32} data-ai-hint="logo globe"/>
-                <span className="font-bold font-headline text-xl text-foreground">eMotionView</span>
+              <Image 
+                src="https://placehold.co/50x50/FFFFFF/000000.png" 
+                alt="eMotionView Logo" 
+                width={isScrolled ? 32 : 40} 
+                height={isScrolled ? 32 : 40} 
+                className="transition-all duration-300"
+                data-ai-hint="logo globe"
+              />
+              <span className={cn("font-bold font-headline text-foreground transition-all duration-300", isScrolled ? 'text-xl' : 'text-2xl')}>
+                eMotionView
+              </span>
             </Link>
-
-            <div className="hidden lg:flex">
+            
+            <div className={cn("hidden lg:flex items-center transition-opacity duration-300", isScrolled ? 'opacity-100' : 'opacity-0 pointer-events-none')}>
               <DropdownMenu>
                   <DropdownMenuTrigger asChild>
                       <Button>
@@ -413,26 +402,28 @@ export function Header() {
                   </DropdownMenuContent>
               </DropdownMenu>
             </div>
+          </div>
 
-            <div className="flex-1 flex justify-center px-4 relative">
-                 <form className="w-full max-w-lg">
-                    <div className="relative">
-                      {searchInput}
-                      {searchButton}
-                    </div>
-                </form>
-                {isSearchFocused && searchTerm.length >= 3 && searchResultsPanel}
-            </div>
+          <div className="flex-1 flex justify-center px-4 relative">
+            <form className={cn("w-full transition-all duration-300", isScrolled ? 'max-w-lg' : 'max-w-2xl')}>
+              <div className="relative">
+                {searchInput}
+                {searchButton}
+              </div>
+            </form>
+            {isSearchFocused && searchTerm.length >= 3 && searchResultsPanel}
+          </div>
 
-            <div className="flex items-center justify-end gap-1">
-                <Button variant="ghost" size="icon" asChild>
-                    <Link href="/wishlist">
-                        <Heart className="h-6 w-6" />
-                        <span className="sr-only">Wishlist</span>
-                    </Link>
-                </Button>
-                <CartButton />
-                <DropdownMenu>
+          <div className="flex items-center justify-end gap-1">
+            <Button variant="ghost" size="icon" asChild className={cn("hidden lg:inline-flex transition-opacity duration-300", isScrolled ? 'opacity-100' : 'opacity-0 pointer-events-none')}>
+                <Link href="/wishlist">
+                    <Heart className="h-6 w-6" />
+                    <span className="sr-only">Wishlist</span>
+                </Link>
+            </Button>
+            <CartButton />
+            <div className={cn("hidden lg:inline-flex items-center transition-opacity duration-300", isScrolled ? 'opacity-100' : 'opacity-0 pointer-events-none')}>
+              <DropdownMenu>
                     <DropdownMenuTrigger asChild>
                         <Button variant="ghost" size="icon" aria-label="Account">
                             <User className="h-6 w-6" />
@@ -458,10 +449,9 @@ export function Header() {
                     </DropdownMenuContent>
                 </DropdownMenu>
             </div>
+          </div>
         </div>
       </div>
     </header>
   )
 }
-
-    
