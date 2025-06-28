@@ -88,7 +88,7 @@ export function ProductCard({ product }: ProductCardProps) {
             setSelectedAttributes({});
         }
     }}>
-      <Card className="group overflow-hidden rounded-lg shadow-sm hover:shadow-lg transition-shadow duration-300 flex flex-col h-full bg-background">
+      <Card className="group overflow-hidden rounded-lg shadow-md hover:shadow-lg transition-shadow duration-300 flex flex-col h-full bg-background">
         <CardHeader className="p-0 relative border-b">
           <DialogTrigger asChild>
             <div className="block aspect-square bg-secondary/30 cursor-pointer">
