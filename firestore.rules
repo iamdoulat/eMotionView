@@ -1,68 +1,70 @@
-
 rules_version = '2';
 
 service cloud.firestore {
   match /databases/{database}/documents {
-  
-    // Helper function to check if a user's role is Admin.
-    // This requires reading the user's document in the 'users' collection.
-    function isAdmin() {
-      return exists(/databases/$(database)/documents/users/$(request.auth.uid)) &&
-             get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'Admin';
-    }
-    
-    // Helper function to check if a user is any kind of staff member.
+
+    // Helper function to check if a user is an admin or staff.
     function isStaff() {
-       return exists(/databases/$(database)/documents/users/$(request.auth.uid));
+      return request.auth != null && exists(/databases/$(database)/documents/users/$(request.auth.uid));
     }
 
-    // Products, categories, brands, attributes, and suppliers are public-readable.
-    // Only staff can write/modify them.
-    match /(products|categories|brands|attributes|suppliers)/{docId} {
-      allow read: if true;
-      allow write: if isStaff();
+    // Helper function to check if a user is the owner of a document.
+    function isOwner(userId) {
+      return request.auth != null && request.auth.uid == userId;
     }
 
-    // Approved reviews are public-readable.
-    // Users can create their own reviews.
-    // Staff can manage all reviews.
+    // PRODUCTS: Public can read and list, staff can write.
+    match /products/{productId} {
+      allow get, list: if true;
+      allow create, update, delete: if isStaff();
+    }
+
+    // REVIEWS: Public can read. Customers can create their own. Staff can moderate.
     match /reviews/{reviewId} {
-      allow get: if resource.data.status == 'approved' || isStaff();
-      // Listing all reviews (pending, etc.) is an admin/staff action.
-      allow list: if isStaff();
-      allow create: if request.auth != null && request.auth.uid == request.resource.data.userId;
-      allow update, delete: if isStaff();
+        allow get, list: if true;
+        allow create: if isOwner(request.resource.data.userId);
+        allow update, delete: if isStaff();
     }
-    
-    // Customers can create, read, and update their own data.
-    // Staff can view and manage all customer data.
-    // Only Admins can delete customer accounts.
+
+    // CATEGORIES, BRANDS, ATTRIBUTES, SUPPLIERS: Public read, staff write.
+    match /categories/{categoryId} {
+      allow get, list: if true;
+      allow create, update, delete: if isStaff();
+    }
+    match /brands/{brandId} {
+      allow get, list: if true;
+      allow create, update, delete: if isStaff();
+    }
+    match /attributes/{attributeId} {
+      allow get, list: if true;
+      allow create, update, delete: if isStaff();
+    }
+    match /suppliers/{supplierId} {
+      allow get, list: if true;
+      allow create, update, delete: if isStaff();
+    }
+
+    // CUSTOMERS:
+    // Customers can create, read, and update their own document.
+    // Staff can read, list, and delete all customer documents.
     match /customers/{userId} {
-      allow get, update: if request.auth.uid == userId || isStaff();
-      allow create: if request.auth.uid == userId;
-      allow list: if isStaff();
-      allow delete: if isAdmin();
+      allow create: if isOwner(userId);
+      allow get, update: if isOwner(userId);
+      allow list, get, delete: if isStaff();
     }
-    
-    // Staff members can be viewed by other staff.
-    // Admins can manage all staff members.
+
+    // USERS (STAFF): Staff can manage other staff members.
     match /users/{userId} {
-      allow read, list: if isStaff();
-      // Allow any staff to add/edit other staff. For stricter control, change to isAdmin().
-      allow create, update: if isStaff();
-      // Only Admins can delete staff accounts.
-      allow delete: if isAdmin();
+      allow get, list, create, update, delete: if isStaff();
     }
-    
-    // Customers can create orders for themselves.
-    // Staff can view and manage all orders.
+
+    // ORDERS:
+    // Customers can create and read their own orders.
+    // Staff can read and update any order.
     match /orders/{orderId} {
-        allow get: if request.auth.uid == resource.data.userId || isStaff();
-        allow list: if isStaff();
-        allow create: if request.auth.uid == request.resource.data.userId;
+        allow create: if isOwner(request.resource.data.userId);
+        allow get, list: if isOwner(resource.data.userId) || isStaff();
         allow update: if isStaff();
-        // Deleting orders should be a highly restricted action.
-        allow delete: if isAdmin();
     }
   }
 }
