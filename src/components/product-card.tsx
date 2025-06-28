@@ -61,11 +61,7 @@ export function ProductCard({ product }: ProductCardProps) {
     e.preventDefault();
     e.stopPropagation();
     isWished ? removeFromWishlist(product.id) : addToWishlist(product);
-    toast({
-        title: isWished ? "Removed from Wishlist" : "Added to Wishlist",
-        description: product.name,
-    });
-  }
+  };
 
   return (
     <Dialog onOpenChange={(open) => {
@@ -77,7 +73,7 @@ export function ProductCard({ product }: ProductCardProps) {
       <Card className="group overflow-hidden rounded-lg shadow-sm hover:shadow-lg transition-shadow duration-300 flex flex-col h-full bg-background">
         <CardHeader className="p-0 relative border-b">
           <DialogTrigger asChild>
-            <Link href={`/products/${product.permalink || product.id}`} className="block aspect-square bg-secondary/30 cursor-pointer">
+            <div className="block aspect-square bg-secondary/30 cursor-pointer">
               <Image
                 src={product.images[0]}
                 alt={product.name}
@@ -86,7 +82,7 @@ export function ProductCard({ product }: ProductCardProps) {
                 className="w-full h-full object-contain p-4 group-hover:scale-105 transition-transform duration-300"
                 data-ai-hint={`${product.category} product`}
               />
-            </Link>
+            </div>
           </DialogTrigger>
           {product.discountPercentage && (
             <Badge className="absolute top-3 left-3 bg-blue-600 hover:bg-blue-700 text-primary-foreground border-none">
