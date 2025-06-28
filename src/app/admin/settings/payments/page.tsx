@@ -61,7 +61,7 @@ export default function PaymentShippingSettingsPage() {
                             <CardDescription>Define where you ship and how much you charge.</CardDescription>
                         </div>
                         <Button>
-                            <PlusCircle className="mr-2" />
+                            <PlusCircle className="mr-2 h-4 w-4" />
                             Add Shipping Zone
                         </Button>
                     </div>

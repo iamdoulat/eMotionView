@@ -218,11 +218,11 @@ export default function ClubPointsPage() {
             </div>
             <DialogFooter className="grid grid-cols-2 gap-4">
             <Button variant="destructive" onClick={() => handleAdjustPoints('remove')} disabled={pointsToAdjust <= 0}>
-                <MinusCircle className="mr-2" />
+                <MinusCircle className="mr-2 h-4 w-4" />
                 Remove Points
             </Button>
             <Button onClick={() => handleAdjustPoints('add')} className="bg-green-600 hover:bg-green-700" disabled={pointsToAdjust <= 0}>
-                <PlusCircle className="mr-2" />
+                <PlusCircle className="mr-2 h-4 w-4" />
                 Add Points
             </Button>
             </DialogFooter>
