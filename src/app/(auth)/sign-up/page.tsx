@@ -13,9 +13,10 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '
 import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
 import { Loader2 } from 'lucide-react';
-import { auth } from '@/lib/firebase';
-import { createUserWithEmailAndPassword } from 'firebase/auth';
+import { auth, db } from '@/lib/firebase';
+import { createUserWithEmailAndPassword, updateProfile } from 'firebase/auth';
 import { FirebaseError } from 'firebase/app';
+import { doc, setDoc } from 'firebase/firestore';
 
 
 const formSchema = z.object({
@@ -41,7 +42,26 @@ export default function SignUpPage() {
   async function onSubmit(values: z.infer<typeof formSchema>) {
     setIsLoading(true);
     try {
-      await createUserWithEmailAndPassword(auth, values.email, values.password);
+      const userCredential = await createUserWithEmailAndPassword(auth, values.email, values.password);
+      const user = userCredential.user;
+
+      // Set display name in Firebase Auth
+      await updateProfile(user, { displayName: values.name });
+
+      // Create a user document in Firestore
+      await setDoc(doc(db, "users", user.uid), {
+        uid: user.uid,
+        name: values.name,
+        email: values.email,
+        role: 'Customer',
+        createdAt: new Date().toISOString(),
+        status: 'Active',
+        avatar: `https://placehold.co/100x100.png?text=${values.name.charAt(0)}`,
+        lastLogin: new Date().toISOString(),
+        registeredDate: new Date().toISOString(),
+        points: 0
+      });
+
       toast({
         title: 'Account Created',
         description: 'Welcome! You have been successfully signed up.',

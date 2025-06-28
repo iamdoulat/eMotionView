@@ -63,11 +63,14 @@ export type Order = {
 };
 
 export type User = {
-  id: string;
+  id: string; // Firestore document ID
+  uid: string; // Firebase Auth User ID
   name: string;
   email: string;
+  mobileNumber?: string;
   avatar: string;
   registeredDate: string;
+  createdAt?: string;
   status: 'Active' | 'Inactive';
   lastLogin: string;
   role: 'Admin' | 'Manager' | 'Staff' | 'Customer';
@@ -573,6 +576,7 @@ export const orders: Order[] = [
 export const users: User[] = [
   {
     id: '1',
+    uid: 'admin-user-01',
     name: 'Olivia Martin',
     email: 'olivia.martin@email.com',
     avatar: 'https://placehold.co/40x40.png',
@@ -584,6 +588,7 @@ export const users: User[] = [
   },
    {
     id: '6',
+    uid: 'manager-user-01',
     name: 'David Chen',
     email: 'david.chen@email.com',
     avatar: 'https://placehold.co/40x40.png',
@@ -595,6 +600,7 @@ export const users: User[] = [
   },
   {
     id: '7',
+    uid: 'staff-user-01',
     name: 'Sarah Miller',
     email: 'sarah.miller@email.com',
     avatar: 'https://placehold.co/40x40.png',
@@ -606,6 +612,7 @@ export const users: User[] = [
   },
   {
     id: '2',
+    uid: 'customer-user-01',
     name: 'Jackson Lee',
     email: 'jackson.lee@email.com',
     avatar: 'https://placehold.co/40x40.png',
@@ -617,6 +624,7 @@ export const users: User[] = [
   },
   {
     id: '3',
+    uid: 'customer-user-02',
     name: 'Isabella Nguyen',
     email: 'isabella.nguyen@email.com',
     avatar: 'https://placehold.co/40x40.png',
@@ -628,6 +636,7 @@ export const users: User[] = [
   },
   {
     id: '4',
+    uid: 'customer-user-03',
     name: 'William Kim',
     email: 'will@email.com',
     avatar: 'https://placehold.co/40x40.png',
@@ -639,6 +648,7 @@ export const users: User[] = [
   },
   {
     id: '5',
+    uid: 'customer-user-04',
     name: 'Sofia Davis',
     email: 'sofia.davis@email.com',
     avatar: 'https://placehold.co/40x40.png',
