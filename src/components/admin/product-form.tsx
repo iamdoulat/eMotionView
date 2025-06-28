@@ -415,7 +415,7 @@ export function ProductForm({ product, onSave, onCancel, isSaving }: ProductForm
                                                 </SelectTrigger>
                                             </FormControl>
                                             <SelectContent>
-                                                {categories.map(cat => <SelectItem key={cat.id} value={cat.name}>{cat.name}</SelectItem>)}
+                                                {categories.map(cat => <SelectItem key={cat.name} value={cat.name}>{cat.name}</SelectItem>)}
                                             </SelectContent>
                                         </Select>
                                     </FormItem>
@@ -434,7 +434,7 @@ export function ProductForm({ product, onSave, onCancel, isSaving }: ProductForm
                                                 </SelectTrigger>
                                             </FormControl>
                                             <SelectContent>
-                                                {brands.map(brand => <SelectItem key={brand.id} value={brand.name}>{brand.name}</SelectItem>)}
+                                                {brands.map(brand => <SelectItem key={brand.name} value={brand.name}>{brand.name}</SelectItem>)}
                                             </SelectContent>
                                         </Select>
                                     </FormItem>
@@ -453,7 +453,7 @@ export function ProductForm({ product, onSave, onCancel, isSaving }: ProductForm
                                                 </SelectTrigger>
                                             </FormControl>
                                             <SelectContent>
-                                                {suppliers.map(sup => <SelectItem key={sup.id} value={sup.name}>{sup.name}</SelectItem>)}
+                                                {suppliers.map(sup => <SelectItem key={sup.name} value={sup.name}>{sup.name}</SelectItem>)}
                                             </SelectContent>
                                         </Select>
                                     </FormItem>
@@ -511,7 +511,7 @@ export function ProductForm({ product, onSave, onCancel, isSaving }: ProductForm
                                                                     </FormControl>
                                                                     <SelectContent>
                                                                         {attributes.map(attr => (
-                                                                            <SelectItem key={attr.id} value={attr.name}>{attr.name}</SelectItem>
+                                                                            <SelectItem key={attr.name} value={attr.name}>{attr.name}</SelectItem>
                                                                         ))}
                                                                     </SelectContent>
                                                                 </Select>
