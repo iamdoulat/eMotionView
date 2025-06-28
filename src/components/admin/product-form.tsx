@@ -12,7 +12,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Trash2 } from "lucide-react";
+import { Loader2, Trash2 } from "lucide-react";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { DialogFooter } from "@/components/ui/dialog";
 import Image from "next/image";
@@ -56,9 +56,10 @@ interface ProductFormProps {
     product?: Product | null;
     onSave: (data: Product) => void;
     onCancel: () => void;
+    isSaving?: boolean;
 }
 
-export function ProductForm({ product, onSave, onCancel }: ProductFormProps) {
+export function ProductForm({ product, onSave, onCancel, isSaving }: ProductFormProps) {
     const form = useForm<ProductFormData>({
         resolver: zodResolver(productSchema),
         defaultValues: product ? {
@@ -95,10 +96,12 @@ export function ProductForm({ product, onSave, onCancel }: ProductFormProps) {
         },
     });
 
-    const { register, handleSubmit, control, formState: { errors } } = form;
+    const { register, handleSubmit, control, formState: { errors }, watch, setValue } = form;
 
     const [isPermalinkManuallyEdited, setIsPermalinkManuallyEdited] = useState(!!product?.id);
-    const productName = form.watch('name');
+    const [isSkuManuallyEdited, setIsSkuManuallyEdited] = useState(!!product?.id);
+    const productName = watch('name');
+    const brandName = watch('brand');
 
     useEffect(() => {
         if (!isPermalinkManuallyEdited && productName) {
@@ -109,13 +112,29 @@ export function ProductForm({ product, onSave, onCancel }: ProductFormProps) {
                 .replace(/[^a-z0-9\s-]/g, '')
                 .replace(/\s+/g, '-')
                 .replace(/-+/g, '-');
-            form.setValue('permalink', generatedPermalink, { shouldValidate: true });
+            setValue('permalink', generatedPermalink, { shouldValidate: true });
         }
-    }, [productName, isPermalinkManuallyEdited, form]);
+    }, [productName, isPermalinkManuallyEdited, setValue]);
+    
+    useEffect(() => {
+        if (!isSkuManuallyEdited && productName && brandName) {
+            const brandPart = brandName.substring(0, 4).toUpperCase();
+            const namePart = productName
+                .split(' ')
+                .slice(0, 3)
+                .map(word => word[0] || '')
+                .join('')
+                .toUpperCase();
+            
+            if (brandPart && namePart) {
+                setValue('sku', `${brandPart}-${namePart}`, { shouldValidate: true });
+            }
+        }
+    }, [productName, brandName, isSkuManuallyEdited, setValue]);
 
 
-    const productType = form.watch('productType');
-    const manageStock = form.watch('manageStock');
+    const productType = watch('productType');
+    const manageStock = watch('manageStock');
 
     const { fields: featureFields, append: appendFeature, remove: removeFeature } = useFieldArray({
         control,
@@ -132,6 +151,7 @@ export function ProductForm({ product, onSave, onCancel }: ProductFormProps) {
         name: "productAttributes",
     });
 
+    const skuRegister = register("sku");
 
     const onSubmit: SubmitHandler<ProductFormData> = (data) => {
         const specObject: Record<string, string> = {};
@@ -142,7 +162,6 @@ export function ProductForm({ product, onSave, onCancel }: ProductFormProps) {
         });
 
         const transformedData: Product = {
-            // Explicitly map fields from form data
             name: data.name,
             permalink: data.permalink,
             description: data.description,
@@ -159,18 +178,12 @@ export function ProductForm({ product, onSave, onCancel }: ProductFormProps) {
             downloadUrl: data.downloadUrl || undefined,
             digitalProductNote: data.digitalProductNote || undefined,
             productAttributes: data.productAttributes,
-
-            // Transformed fields from form data
             features: data.features.map(f => f.value),
             specifications: specObject,
-            
-            // Fields from original product object (non-editable in form)
             id: product?.id || data.id || "",
             rating: product?.rating || 0,
             reviewCount: product?.reviewCount || 0,
             images: product?.images || ['https://placehold.co/600x600.png'],
-
-            // Calculated field
             discountPercentage: data.originalPrice && data.price < data.originalPrice ? Math.round(((data.originalPrice - data.price) / data.originalPrice) * 100) : undefined,
         };
         onSave(transformedData);
@@ -191,8 +204,7 @@ export function ProductForm({ product, onSave, onCancel }: ProductFormProps) {
                                     <RadioGroup
                                     onValueChange={(value) => {
                                         field.onChange(value);
-                                        // If switching to digital, disable stock management. If to physical, enable it.
-                                        form.setValue('manageStock', value === 'Physical');
+                                        setValue('manageStock', value === 'Physical');
                                     }}
                                     defaultValue={field.value}
                                     className="flex items-center gap-4"
@@ -239,7 +251,14 @@ export function ProductForm({ product, onSave, onCancel }: ProductFormProps) {
                             </div>
                             <div className="space-y-2">
                                 <Label htmlFor="sku">SKU</Label>
-                                <Input id="sku" {...register("sku")} />
+                                <Input
+                                  id="sku"
+                                  {...skuRegister}
+                                  onChange={(e) => {
+                                    skuRegister.onChange(e);
+                                    setIsSkuManuallyEdited(true);
+                                  }}
+                                />
                                 {errors.sku && <p className="text-destructive text-sm">{errors.sku.message}</p>}
                             </div>
                         </div>
@@ -251,7 +270,7 @@ export function ProductForm({ product, onSave, onCancel }: ProductFormProps) {
                                 {...register("permalink")}
                                 onChange={(e) => {
                                     setIsPermalinkManuallyEdited(true);
-                                    form.setValue('permalink', e.target.value);
+                                    setValue('permalink', e.target.value);
                                 }}
                             />
                             {errors.permalink && <p className="text-destructive text-sm">{errors.permalink.message}</p>}
@@ -400,9 +419,9 @@ export function ProductForm({ product, onSave, onCancel }: ProductFormProps) {
                             <Label>Product Attributes</Label>
                             <div className="space-y-4">
                                 {attributeFields.map((field, index) => {
-                                    const attributeName = form.watch(`productAttributes.${index}.name`);
+                                    const attributeName = watch(`productAttributes.${index}.name`);
                                     const availableValues = attributes.find(a => a.name === attributeName)?.values || [];
-                                    const selectedValues = form.watch(`productAttributes.${index}.values`) || [];
+                                    const selectedValues = watch(`productAttributes.${index}.values`) || [];
                                     
                                     return (
                                         <Card key={field.id} className="p-4 bg-secondary/50">
@@ -417,7 +436,7 @@ export function ProductForm({ product, onSave, onCancel }: ProductFormProps) {
                                                                 <Select 
                                                                     onValueChange={(value) => {
                                                                         selectField.onChange(value);
-                                                                        form.setValue(`productAttributes.${index}.values`, []);
+                                                                        setValue(`productAttributes.${index}.values`, []);
                                                                     }} 
                                                                     defaultValue={selectField.value}
                                                                 >
@@ -450,7 +469,7 @@ export function ProductForm({ product, onSave, onCancel }: ProductFormProps) {
                                                                             const newValues = selectedValues.includes(value)
                                                                                 ? selectedValues.filter((v: string) => v !== value)
                                                                                 : [...selectedValues, value];
-                                                                            form.setValue(`productAttributes.${index}.values`, newValues, { shouldValidate: true });
+                                                                            setValue(`productAttributes.${index}.values`, newValues, { shouldValidate: true });
                                                                         }}
                                                                     >
                                                                         {value}
@@ -499,7 +518,10 @@ export function ProductForm({ product, onSave, onCancel }: ProductFormProps) {
                 </ScrollArea>
                 <DialogFooter className="pt-6">
                     <Button type="button" variant="ghost" onClick={onCancel}>Cancel</Button>
-                    <Button type="submit">Save Product</Button>
+                    <Button type="submit" disabled={isSaving}>
+                        {isSaving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                        Save Product
+                    </Button>
                 </DialogFooter>
             </form>
         </Form>

@@ -1,8 +1,10 @@
 
 "use client";
 
-import { useState, useMemo } from "react";
-import { products as initialProducts, type Product } from "@/lib/placeholder-data";
+import { useState, useMemo, useEffect } from "react";
+import type { Product } from "@/lib/placeholder-data";
+import { collection, getDocs, doc, setDoc, deleteDoc, addDoc } from "firebase/firestore";
+import { db, docToJSON } from "@/lib/firebase";
 import Image from "next/image";
 import {
   Card,
@@ -45,14 +47,29 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Button } from "@/components/ui/button";
-import { MoreHorizontal, PlusCircle, Edit, Trash2 } from "lucide-react";
+import { MoreHorizontal, PlusCircle, Edit, Trash2, Loader2 } from "lucide-react";
 import { ProductForm } from "@/components/admin/product-form";
+import { useToast } from "@/hooks/use-toast";
 
 export default function DigitalProductsPage() {
-  const [allProducts, setAllProducts] = useState<Product[]>(initialProducts);
+  const [allProducts, setAllProducts] = useState<Product[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
   const [productToEdit, setProductToEdit] = useState<Product | null>(null);
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [productToDelete, setProductToDelete] = useState<Product | null>(null);
+  const [isSaving, setIsSaving] = useState(false);
+  const { toast } = useToast();
+  
+  useEffect(() => {
+    const fetchProducts = async () => {
+        setIsLoading(true);
+        const productsSnapshot = await getDocs(collection(db, 'products'));
+        const productList = productsSnapshot.docs.map(docToJSON) as Product[];
+        setAllProducts(productList);
+        setIsLoading(false);
+    }
+    fetchProducts();
+  }, []);
 
   const digitalProducts = useMemo(() => allProducts.filter(p => p.productType === 'Digital'), [allProducts]);
 
@@ -66,20 +83,41 @@ export default function DigitalProductsPage() {
     setIsFormOpen(false);
   };
 
-  const handleSaveProduct = (productData: Product) => {
-    if (productToEdit && 'id' in productToEdit && productToEdit.id) {
-        setAllProducts(allProducts.map(p => p.id === productData.id ? productData : p));
-    } else {
-      const newProductWithId = { ...productData, id: `prod-${Date.now()}`};
-      setAllProducts([...allProducts, newProductWithId]);
+  const handleSaveProduct = async (productData: Product) => {
+    setIsSaving(true);
+    try {
+      if (productToEdit) {
+        const docRef = doc(db, 'products', productToEdit.id);
+        await setDoc(docRef, productData, { merge: true });
+        setAllProducts(allProducts.map(p => p.id === productToEdit.id ? { ...productData, id: productToEdit.id } : p));
+        toast({ title: "Success", description: "Product updated successfully." });
+      } else {
+        const { id, ...payload } = productData;
+        const docRef = await addDoc(collection(db, 'products'), payload);
+        setAllProducts([...allProducts, { ...payload, id: docRef.id }]);
+        toast({ title: "Success", description: "New digital product created successfully." });
+      }
+      handleCloseForm();
+    } catch (error) {
+      console.error("Error saving product:", error);
+      toast({ variant: 'destructive', title: "Error", description: "Could not save the product." });
+    } finally {
+      setIsSaving(false);
     }
-    handleCloseForm();
   };
 
-  const handleDeleteProduct = () => {
+  const handleDeleteProduct = async () => {
     if (!productToDelete) return;
-    setAllProducts(allProducts.filter(p => p.id !== productToDelete.id));
-    setProductToDelete(null);
+    try {
+      await deleteDoc(doc(db, 'products', productToDelete.id));
+      setAllProducts(allProducts.filter(p => p.id !== productToDelete.id));
+      toast({ title: "Success", description: "Product deleted." });
+    } catch (error) {
+      console.error("Error deleting product:", error);
+      toast({ variant: 'destructive', title: "Error", description: "Could not delete product." });
+    } finally {
+      setProductToDelete(null);
+    }
   };
 
   return (
@@ -114,7 +152,13 @@ export default function DigitalProductsPage() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {digitalProducts.map((product) => (
+              {isLoading ? (
+                  <TableRow>
+                      <TableCell colSpan={6} className="h-24 text-center">
+                          <Loader2 className="h-6 w-6 animate-spin mx-auto" />
+                      </TableCell>
+                  </TableRow>
+              ) : digitalProducts.map((product) => (
                 <TableRow key={product.id}>
                   <TableCell className="hidden sm:table-cell">
                     <Image
@@ -173,6 +217,7 @@ export default function DigitalProductsPage() {
                   product={productToEdit}
                   onSave={handleSaveProduct}
                   onCancel={handleCloseForm}
+                  isSaving={isSaving}
               />
           </DialogContent>
       </Dialog>
