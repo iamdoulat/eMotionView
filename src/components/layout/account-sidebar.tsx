@@ -1,3 +1,4 @@
+
 "use client"
 
 import Link from "next/link";
@@ -6,6 +7,8 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { User, ShoppingBag, Heart, LogOut } from 'lucide-react';
 import { cn } from "@/lib/utils";
+import { signOut } from "firebase/auth";
+import { auth } from "@/lib/firebase";
 
 const navItems = [
     { href: "/account/profile", label: "Profile", icon: User },
@@ -17,8 +20,8 @@ export function AccountSidebar() {
     const pathname = usePathname();
     const router = useRouter();
 
-    const handleSignOut = () => {
-        localStorage.removeItem('isLoggedIn');
+    const handleSignOut = async () => {
+        await signOut(auth);
         router.push('/sign-in');
         router.refresh();
     };
@@ -33,7 +36,7 @@ export function AccountSidebar() {
                     <Button
                         key={item.href}
                         asChild
-                        variant={pathname === item.href ? "default" : "ghost"}
+                        variant={pathname.startsWith(item.href) ? "default" : "ghost"}
                         className="justify-start"
                     >
                         <Link href={item.href}>

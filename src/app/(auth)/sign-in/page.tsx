@@ -1,3 +1,4 @@
+
 "use client";
 
 import Link from 'next/link';
@@ -12,10 +13,13 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '
 import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
 import { Loader2 } from 'lucide-react';
+import { auth } from '@/lib/firebase';
+import { signInWithEmailAndPassword } from 'firebase/auth';
+import { FirebaseError } from 'firebase/app';
 
 const formSchema = z.object({
   email: z.string().email({ message: 'Please enter a valid email address.' }),
-  password: z.string().min(1, { message: 'Password is required.' }),
+  password: z.string().min(6, { message: 'Password must be at least 6 characters.' }),
 });
 
 export default function SignInPage() {
@@ -31,28 +35,41 @@ export default function SignInPage() {
     },
   });
 
-  function onSubmit(values: z.infer<typeof formSchema>) {
+  async function onSubmit(values: z.infer<typeof formSchema>) {
     setIsLoading(true);
-    // Simulate API call for login. In a real app, this would be an API call.
-    setTimeout(() => {
-      if (values.email === 'admin@gmail.com' && values.password === '123456') {
-        localStorage.setItem('isLoggedIn', 'true');
-        toast({
-          title: 'Login Successful',
-          description: 'Welcome back, Admin!',
-        });
-        router.push('/account');
-        // Force a reload of the page to update header state
-        router.refresh(); 
-      } else {
-        toast({
-          variant: 'destructive',
-          title: 'Login Failed',
-          description: 'Invalid email or password. Please try again.',
-        });
+    try {
+      await signInWithEmailAndPassword(auth, values.email, values.password);
+      toast({
+        title: 'Login Successful',
+        description: 'Welcome back!',
+      });
+      router.push('/account');
+      router.refresh(); 
+    } catch (error) {
+       let description = 'An unexpected error occurred. Please try again.';
+       if (error instanceof FirebaseError) {
+        switch (error.code) {
+          case 'auth/user-not-found':
+          case 'auth/wrong-password':
+          case 'auth/invalid-credential':
+            description = 'Invalid email or password. Please try again.';
+            break;
+          case 'auth/invalid-email':
+            description = 'Please enter a valid email address.';
+            break;
+          default:
+            description = 'Login failed. Please try again later.'
+            break;
+        }
       }
+      toast({
+        variant: 'destructive',
+        title: 'Login Failed',
+        description: description,
+      });
+    } finally {
       setIsLoading(false);
-    }, 1000);
+    }
   }
 
   return (
@@ -71,7 +88,7 @@ export default function SignInPage() {
                 <FormItem>
                   <FormLabel>Email</FormLabel>
                   <FormControl>
-                    <Input type="email" placeholder="admin@gmail.com" {...field} />
+                    <Input type="email" placeholder="you@example.com" {...field} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>

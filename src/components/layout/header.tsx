@@ -1,3 +1,4 @@
+
 "use client"
 
 import React, { useState, useEffect, useRef } from "react"
@@ -15,6 +16,9 @@ import { products, categories, brands, suppliers, attributes } from "@/lib/place
 import { Separator } from "@/components/ui/separator"
 import { ScrollArea } from "../ui/scroll-area"
 import { useCart } from "@/hooks/use-cart"
+import { auth } from "@/lib/firebase"
+import { onAuthStateChanged, signOut, type User as FirebaseUser } from "firebase/auth"
+import { Skeleton } from "../ui/skeleton"
 
 const categoryLinks = [
     { name: 'Smart Watches', href: '/products?category=Wearables' },
@@ -40,9 +44,9 @@ type SearchResult = {
 
 export function Header() {
   const [isScrolled, setIsScrolled] = useState(false);
-  const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [currentUser, setCurrentUser] = useState<FirebaseUser | null>(null);
+  const [isAuthLoading, setIsAuthLoading] = useState(true);
   const [isMobile, setIsMobile] = useState(false);
-  const [isMounted, setIsMounted] = useState(false);
   const router = useRouter();
   const { cartCount, isInitialized: isCartInitialized } = useCart();
 
@@ -54,23 +58,23 @@ export function Header() {
   const searchWrapperRef = useRef<HTMLElement>(null);
 
   useEffect(() => {
-    setIsMounted(true);
-    
     const handleResize = () => setIsMobile(window.innerWidth < 768);
     const handleScroll = () => setIsScrolled(window.scrollY > 80);
-    const checkLoginStatus = () => setIsLoggedIn(localStorage.getItem('isLoggedIn') === 'true');
     
     handleResize();
-    checkLoginStatus();
 
     window.addEventListener("resize", handleResize);
     window.addEventListener("scroll", handleScroll);
-    window.addEventListener('storage', checkLoginStatus); // Listen for login/logout from other tabs
+
+    const unsubscribe = onAuthStateChanged(auth, (user) => {
+        setCurrentUser(user);
+        setIsAuthLoading(false);
+    });
 
     return () => {
       window.removeEventListener("resize", handleResize);
       window.removeEventListener("scroll", handleScroll);
-      window.removeEventListener('storage', checkLoginStatus);
+      unsubscribe();
     };
   }, []);
 
@@ -112,7 +116,7 @@ export function Header() {
       const supplierResults: SearchResult[] = suppliers
         .filter(s => s.name.toLowerCase().includes(query))
         .slice(0, 2)
-        .map(s => ({ type: 'Supplier', name: s.name, href: `/admin/products/suppliers` })); // No user facing page for this
+        .map(s => ({ type: 'Supplier', name: s.name, href: `/admin/products/suppliers` }));
 
       const attributeResults: SearchResult[] = [];
       attributes.forEach(attr => {
@@ -133,9 +137,8 @@ export function Header() {
     return () => clearTimeout(debounceTimer);
   }, [searchTerm]);
 
-  const handleLogout = () => {
-    localStorage.removeItem('isLoggedIn');
-    setIsLoggedIn(false);
+  const handleLogout = async () => {
+    await signOut(auth);
     router.push('/sign-in');
     router.refresh();
   };
@@ -229,11 +232,11 @@ export function Header() {
   );
 
   const AccountLinks = ({isMobile = false}: {isMobile?: boolean}) => {
-    if (!isMounted) {
-      return isMobile ? null : <div className="h-4 w-10 bg-muted rounded-md animate-pulse"></div>;
+    if (isAuthLoading) {
+      return isMobile ? null : <Skeleton className="h-4 w-12" />;
     }
 
-    if (isLoggedIn) {
+    if (currentUser) {
         return isMobile ? (
             <>
                 <Button variant="ghost" asChild className="w-full justify-start">
@@ -360,23 +363,21 @@ export function Header() {
                         </Button>
                     </DropdownMenuTrigger>
                     <DropdownMenuContent align="end">
-                        {isMounted ? (
-                            isLoggedIn ? (
-                                <>
-                                    <DropdownMenuItem asChild>
-                                        <Link href="/account">My Account</Link>
-                                    </DropdownMenuItem>
-                                    <DropdownMenuItem onClick={handleLogout}>
-                                        Logout
-                                    </DropdownMenuItem>
-                                </>
-                            ) : (
+                        {isAuthLoading ? (
+                            <DropdownMenuItem disabled>Loading...</DropdownMenuItem>
+                        ) : currentUser ? (
+                            <>
                                 <DropdownMenuItem asChild>
-                                    <Link href="/sign-in">Sign In</Link>
+                                    <Link href="/account">My Account</Link>
                                 </DropdownMenuItem>
-                            )
+                                <DropdownMenuItem onClick={handleLogout}>
+                                    Logout
+                                </DropdownMenuItem>
+                            </>
                         ) : (
-                           <DropdownMenuItem disabled>Loading...</DropdownMenuItem>
+                            <DropdownMenuItem asChild>
+                                <Link href="/sign-in">Sign In</Link>
+                            </DropdownMenuItem>
                         )}
                     </DropdownMenuContent>
                 </DropdownMenu>
