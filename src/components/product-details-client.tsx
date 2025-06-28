@@ -23,6 +23,7 @@ export function ProductDetailsClient({ product }: { product: Product }) {
   
   const [selectedImage, setSelectedImage] = useState(product.images[0]);
   const [quantity, setQuantity] = useState(1);
+  const [selectedAttributes, setSelectedAttributes] = useState<Record<string, string>>({});
   const isWished = isInWishlist(product.id);
 
   const isStockManaged = product.manageStock ?? true;
@@ -51,6 +52,13 @@ export function ProductDetailsClient({ product }: { product: Product }) {
       description: product.name,
     });
   }
+
+  const handleAttributeSelect = (attributeName: string, value: string) => {
+    setSelectedAttributes(prev => ({
+        ...prev,
+        [attributeName]: value,
+    }));
+  };
 
   return (
     <div className="grid md:grid-cols-2 gap-8 bg-card p-6 rounded-lg border">
@@ -137,17 +145,30 @@ export function ProductDetailsClient({ product }: { product: Product }) {
           </button>
         </div>
 
-        <div className="mt-6">
-            <p className="text-sm font-medium mb-2">Color:</p>
-            <div className="flex gap-2">
-                <Button variant="outline" size="icon" className="h-8 w-8 rounded-full border-2 border-primary ring-1 ring-primary ring-offset-2">
-                    <div className="h-5 w-5 rounded-full bg-gray-800" />
-                </Button>
-                 <Button variant="outline" size="icon" className="h-8 w-8 rounded-full">
-                    <div className="h-5 w-5 rounded-full bg-slate-400" />
-                </Button>
+        {product.productAttributes && product.productAttributes.length > 0 && (
+            <div className="mt-6 space-y-4">
+                {product.productAttributes.map((attr) => (
+                    <div key={attr.name}>
+                        <Label className="text-sm font-medium mb-2 block">{attr.name}:</Label>
+                        <div className="flex flex-wrap gap-2">
+                            {attr.values.map((value) => {
+                                const isSelected = selectedAttributes[attr.name] === value;
+                                return (
+                                    <Button
+                                        key={value}
+                                        variant={isSelected ? 'default' : 'outline'}
+                                        onClick={() => handleAttributeSelect(attr.name, value)}
+                                        size="sm"
+                                    >
+                                        {value}
+                                    </Button>
+                                );
+                            })}
+                        </div>
+                    </div>
+                ))}
             </div>
-        </div>
+        )}
 
          <div className="mt-6">
             <Label className="text-sm font-medium mb-2 block">Quantity:</Label>
