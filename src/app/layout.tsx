@@ -1,19 +1,16 @@
+
 import type {Metadata} from 'next';
-import { Inter, Space_Grotesk } from 'next/font/google';
+import { Poppins } from 'next/font/google';
 import './globals.css';
 import { cn } from '@/lib/utils';
 import { Header } from '@/components/layout/header';
 import { Footer } from '@/components/layout/footer';
 import { Toaster } from "@/components/ui/toaster";
 
-const inter = Inter({
+const poppins = Poppins({
   subsets: ['latin'],
-  variable: '--font-inter',
-});
-
-const spaceGrotesk = Space_Grotesk({
-  subsets: ['latin'],
-  variable: '--font-space-grotesk',
+  variable: '--font-poppins',
+  weight: ['400', '500', '600', '700'],
 });
 
 
@@ -30,7 +27,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" className={cn("h-full", inter.variable, spaceGrotesk.variable)} suppressHydrationWarning>
+    <html lang="en" className={cn("h-full", poppins.variable)} suppressHydrationWarning>
       <body className={cn("font-body antialiased min-h-screen flex flex-col")}>
         <Header />
         <main className="flex-1">
