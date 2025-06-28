@@ -82,10 +82,10 @@ export default async function ProductDetailPage({ params }: { params: { id: stri
           <div className="lg:col-span-3 hidden lg:block">
             <Link href="#">
                <Image
-                  src="https://placehold.co/300x500.png"
+                  src="https://placehold.co/300x700.png"
                   alt="Advertisement"
                   width={300}
-                  height={500}
+                  height={700}
                   className="w-full h-auto object-cover rounded-lg"
                   data-ai-hint="product advertisement"
                 />
@@ -98,7 +98,7 @@ export default async function ProductDetailPage({ params }: { params: { id: stri
             <TabsList className="border-b-2 border-border rounded-none bg-transparent p-0 h-auto justify-start">
               <TabsTrigger value="specification" className="data-[state=active]:border-b-2 data-[state=active]:border-primary data-[state=active]:text-foreground data-[state=active]:shadow-none rounded-none bg-transparent text-lg font-semibold py-3 mr-4">Specification</TabsTrigger>
               <TabsTrigger value="description" className="data-[state=active]:border-b-2 data-[state=active]:border-primary data-[state=active]:text-foreground data-[state=active]:shadow-none rounded-none bg-transparent text-lg font-semibold py-3 mr-4">Description</TabsTrigger>
-              <TabsTrigger value="reviews" className="data-[state=active]:border-b-2 data-[state=active]:border-primary data-[state=active]:text-foreground data-[state=active]:shadow-none rounded-none bg-transparent text-lg font-semibold py-3 mr-4">Reviews</TabsTrigger>
+              <TabsTrigger value="reviews" id="reviews" className="data-[state=active]:border-b-2 data-[state=active]:border-primary data-[state=active]:text-foreground data-[state=active]:shadow-none rounded-none bg-transparent text-lg font-semibold py-3 mr-4">Reviews</TabsTrigger>
               <TabsTrigger value="questions" className="data-[state=active]:border-b-2 data-[state=active]:border-primary data-[state=active]:text-foreground data-[state=active]:shadow-none rounded-none bg-transparent text-lg font-semibold py-3 mr-4">Questions</TabsTrigger>
               <TabsTrigger value="video" className="data-[state=active]:border-b-2 data-[state=active]:border-primary data-[state=active]:text-foreground data-[state=active]:shadow-none rounded-none bg-transparent text-lg font-semibold py-3 mr-4">Video</TabsTrigger>
             </TabsList>
@@ -131,7 +131,7 @@ export default async function ProductDetailPage({ params }: { params: { id: stri
                 </CardContent>
               </Card>
             </TabsContent>
-            <TabsContent value="reviews" id="reviews" className="mt-6">
+            <TabsContent value="reviews" className="mt-6">
               <Reviews productId={product.id} reviews={productReviews} averageRating={averageRating} />
             </TabsContent>
             <TabsContent value="questions" className="mt-6">
