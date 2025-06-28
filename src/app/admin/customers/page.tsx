@@ -39,8 +39,8 @@ export default function AdminCustomersPage() {
             console.error("Failed to fetch customers:", error);
             toast({
                 variant: 'destructive',
-                title: 'Error Fetching Data',
-                description: 'Could not load customers. Please check your Firestore security rules and connection.',
+                title: 'Error Fetching Customers',
+                description: 'Could not load customer data. Please ensure you are logged in as an admin and have deployed the latest Firestore security rules.',
             });
         } finally {
             setIsLoading(false);
