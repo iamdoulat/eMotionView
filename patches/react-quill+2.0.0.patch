@@ -1,0 +1,17 @@
+--- a/node_modules/react-quill/lib/index.js
++++ b/node_modules/react-quill/lib/index.js
+@@ -1,5 +1,4 @@
+ 'use strict';
+-var ReactDOM = require('react-dom');
+ var Quill = require('quill');
+ var QuillMixin = require('./mixin');
+ var PropTypes = require('prop-types');
+@@ -232,7 +231,7 @@
+ 	},
+ 
+ 	getEditorNode: function() {
+-		return ReactDOM.findDOMNode(this.editorRef);
++		return this.editorRef.current;
+ 	},
+ 
+ 	getEditingArea: function() {
