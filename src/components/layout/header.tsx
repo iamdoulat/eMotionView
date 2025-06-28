@@ -20,6 +20,8 @@ import { useCart } from "@/hooks/use-cart"
 import { auth } from "@/lib/firebase"
 import { onAuthStateChanged, signOut, type User as FirebaseUser } from "firebase/auth"
 import { Skeleton } from "../ui/skeleton"
+import { useIsMobile } from "@/hooks/use-mobile"
+import { useHasMounted } from "@/hooks/use-has-mounted"
 
 const categoryLinks = [
     { name: 'Smart Watches', href: '/products?category=Wearables' },
@@ -47,9 +49,11 @@ export function Header() {
   const [isScrolled, setIsScrolled] = useState(false);
   const [currentUser, setCurrentUser] = useState<FirebaseUser | null>(null);
   const [isAuthLoading, setIsAuthLoading] = useState(true);
-  const [isMobile, setIsMobile] = useState(false);
   const router = useRouter();
   const { cartCount, isInitialized: isCartInitialized } = useCart();
+  
+  const hasMounted = useHasMounted();
+  const isMobile = useIsMobile();
 
   // Search state
   const [searchTerm, setSearchTerm] = useState('');
@@ -59,12 +63,7 @@ export function Header() {
   const searchWrapperRef = useRef<HTMLElement>(null);
 
   useEffect(() => {
-    const handleResize = () => setIsMobile(window.innerWidth < 768);
     const handleScroll = () => setIsScrolled(window.scrollY > 80);
-    
-    handleResize();
-
-    window.addEventListener("resize", handleResize);
     window.addEventListener("scroll", handleScroll);
 
     const unsubscribe = onAuthStateChanged(auth, (user) => {
@@ -73,7 +72,6 @@ export function Header() {
     });
 
     return () => {
-      window.removeEventListener("resize", handleResize);
       window.removeEventListener("scroll", handleScroll);
       unsubscribe();
     };
@@ -154,6 +152,20 @@ export function Header() {
     return acc;
   }, {} as Record<string, SearchResult[]>);
 
+  if (!hasMounted) {
+    return (
+      <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur-sm">
+        <div className="container mx-auto flex h-16 items-center justify-between px-4 md:h-20">
+          <Skeleton className="h-8 w-32" />
+          <div className="flex items-center gap-4">
+            <Skeleton className="h-10 w-10 rounded-full" />
+            <Skeleton className="h-10 w-24 hidden md:block" />
+          </div>
+        </div>
+      </header>
+    );
+  }
+
   const searchInput = (
     <Input 
       type="search" 
@@ -220,7 +232,7 @@ export function Header() {
   );
 
   const CartButton = ({ className }: { className?: string }) => (
-    <Button variant="ghost" asChild className={cn("relative h-10 w-10 p-0", className)}>
+    <Button variant="ghost" asChild className={cn("relative h-10 w-10", className)}>
       <Link href="/cart" aria-label="Shopping Cart">
         <ShoppingCart className="h-6 w-6" />
         {isCartInitialized && (
@@ -267,10 +279,69 @@ export function Header() {
     )
   }
 
+  if (isMobile) {
+    return (
+       <header className="sticky top-0 z-50 w-full bg-background/95 backdrop-blur-sm" ref={searchWrapperRef}>
+        <div className="container mx-auto flex h-16 items-center justify-between px-4 border-b">
+          <Sheet>
+            <SheetTrigger asChild>
+              <Button variant="ghost" size="icon">
+                <Menu className="h-6 w-6" />
+                <span className="sr-only">Toggle Menu</span>
+              </Button>
+            </SheetTrigger>
+            <SheetContent side="left" className="w-[300px] p-0 flex flex-col">
+              <div className="bg-primary p-4">
+                <Link href="/" className="flex items-center gap-2">
+                  <Image src="https://placehold.co/40x40/FFFFFF/8B2BE2.png" alt="eMotionView Logo" width={40} height={40} data-ai-hint="logo initial"/>
+                  <span className="font-bold text-xl text-primary-foreground">eMotionView</span>
+                </Link>
+              </div>
+              <ScrollArea className="flex-1">
+                <div className="p-4 space-y-2">
+                    <h3 className="font-semibold px-2 text-lg mb-2">Account</h3>
+                    <AccountLinks isMobile={true} />
+                </div>
+                <Separator/>
+                <div className="p-4 space-y-2">
+                  <h3 className="font-semibold px-2 text-lg mb-2">All Categories</h3>
+                  {categoryLinks.map(link => (
+                    <Button variant="ghost" asChild key={link.name} className="w-full justify-start">
+                        <Link href={link.href}>
+                        {link.name}
+                        </Link>
+                    </Button>
+                  ))}
+                </div>
+              </ScrollArea>
+            </SheetContent>
+          </Sheet>
+          <Link href="/" className="flex items-center gap-2">
+            <span className="font-bold font-headline text-xl text-foreground">eMotionView</span>
+          </Link>
+          <CartButton />
+        </div>
+        <div className="px-4 py-3 border-b relative">
+          <form>
+            <div className="relative">
+              {searchInput}
+              {searchButton}
+            </div>
+          </form>
+          {isSearchFocused && searchTerm.length >= 3 && 
+            <div className="absolute top-full left-0 right-0 px-4 pb-4 bg-background">
+              {searchResultsPanel}
+            </div>
+          }
+        </div>
+      </header>
+    )
+  }
+
   return (
     <header className="sticky top-0 z-50 w-full bg-background/95 backdrop-blur-sm" ref={searchWrapperRef}>
       {/* Top Bar (hides on scroll) */}
-      <div className={cn("hidden md:block bg-secondary/50 text-black transition-all duration-300", isScrolled ? 'h-0 opacity-0 overflow-hidden' : 'h-8')}>
+      <div className={cn("bg-secondary/50 text-black transition-all duration-300", isScrolled ? 'h-0 opacity-0 overflow-hidden' : 'h-8')}>
         <div className="container mx-auto flex h-full items-center justify-between px-4 text-xs">
           <div>
             <span>Biggest Smart Gadget & SmartPhone Collection</span>
@@ -293,12 +364,12 @@ export function Header() {
       
       {/* Normal Header (Unscrolled) */}
       <div className={cn("border-b", isScrolled ? 'hidden' : 'block')}>
-        <div className="container mx-auto hidden h-20 items-center justify-between gap-4 px-4 md:flex">
+        <div className="container mx-auto h-20 items-center justify-between gap-4 px-4 flex">
           <Link href="/" className="flex items-center gap-2 flex-shrink-0">
             <Image src="https://placehold.co/50x50/FFFFFF/000000.png" alt="eMotionView Logo" width={40} height={40} data-ai-hint="logo globe"/>
             <span className="font-bold font-headline text-2xl text-foreground">eMotionView</span>
           </Link>
-          <div className="hidden md:flex flex-1 justify-center px-8 relative">
+          <div className="flex flex-1 justify-center px-8 relative">
             <form className="w-full max-w-2xl">
               <div className="relative">
                 {searchInput}
@@ -315,7 +386,7 @@ export function Header() {
 
       {/* Sticky Header (Scrolled) */}
       <div className={cn("border-b shadow-md", isScrolled ? 'block' : 'hidden')}>
-        <div className="container mx-auto hidden h-16 items-center justify-between gap-4 px-4 md:flex">
+        <div className="container mx-auto h-16 items-center justify-between gap-4 px-4 flex">
             <Link href="/" className="flex items-center gap-2 flex-shrink-0">
                 <Image src="https://placehold.co/50x50/FFFFFF/000000.png" alt="eMotionView Logo" width={32} height={32} data-ai-hint="logo globe"/>
                 <span className="font-bold font-headline text-xl text-foreground">eMotionView</span>
@@ -325,7 +396,7 @@ export function Header() {
               <DropdownMenu>
                   <DropdownMenuTrigger asChild>
                       <Button>
-                          <LayoutGrid className="h-5 w-5" />
+                          <LayoutGrid className="mr-2 h-4 w-4" />
                           All Categories
                       </Button>
                   </DropdownMenuTrigger>
@@ -385,61 +456,6 @@ export function Header() {
             </div>
         </div>
       </div>
-
-      {/* Mobile Header */}
-      <div className="md:hidden">
-        <div className="container mx-auto flex h-16 items-center justify-between px-4 border-b">
-          <Sheet>
-            <SheetTrigger asChild>
-              <Button variant="ghost" size="icon">
-                <Menu className="h-6 w-6" />
-                <span className="sr-only">Toggle Menu</span>
-              </Button>
-            </SheetTrigger>
-            <SheetContent side="left" className="w-[300px] p-0 flex flex-col">
-              <div className="bg-primary p-4">
-                <Link href="/" className="flex items-center gap-2">
-                  <Image src="https://placehold.co/40x40/FFFFFF/8B2BE2.png" alt="eMotionView Logo" width={40} height={40} data-ai-hint="logo initial"/>
-                  <span className="font-bold text-xl text-primary-foreground">eMotionView</span>
-                </Link>
-              </div>
-              <ScrollArea className="flex-1">
-                <div className="p-4 space-y-2">
-                    <h3 className="font-semibold px-2 text-lg mb-2">Account</h3>
-                    <AccountLinks isMobile={true} />
-                </div>
-                <Separator/>
-                <div className="p-4 space-y-2">
-                  <h3 className="font-semibold px-2 text-lg mb-2">All Categories</h3>
-                  {categoryLinks.map(link => (
-                    <Button variant="ghost" asChild key={link.name} className="w-full justify-start">
-                        <Link href={link.href}>
-                        {link.name}
-                        </Link>
-                    </Button>
-                  ))}
-                </div>
-              </ScrollArea>
-            </SheetContent>
-          </Sheet>
-          <Link href="/" className="flex items-center gap-2">
-            <span className="font-bold font-headline text-xl text-foreground">eMotionView</span>
-          </Link>
-          <CartButton />
-        </div>
-        <div className="px-4 py-3 border-b relative">
-          <form>
-            <div className="relative">
-              {searchInput}
-              {searchButton}
-            </div>
-          </form>
-          {isSearchFocused && searchTerm.length >= 3 && 
-            <div className="absolute top-full left-0 right-0 px-4 pb-4 bg-background">
-              {searchResultsPanel}
-            </div>
-          }
-        </div>
-      </div>
     </header>
   )
+}
