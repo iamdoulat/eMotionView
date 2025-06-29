@@ -30,7 +30,16 @@ interface SingleBanner {
     image: string;
     link: string;
 }
-type SectionType = 'featured-categories' | 'product-grid' | 'promo-banner-pair' | 'single-banner-large' | 'promo-banner-trio';
+type SectionType = 
+    | 'featured-categories' 
+    | 'product-grid' 
+    | 'promo-banner-pair' 
+    | 'single-banner-large' 
+    | 'promo-banner-trio'
+    | 'one-column-banner'
+    | 'two-column-banner'
+    | 'three-column-banner';
+
 
 interface Section {
     id: string;
@@ -171,7 +180,15 @@ function SortableSectionItem({
                 );
             case 'promo-banner-trio':
             case 'promo-banner-pair':
-                const size = section.type === 'promo-banner-trio' ? '400x200px' : '800x400px';
+            case 'one-column-banner':
+            case 'two-column-banner':
+            case 'three-column-banner':
+                 let size = '800x400px';
+                 if (section.type === 'promo-banner-trio') size = '400x200px';
+                 if (section.type === 'one-column-banner') size = '1200x400px';
+                 if (section.type === 'two-column-banner') size = '600x400px';
+                 if (section.type === 'three-column-banner') size = '400x400px';
+
                  return (
                     <div className="space-y-4 py-4">
                         <p className="text-sm text-muted-foreground">Recommended size: {size}</p>
@@ -344,6 +361,37 @@ export default function HomepageSettingsPage() {
                 content: []
             };
             break;
+        case 'one-column-banner':
+            newSection = {
+                id,
+                name: "New 1-Column Banner",
+                type: 'one-column-banner',
+                content: [{ id: `promo-${id}`, image: 'https://placehold.co/1200x400.png', link: '#' }]
+            };
+            break;
+        case 'two-column-banner':
+            newSection = {
+                id,
+                name: "New 2-Column Banners",
+                type: 'two-column-banner',
+                content: [
+                    { id: `promo1-${id}`, image: 'https://placehold.co/600x400.png', link: '#' },
+                    { id: `promo2-${id}`, image: 'https://placehold.co/600x400.png', link: '#' },
+                ]
+            };
+            break;
+        case 'three-column-banner':
+            newSection = {
+                id,
+                name: "New 3-Column Banners",
+                type: 'three-column-banner',
+                content: [
+                    { id: `promo1-${id}`, image: 'https://placehold.co/400x400.png', link: '#' },
+                    { id: `promo2-${id}`, image: 'https://placehold.co/400x400.png', link: '#' },
+                    { id: `promo3-${id}`, image: 'https://placehold.co/400x400.png', link: '#' },
+                ]
+            };
+            break;
         case 'product-grid':
         default:
             newSection = {
@@ -433,15 +481,27 @@ export default function HomepageSettingsPage() {
             </Button>
              <Button variant="outline" onClick={() => handleAddNewSection('promo-banner-trio')}>
               <Plus className="mr-2 h-4 w-4" />
-              Add Triple Banners (400x200)
+              Add Triple Banners
             </Button>
             <Button variant="outline" onClick={() => handleAddNewSection('promo-banner-pair')}>
               <Plus className="mr-2 h-4 w-4" />
-              Add Promo Banners (800x400)
+              Add Paired Banners
             </Button>
             <Button variant="outline" onClick={() => handleAddNewSection('single-banner-large')}>
               <Plus className="mr-2 h-4 w-4" />
-              Add Large Banner (1200x250)
+              Add Large Banner
+            </Button>
+            <Button variant="outline" onClick={() => handleAddNewSection('one-column-banner')}>
+              <Plus className="mr-2 h-4 w-4" />
+              Add 1-Column Banner
+            </Button>
+            <Button variant="outline" onClick={() => handleAddNewSection('two-column-banner')}>
+              <Plus className="mr-2 h-4 w-4" />
+              Add 2-Column Banners
+            </Button>
+            <Button variant="outline" onClick={() => handleAddNewSection('three-column-banner')}>
+              <Plus className="mr-2 h-4 w-4" />
+              Add 3-Column Banners
             </Button>
           </div>
         </CardContent>
