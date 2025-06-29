@@ -4,12 +4,9 @@
 import { useState, useEffect } from "react";
 import { DndContext, closestCenter, KeyboardSensor, PointerSensor, useSensor, useSensors, type DragEndEvent } from '@dnd-kit/core';
 import { arrayMove, SortableContext, sortableKeyboardCoordinates, verticalListSortingStrategy } from '@dnd-kit/sortable';
-import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
+import { Accordion } from "@/components/ui/accordion";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
 import { Loader2, Plus } from "lucide-react";
 import { doc, getDoc, setDoc } from "firebase/firestore";
 import { db } from "@/lib/firebase";
@@ -18,6 +15,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import type { Section, SectionType, HeroBanner } from "@/lib/placeholder-data";
 import { defaultHeroBanners, defaultHomepageSections } from "@/lib/placeholder-data";
 import { HomepageSectionItem } from "@/components/admin/homepage-section-item";
+import { HeroBannerItem } from "@/components/admin/hero-banner-item";
 
 
 export default function HomepageSettingsPage() {
@@ -50,11 +48,33 @@ export default function HomepageSettingsPage() {
     fetchSettings();
   }, [toast]);
   
-  const handleHeroBannerChange = (index: number, field: keyof HeroBanner, value: string) => {
-    const newBanners = [...heroBanners];
-    (newBanners[index] as any)[field] = value;
-    setHeroBanners(newBanners);
+  const handleHeroBannerChange = (id: number, field: keyof HeroBanner, value: string) => {
+    setHeroBanners(prev => prev.map(banner => {
+        if (banner.id === id) {
+            return { ...banner, [field]: value };
+        }
+        return banner;
+    }));
   };
+  
+  const handleAddHeroBanner = () => {
+    setHeroBanners(prev => [
+        ...prev,
+        {
+            id: Date.now(),
+            image: `https://placehold.co/900x440.png`,
+            headline: "New Banner Headline",
+            subheadline: "Describe the promotion here.",
+            buttonText: "Shop Now",
+            link: "/products",
+        }
+    ]);
+  };
+
+  const handleDeleteHeroBanner = (id: number) => {
+    setHeroBanners(prev => prev.filter(banner => banner.id !== id));
+  };
+
 
   const sensors = useSensors(
     useSensor(PointerSensor),
@@ -63,7 +83,7 @@ export default function HomepageSettingsPage() {
     })
   );
 
-  function handleDragEnd(event: DragEndEvent) {
+  function handleSectionDragEnd(event: DragEndEvent) {
     const { active, over } = event;
 
     if (over && active.id !== over.id) {
@@ -72,6 +92,18 @@ export default function HomepageSettingsPage() {
         const newIndex = items.findIndex((item) => item.id === over.id);
         return arrayMove(items, oldIndex, newIndex);
       });
+    }
+  }
+  
+  function handleBannerDragEnd(event: DragEndEvent) {
+    const { active, over } = event;
+
+    if (over && active.id !== over.id) {
+        setHeroBanners((items) => {
+            const oldIndex = items.findIndex((item) => item.id === active.id);
+            const newIndex = items.findIndex((item) => item.id === over.id);
+            return arrayMove(items, oldIndex, newIndex);
+        });
     }
   }
 
@@ -210,42 +242,39 @@ export default function HomepageSettingsPage() {
       
       <Card>
         <CardHeader>
-          <CardTitle>Hero Banners</CardTitle>
-          <CardDescription>Manage the rotating banners at the top of your homepage. Configure up to 5.</CardDescription>
+            <div className="flex items-center justify-between">
+                <div>
+                    <CardTitle>Hero Banners</CardTitle>
+                    <CardDescription>Manage the rotating banners at the top of your homepage. Drag to reorder.</CardDescription>
+                </div>
+                <Button onClick={handleAddHeroBanner}>
+                    <Plus className="mr-2 h-4 w-4" />
+                    Add Banner
+                </Button>
+            </div>
         </CardHeader>
         <CardContent>
-          <Accordion type="single" collapsible className="w-full" defaultValue="item-1">
-            {heroBanners.map((banner, index) => (
-              <AccordionItem value={`item-${banner.id}`} key={banner.id}>
-                <AccordionTrigger>Hero Banner {index + 1}</AccordionTrigger>
-                <AccordionContent>
-                    <div className="grid gap-4 pt-4">
-                      <div className="space-y-2">
-                        <Label htmlFor={`hero-image-${banner.id}`}>Banner Image URL</Label>
-                        <Input id={`hero-image-${banner.id}`} value={banner.image} onChange={(e) => handleHeroBannerChange(index, 'image', e.target.value)} />
-                        <p className="text-sm text-muted-foreground">Recommended size: 900x440px</p>
-                      </div>
-                      <div className="space-y-2">
-                        <Label htmlFor={`hero-headline-${banner.id}`}>Headline</Label>
-                        <Input id={`hero-headline-${banner.id}`} value={banner.headline} onChange={(e) => handleHeroBannerChange(index, 'headline', e.target.value)} />
-                      </div>
-                      <div className="space-y-2">
-                        <Label htmlFor={`hero-subheadline-${banner.id}`}>Sub-headline</Label>
-                        <Textarea id={`hero-subheadline-${banner.id}`} value={banner.subheadline} onChange={(e) => handleHeroBannerChange(index, 'subheadline', e.target.value)} />
-                      </div>
-                      <div className="space-y-2">
-                        <Label htmlFor={`hero-button-text-${banner.id}`}>Button Text</Label>
-                        <Input id={`hero-button-text-${banner.id}`} value={banner.buttonText} onChange={(e) => handleHeroBannerChange(index, 'buttonText', e.target.value)} />
-                      </div>
-                      <div className="space-y-2">
-                        <Label htmlFor={`hero-link-${banner.id}`}>Button Link</Label>
-                        <Input id={`hero-link-${banner.id}`} value={banner.link} onChange={(e) => handleHeroBannerChange(index, 'link', e.target.value)} />
-                      </div>
-                    </div>
-                </AccordionContent>
-              </AccordionItem>
-            ))}
-          </Accordion>
+            <Accordion type="multiple" className="w-full space-y-2">
+                <DndContext
+                    sensors={sensors}
+                    collisionDetection={closestCenter}
+                    onDragEnd={handleBannerDragEnd}
+                >
+                    <SortableContext
+                        items={heroBanners.map(b => b.id)}
+                        strategy={verticalListSortingStrategy}
+                    >
+                        {heroBanners.map((banner) => (
+                            <HeroBannerItem
+                                key={banner.id}
+                                banner={banner}
+                                onChange={handleHeroBannerChange}
+                                onDelete={() => handleDeleteHeroBanner(banner.id)}
+                            />
+                        ))}
+                    </SortableContext>
+                </DndContext>
+            </Accordion>
         </CardContent>
       </Card>
 
@@ -258,7 +287,7 @@ export default function HomepageSettingsPage() {
           <DndContext
             sensors={sensors}
             collisionDetection={closestCenter}
-            onDragEnd={handleDragEnd}
+            onDragEnd={handleSectionDragEnd}
           >
             <SortableContext
               items={sections.map(s => s.id)}
