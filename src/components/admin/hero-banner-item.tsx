@@ -1,9 +1,7 @@
 
 "use client";
 
-import { useSortable } from '@dnd-kit/sortable';
-import { CSS } from '@dnd-kit/utilities';
-import { GripVertical, Trash2 } from "lucide-react";
+import { Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -20,30 +18,15 @@ export function HeroBannerItem({
     onDelete: () => void;
     onChange: (id: number, field: keyof HeroBanner, value: string) => void;
 }) {
-    const {
-        attributes,
-        listeners,
-        setNodeRef,
-        transform,
-        transition,
-    } = useSortable({ id: banner.id });
-
-    const style = {
-        transform: CSS.Transform.toString(transform),
-        transition,
-    };
 
     const handleChange = (field: keyof HeroBanner, value: string) => {
         onChange(banner.id, field, value);
     };
 
     return (
-        <div ref={setNodeRef} style={style} {...attributes}>
+        <div>
             <AccordionItem value={`item-${banner.id}`} className="bg-background rounded-lg border">
                 <div className="flex items-center p-2">
-                    <Button variant="ghost" size="icon" className="cursor-grab touch-none" {...listeners}>
-                        <GripVertical className="h-5 w-5 text-muted-foreground" />
-                    </Button>
                     <AccordionTrigger className="flex-1 text-left p-2 hover:no-underline">
                         <span>{banner.headline || `Banner ${banner.id}`}</span>
                     </AccordionTrigger>

@@ -2,8 +2,6 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { DndContext, closestCenter, KeyboardSensor, PointerSensor, useSensor, useSensors, type DragEndEvent } from '@dnd-kit/core';
-import { arrayMove, SortableContext, sortableKeyboardCoordinates, verticalListSortingStrategy } from '@dnd-kit/sortable';
 import { Accordion } from "@/components/ui/accordion";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -74,38 +72,6 @@ export default function HomepageSettingsPage() {
   const handleDeleteHeroBanner = (id: number) => {
     setHeroBanners(prev => prev.filter(banner => banner.id !== id));
   };
-
-
-  const sensors = useSensors(
-    useSensor(PointerSensor),
-    useSensor(KeyboardSensor, {
-      coordinateGetter: sortableKeyboardCoordinates,
-    })
-  );
-
-  function handleSectionDragEnd(event: DragEndEvent) {
-    const { active, over } = event;
-
-    if (over && active.id !== over.id) {
-      setSections((items) => {
-        const oldIndex = items.findIndex((item) => item.id === active.id);
-        const newIndex = items.findIndex((item) => item.id === over.id);
-        return arrayMove(items, oldIndex, newIndex);
-      });
-    }
-  }
-  
-  function handleBannerDragEnd(event: DragEndEvent) {
-    const { active, over } = event;
-
-    if (over && active.id !== over.id) {
-        setHeroBanners((items) => {
-            const oldIndex = items.findIndex((item) => item.id === active.id);
-            const newIndex = items.findIndex((item) => item.id === over.id);
-            return arrayMove(items, oldIndex, newIndex);
-        });
-    }
-  }
 
   const handleSaveSection = (updatedSection: Section) => {
     setSections(prev => prev.map(s => s.id === updatedSection.id ? updatedSection : s));
@@ -245,7 +211,7 @@ export default function HomepageSettingsPage() {
             <div className="flex items-center justify-between">
                 <div>
                     <CardTitle>Hero Banners</CardTitle>
-                    <CardDescription>Manage the rotating banners at the top of your homepage. Drag to reorder.</CardDescription>
+                    <CardDescription>Manage the rotating banners at the top of your homepage.</CardDescription>
                 </div>
                 <Button onClick={handleAddHeroBanner}>
                     <Plus className="mr-2 h-4 w-4" />
@@ -255,25 +221,14 @@ export default function HomepageSettingsPage() {
         </CardHeader>
         <CardContent>
             <Accordion type="multiple" className="w-full space-y-2">
-                <DndContext
-                    sensors={sensors}
-                    collisionDetection={closestCenter}
-                    onDragEnd={handleBannerDragEnd}
-                >
-                    <SortableContext
-                        items={heroBanners.map(b => b.id)}
-                        strategy={verticalListSortingStrategy}
-                    >
-                        {heroBanners.map((banner) => (
-                            <HeroBannerItem
-                                key={banner.id}
-                                banner={banner}
-                                onChange={handleHeroBannerChange}
-                                onDelete={() => handleDeleteHeroBanner(banner.id)}
-                            />
-                        ))}
-                    </SortableContext>
-                </DndContext>
+                {heroBanners.map((banner) => (
+                    <HeroBannerItem
+                        key={banner.id}
+                        banner={banner}
+                        onChange={handleHeroBannerChange}
+                        onDelete={() => handleDeleteHeroBanner(banner.id)}
+                    />
+                ))}
             </Accordion>
         </CardContent>
       </Card>
@@ -281,30 +236,19 @@ export default function HomepageSettingsPage() {
       <Card>
         <CardHeader>
           <CardTitle>Homepage Sections</CardTitle>
-          <CardDescription>Drag and drop to reorder the sections on your homepage.</CardDescription>
+          <CardDescription>Add, edit, or delete sections on your homepage.</CardDescription>
         </CardHeader>
         <CardContent>
-          <DndContext
-            sensors={sensors}
-            collisionDetection={closestCenter}
-            onDragEnd={handleSectionDragEnd}
-          >
-            <SortableContext
-              items={sections.map(s => s.id)}
-              strategy={verticalListSortingStrategy}
-            >
-              <div className="space-y-2">
-                {sections.map((section) => (
-                  <HomepageSectionItem 
-                    key={section.id} 
-                    section={section}
-                    onSave={handleSaveSection}
-                    onDelete={() => handleDeleteSection(section.id)}
-                  />
-                ))}
-              </div>
-            </SortableContext>
-          </DndContext>
+          <div className="space-y-2">
+            {sections.map((section) => (
+              <HomepageSectionItem 
+                key={section.id} 
+                section={section}
+                onSave={handleSaveSection}
+                onDelete={() => handleDeleteSection(section.id)}
+              />
+            ))}
+          </div>
           <div className="mt-4 border-t pt-4 flex flex-wrap gap-2">
             <Button variant="outline" onClick={() => handleAddNewSection('product-grid')}>
               <Plus className="mr-2 h-4 w-4" />

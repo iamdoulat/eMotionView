@@ -2,14 +2,11 @@
 "use client";
 
 import { useState } from "react";
-import { useSortable } from '@dnd-kit/sortable';
-import { CSS } from '@dnd-kit/utilities';
-
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { GripVertical, Pencil, Plus, Trash2 } from "lucide-react";
+import { Pencil, Plus, Trash2 } from "lucide-react";
 import { Card, CardTitle } from "../ui/card";
 
 // Data Structures
@@ -53,19 +50,6 @@ export function HomepageSectionItem({
     onSave: (updatedSection: Section) => void;
     onDelete: () => void;
 }) {
-    const {
-        attributes,
-        listeners,
-        setNodeRef,
-        transform,
-        transition,
-    } = useSortable({ id: section.id });
-
-    const style = {
-        transform: CSS.Transform.toString(transform),
-        transition,
-    };
-    
     const [isDialogOpen, setIsDialogOpen] = useState(false);
     const [editedSection, setEditedSection] = useState<Section>(section);
     
@@ -214,11 +198,8 @@ export function HomepageSectionItem({
 
     return (
         <Dialog open={isDialogOpen} onOpenChange={handleOpenChange}>
-            <div ref={setNodeRef} style={style} {...attributes} className="flex items-center justify-between rounded-md border bg-background p-3 touch-none">
+            <div className="flex items-center justify-between rounded-md border bg-background p-3 touch-none">
                 <div className="flex items-center gap-3">
-                    <Button variant="ghost" size="icon" className="cursor-grab" {...listeners}>
-                        <GripVertical className="h-5 w-5 text-muted-foreground" />
-                    </Button>
                     <p className="font-medium">{section.name}</p>
                 </div>
                 <div className="flex items-center gap-2">
