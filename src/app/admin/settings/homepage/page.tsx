@@ -14,6 +14,7 @@ import type { Section, SectionType, HeroBanner } from "@/lib/placeholder-data";
 import { defaultHeroBanners, defaultHomepageSections } from "@/lib/placeholder-data";
 import { HomepageSectionItem } from "@/components/admin/homepage-section-item";
 import { HeroBannerItem } from "@/components/admin/hero-banner-item";
+import { useAuth } from "@/hooks/use-auth";
 
 
 export default function HomepageSettingsPage() {
@@ -22,9 +23,18 @@ export default function HomepageSettingsPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
   const { toast } = useToast();
+  const { user, isLoading: isAuthLoading } = useAuth();
 
   useEffect(() => {
     const fetchSettings = async () => {
+      // Don't fetch if user is not logged in
+      if (!user) {
+          setIsLoading(false);
+          setHeroBanners(defaultHeroBanners);
+          setSections(defaultHomepageSections);
+          return;
+      };
+
       try {
         const docRef = doc(db, "settings", "homepage");
         const docSnap = await getDoc(docRef);
@@ -33,18 +43,26 @@ export default function HomepageSettingsPage() {
           setHeroBanners(data.heroBanners || defaultHeroBanners);
           setSections(data.sections || defaultHomepageSections);
         } else {
+          // If doc doesn't exist for the admin, set defaults
           setHeroBanners(defaultHeroBanners);
           setSections(defaultHomepageSections);
         }
       } catch (error) {
         console.error("Failed to fetch homepage settings:", error);
         toast({ variant: 'destructive', title: "Error", description: "Could not load homepage settings." });
+        // Fallback to defaults on error
+        setHeroBanners(defaultHeroBanners);
+        setSections(defaultHomepageSections);
       } finally {
         setIsLoading(false);
       }
     };
-    fetchSettings();
-  }, [toast]);
+    
+    // Only fetch when auth has finished loading
+    if (!isAuthLoading) {
+        fetchSettings();
+    }
+  }, [toast, user, isAuthLoading]);
   
   const handleHeroBannerChange = (id: number, field: keyof HeroBanner, value: string) => {
     setHeroBanners(prev => prev.map(banner => {
@@ -189,7 +207,7 @@ export default function HomepageSettingsPage() {
     }
   };
   
-  if (isLoading) {
+  if (isLoading || isAuthLoading) {
       return (
           <div className="space-y-8">
               <h1 className="text-3xl font-bold tracking-tight">Homepage Design</h1>
