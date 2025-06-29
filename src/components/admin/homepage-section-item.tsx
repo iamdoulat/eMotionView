@@ -6,8 +6,11 @@ import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Pencil, Plus, Trash2 } from "lucide-react";
+import { Loader2, Pencil, Plus, Trash2 } from "lucide-react";
 import { Card, CardTitle } from "../ui/card";
+import { storage } from "@/lib/firebase";
+import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
+import Image from 'next/image';
 
 // Data Structures
 export interface FeaturedCategory {
@@ -52,23 +55,68 @@ export function HomepageSectionItem({
 }) {
     const [isDialogOpen, setIsDialogOpen] = useState(false);
     const [editedSection, setEditedSection] = useState<Section>(section);
+    const [filesToUpload, setFilesToUpload] = useState<Record<string, File | null>>({});
+    const [isUploading, setIsUploading] = useState(false);
     
     const handleOpenChange = (open: boolean) => {
         if (open) {
             setEditedSection(JSON.parse(JSON.stringify(section))); 
+            setFilesToUpload({});
         }
         setIsDialogOpen(open);
     }
 
-    const handleSave = () => {
-        onSave(editedSection);
-        setIsDialogOpen(false);
+    const handleSave = async () => {
+        setIsUploading(true);
+        try {
+            const sectionToSave = JSON.parse(JSON.stringify(editedSection));
+
+            const uploadPromises = Object.entries(filesToUpload).map(async ([itemId, file]) => {
+                if (file) {
+                    const storageRef = ref(storage, `homepage/${section.type}/${itemId}-${file.name}`);
+                    await uploadBytes(storageRef, file);
+                    const downloadURL = await getDownloadURL(storageRef);
+
+                    // Update URL based on section type
+                    if (Array.isArray(sectionToSave.content)) {
+                        const itemIndex = sectionToSave.content.findIndex((item: any) => item.id === itemId);
+                        if (itemIndex > -1) {
+                            sectionToSave.content[itemIndex].image = downloadURL;
+                        }
+                    } else if (typeof sectionToSave.content === 'object' && sectionToSave.content !== null) {
+                        // This is for single-banner-large
+                        if (sectionToSave.id === itemId) {
+                             sectionToSave.content.image = downloadURL;
+                        }
+                    }
+                }
+            });
+
+            await Promise.all(uploadPromises);
+            onSave(sectionToSave);
+        } catch (error) {
+             console.error("Failed to upload images or save section", error);
+        } finally {
+            setFilesToUpload({});
+            setIsUploading(false);
+            setIsDialogOpen(false);
+        }
     }
     
     const handleNameChange = (newName: string) => {
         setEditedSection(prev => ({ ...prev, name: newName }));
     };
 
+    const handleFileChange = (itemId: string, e: React.ChangeEvent<HTMLInputElement>, updatePreview: (url: string) => void) => {
+        const file = e.target.files?.[0];
+        if (file) {
+            setFilesToUpload(prev => ({ ...prev, [itemId]: file }));
+            const previewUrl = URL.createObjectURL(file);
+            updatePreview(previewUrl);
+        }
+    };
+    
+    // Specific change handlers
     const handleCategoryChange = (index: number, field: keyof FeaturedCategory, value: string) => {
         const newContent = [...(editedSection.content as FeaturedCategory[])];
         newContent[index] = { ...newContent[index], [field]: value };
@@ -101,19 +149,38 @@ export function HomepageSectionItem({
     const renderDialogContent = () => {
         switch (section.type) {
             case 'featured-categories':
+                 const updateCategoryPreview = (index: number, url: string) => {
+                    const newContent = [...(editedSection.content as FeaturedCategory[])];
+                    newContent[index].image = url;
+                    setEditedSection(prev => ({ ...prev, content: newContent }));
+                };
                 return (
                     <div className="space-y-4 py-4">
                         <div className="max-h-[60vh] space-y-4 overflow-y-auto pr-2">
                             {(editedSection.content as FeaturedCategory[]).map((category, index) => (
                                 <Card key={category.id} className="p-4">
-                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 items-end">
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 items-center">
                                         <div className="space-y-2">
                                             <Label htmlFor={`cat-name-${category.id}`}>Category Name</Label>
                                             <Input id={`cat-name-${category.id}`} value={category.name} onChange={(e) => handleCategoryChange(index, 'name', e.target.value)} />
                                         </div>
-                                        <div className="space-y-2">
-                                            <Label htmlFor={`cat-image-${category.id}`}>Image URL</Label>
-                                            <Input id={`cat-image-${category.id}`} value={category.image} onChange={(e) => handleCategoryChange(index, 'image', e.target.value)} />
+                                         <div className="space-y-2">
+                                            <Label htmlFor={`cat-image-upload-${category.id}`}>Image</Label>
+                                            <div className="flex items-center gap-4">
+                                                <Image 
+                                                    src={category.image} 
+                                                    alt={category.name} 
+                                                    width={64} height={64} 
+                                                    className="rounded-md border object-cover aspect-square"
+                                                />
+                                                <Input 
+                                                    id={`cat-image-upload-${category.id}`} 
+                                                    type="file" 
+                                                    accept="image/*"
+                                                    onChange={(e) => handleFileChange(category.id, e, (url) => updateCategoryPreview(index, url))}
+                                                    className="block"
+                                                />
+                                            </div>
                                         </div>
                                         <div className="col-span-full flex justify-end">
                                             <Button variant="destructive" size="icon" onClick={() => handleRemoveCategory(category.id)}>
@@ -136,11 +203,33 @@ export function HomepageSectionItem({
             case 'one-column-banner':
             case 'two-column-banner':
             case 'three-column-banner':
+            case 'single-banner-large':
                  let size = '800x400px';
                  if (section.type === 'promo-banner-trio') size = '400x200px';
+                 if (section.type === 'single-banner-large') size = '1200x250px';
                  if (section.type === 'one-column-banner') size = '1200x400px';
                  if (section.type === 'two-column-banner') size = '600x400px';
                  if (section.type === 'three-column-banner') size = '400x400px';
+
+                 if (section.type === 'single-banner-large') {
+                     return (
+                         <div className="space-y-4 py-4">
+                             <p className="text-sm text-muted-foreground">Recommended size: {size}</p>
+                             <Card className="p-4">
+                                <div className="space-y-4">
+                                     <div className="space-y-2">
+                                         <Label htmlFor={`single-banner-image-${section.id}`}>Image URL</Label>
+                                         <Input id={`single-banner-image-${section.id}`} value={(editedSection.content as SingleBanner)?.image || ''} onChange={(e) => handleSingleBannerChange('image', e.target.value)} />
+                                     </div>
+                                     <div className="space-y-2">
+                                         <Label htmlFor={`single-banner-link-${section.id}`}>Link URL</Label>
+                                         <Input id={`single-banner-link-${section.id}`} value={(editedSection.content as SingleBanner)?.link || ''} onChange={(e) => handleSingleBannerChange('link', e.target.value)} />
+                                     </div>
+                                 </div>
+                             </Card>
+                         </div>
+                     )
+                 }
 
                  return (
                     <div className="space-y-4 py-4">
@@ -162,24 +251,6 @@ export function HomepageSectionItem({
                                 </Card>
                             ))}
                         </div>
-                    </div>
-                );
-            case 'single-banner-large':
-                return (
-                    <div className="space-y-4 py-4">
-                        <p className="text-sm text-muted-foreground">Recommended size: 1200x250px</p>
-                        <Card className="p-4">
-                           <div className="space-y-4">
-                                <div className="space-y-2">
-                                    <Label htmlFor={`single-banner-image-${section.id}`}>Image URL</Label>
-                                    <Input id={`single-banner-image-${section.id}`} value={(editedSection.content as SingleBanner)?.image || ''} onChange={(e) => handleSingleBannerChange('image', e.target.value)} />
-                                </div>
-                                <div className="space-y-2">
-                                    <Label htmlFor={`single-banner-link-${section.id}`}>Link URL</Label>
-                                    <Input id={`single-banner-link-${section.id}`} value={(editedSection.content as SingleBanner)?.link || ''} onChange={(e) => handleSingleBannerChange('link', e.target.value)} />
-                                </div>
-                            </div>
-                        </Card>
                     </div>
                 );
             case 'product-grid':
@@ -224,8 +295,11 @@ export function HomepageSectionItem({
                 </DialogHeader>
                 {renderDialogContent()}
                 <DialogFooter>
-                     <Button variant="ghost" onClick={() => setIsDialogOpen(false)}>Cancel</Button>
-                    <Button onClick={handleSave}>Save Changes</Button>
+                     <Button variant="ghost" onClick={() => setIsDialogOpen(false)} disabled={isUploading}>Cancel</Button>
+                    <Button onClick={handleSave} disabled={isUploading}>
+                        {isUploading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                        Save Changes
+                    </Button>
                 </DialogFooter>
             </DialogContent>
         </Dialog>
