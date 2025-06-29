@@ -42,12 +42,11 @@ export default async function ProductDetailPage({ params }: { params: { id: stri
 
   const product = docToJSON(productSnap) as Product;
 
-  // Fetch reviews and calculate the most up-to-date rating on the server
-  const reviewsQuery = query(collection(db, 'reviews'), where('productId', '==', product.id));
+  // Fetch ONLY approved reviews and calculate the most up-to-date rating on the server
+  const reviewsQuery = query(collection(db, 'reviews'), where('productId', '==', product.id), where('status', '==', 'approved'));
   const reviewsSnapshot = await getDocs(reviewsQuery);
-  const productReviews = reviewsSnapshot.docs.map(docToJSON) as Review[];
+  const approvedReviews = reviewsSnapshot.docs.map(docToJSON) as Review[];
 
-  const approvedReviews = productReviews.filter(r => r.status === 'approved');
   const reviewCount = approvedReviews.length;
   const averageRating = reviewCount > 0 
     ? approvedReviews.reduce((acc, review) => acc + review.rating, 0) / reviewCount
@@ -82,10 +81,10 @@ export default async function ProductDetailPage({ params }: { params: { id: stri
           <div className="lg:col-span-3 hidden lg:block">
             <Link href="#">
                <Image
-                  src="https://placehold.co/300x600.png"
+                  src="https://placehold.co/300x700.png"
                   alt="Advertisement"
                   width={300}
-                  height={600}
+                  height={700}
                   className="w-full h-auto object-cover rounded-lg"
                   data-ai-hint="product advertisement"
                 />
@@ -132,7 +131,7 @@ export default async function ProductDetailPage({ params }: { params: { id: stri
               </Card>
             </TabsContent>
             <TabsContent value="reviews" className="mt-6">
-              <Reviews productId={product.id} reviews={productReviews} averageRating={averageRating} />
+              <Reviews productId={product.id} reviews={approvedReviews} averageRating={averageRating} />
             </TabsContent>
             <TabsContent value="questions" className="mt-6">
               <Card>

@@ -22,7 +22,7 @@ interface ReviewsProps {
   averageRating: number;
 }
 
-export function Reviews({ reviews, productId }: ReviewsProps) {
+export function Reviews({ reviews: approvedReviews, productId }: ReviewsProps) {
   const [rating, setRating] = useState(0);
   const [hoverRating, setHoverRating] = useState(0);
   const [title, setTitle] = useState('');
@@ -86,8 +86,6 @@ export function Reviews({ reviews, productId }: ReviewsProps) {
         setIsSubmitting(false);
     }
   };
-  
-  const approvedReviews = reviews.filter(r => r.status === 'approved');
 
   return (
     <div className="space-y-8">
