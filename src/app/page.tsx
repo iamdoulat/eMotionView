@@ -52,7 +52,7 @@ export default async function HomePage() {
   // Fetch homepage settings from Firestore, with a fallback for public users
   let settings: { [key: string]: any } | null = null;
   try {
-    const settingsRef = doc(db, 'settings', 'homepage');
+    const settingsRef = doc(db, 'public_content', 'homepage');
     const settingsSnap = await getDoc(settingsRef);
     if (settingsSnap.exists()) {
       settings = settingsSnap.data();
@@ -222,3 +222,4 @@ export default async function HomePage() {
     </div>
   );
 }
+    

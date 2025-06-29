@@ -41,7 +41,7 @@ export default function HomepageSettingsPage() {
       };
 
       try {
-        const docRef = doc(db, "settings", "homepage");
+        const docRef = doc(db, "public_content", "homepage");
         const docSnap = await getDoc(docRef);
         if (docSnap.exists()) {
           const data = docSnap.data();
@@ -191,7 +191,7 @@ export default function HomepageSettingsPage() {
   const handleSave = async () => {
     setIsSaving(true);
     try {
-      const settingsRef = doc(db, "settings", "homepage");
+      const settingsRef = doc(db, "public_content", "homepage");
       await setDoc(settingsRef, { heroBanners, sections });
       toast({
         title: "Success",
@@ -312,3 +312,4 @@ export default function HomepageSettingsPage() {
     </div>
   );
 }
+    
