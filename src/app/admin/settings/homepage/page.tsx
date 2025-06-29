@@ -26,8 +26,13 @@ export default function HomepageSettingsPage() {
   const { user, isLoading: isAuthLoading } = useAuth();
 
   useEffect(() => {
+    // Wait until authentication is resolved
+    if (isAuthLoading) {
+      return;
+    }
+
     const fetchSettings = async () => {
-      // Don't fetch if user is not logged in
+      // Don't fetch if user is not logged in (which means they're not an admin)
       if (!user) {
           setIsLoading(false);
           setHeroBanners(defaultHeroBanners);
@@ -58,10 +63,7 @@ export default function HomepageSettingsPage() {
       }
     };
     
-    // Only fetch when auth has finished loading
-    if (!isAuthLoading) {
-        fetchSettings();
-    }
+    fetchSettings();
   }, [toast, user, isAuthLoading]);
   
   const handleHeroBannerChange = (id: number, field: keyof HeroBanner, value: string) => {
@@ -262,6 +264,7 @@ export default function HomepageSettingsPage() {
               <HomepageSectionItem 
                 key={section.id} 
                 section={section}
+                user={user}
                 onSave={handleSaveSection}
                 onDelete={() => handleDeleteSection(section.id)}
               />

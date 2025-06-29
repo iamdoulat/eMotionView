@@ -11,6 +11,8 @@ import { Card, CardTitle } from "../ui/card";
 import { storage } from "@/lib/firebase";
 import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
 import Image from 'next/image';
+import type { User } from 'firebase/auth';
+import { useToast } from "@/hooks/use-toast";
 
 // Data Structures
 export interface FeaturedCategory {
@@ -46,10 +48,12 @@ export interface Section {
 
 export function HomepageSectionItem({ 
     section,
+    user,
     onSave,
     onDelete,
 }: {
     section: Section;
+    user: User | null;
     onSave: (updatedSection: Section) => void;
     onDelete: () => void;
 }) {
@@ -57,6 +61,7 @@ export function HomepageSectionItem({
     const [editedSection, setEditedSection] = useState<Section>(section);
     const [filesToUpload, setFilesToUpload] = useState<Record<string, File | null>>({});
     const [isUploading, setIsUploading] = useState(false);
+    const { toast } = useToast();
     
     const handleOpenChange = (open: boolean) => {
         if (open) {
@@ -67,6 +72,15 @@ export function HomepageSectionItem({
     }
 
     const handleSave = async () => {
+        if (!user) {
+          toast({
+            variant: "destructive",
+            title: "Authentication Error",
+            description: "You must be logged in to upload images.",
+          });
+          return;
+        }
+
         setIsUploading(true);
         let finalContent = JSON.parse(JSON.stringify(editedSection.content));
     
@@ -74,7 +88,7 @@ export function HomepageSectionItem({
             const uploadResults: Record<string, string> = {};
             const uploadPromises = Object.entries(filesToUpload).map(async ([itemId, file]) => {
                 if (file) {
-                    const storageRef = ref(storage, `homepage/${section.type}/${itemId}-${file.name}`);
+                    const storageRef = ref(storage, `users/${user.uid}/uploads/homepage/${itemId}-${file.name}`);
                     await uploadBytes(storageRef, file);
                     const downloadURL = await getDownloadURL(storageRef);
                     uploadResults[itemId] = downloadURL;
@@ -91,7 +105,9 @@ export function HomepageSectionItem({
                     return item;
                 });
             } else if (typeof finalContent === 'object' && finalContent !== null) {
-                if (uploadResults[section.id]) {
+                // This covers single-banner-large
+                // We use section.id as the key for single images
+                if (uploadResults[section.id]) { 
                     finalContent.image = uploadResults[section.id];
                 }
             }
@@ -101,6 +117,11 @@ export function HomepageSectionItem({
             
         } catch (error) {
              console.error("Failed to upload images or save section", error);
+             toast({
+                variant: "destructive",
+                title: "Upload Failed",
+                description: "Could not upload images. Please check storage permissions."
+             })
         } finally {
             setFilesToUpload({});
             setIsUploading(false);
