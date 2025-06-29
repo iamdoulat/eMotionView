@@ -15,47 +15,9 @@ import { doc, getDoc, setDoc } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import { useToast } from "@/hooks/use-toast";
 import { Skeleton } from "@/components/ui/skeleton";
-import type { Section, SectionType } from "@/components/admin/homepage-section-item";
+import type { Section, SectionType, HeroBanner } from "@/lib/placeholder-data";
+import { defaultHeroBanners, defaultHomepageSections } from "@/lib/placeholder-data";
 import { HomepageSectionItem } from "@/components/admin/homepage-section-item";
-
-
-// Data Structures
-interface HeroBanner {
-    id: number;
-    image: string;
-    headline: string;
-    subheadline: string;
-    buttonText: string;
-    link: string;
-}
-
-// Initial Data
-const initialHeroBannersData: HeroBanner[] = Array.from({ length: 5 }, (_, i) => ({
-    id: i + 1,
-    image: `https://placehold.co/900x440.png`,
-    headline: i === 0 ? "GADGET FEST" : "",
-    subheadline: i === 0 ? "Up to 60% off on your favorite gadgets." : "",
-    buttonText: i === 0 ? "Shop Now" : "",
-    link: i === 0 ? "/products" : "#",
-}));
-
-const initialSectionsData: Section[] = [
-    { id: 'feat-cat', name: "Featured Categories", type: 'featured-categories', content: [
-        { id: 'fc1', name: 'Smart Watches', image: 'https://placehold.co/128x128.png' },
-        { id: 'fc2', name: 'Headphones', image: 'https://placehold.co/128x128.png' },
-        { id: 'fc3', name: 'Android Smart TVs', image: 'https://placehold.co/128x128.png' },
-        { id: 'fc4', name: 'Charger & Cables', image: 'https://placehold.co/128x128.png' },
-        { id: 'fc5', name: 'Powerbanks', image: 'https://placehold.co/128x128.png' },
-    ]},
-    { id: 'new-arr', name: "New Arrivals", type: 'product-grid', content: null },
-    { id: 'promo-ban', name: "Promotional Banners", type: 'promo-banner-pair', content: [
-        { id: 'promo1', image: 'https://placehold.co/800x400.png', link: '#' },
-        { id: 'promo2', image: 'https://placehold.co/800x400.png', link: '#' },
-    ] },
-    { id: 'pop-prod', name: "Popular Products", type: 'product-grid', content: null },
-    { id: 'smart-watch', name: "Smart Watches", type: 'single-banner-large', content: { image: 'https://placehold.co/1200x250.png', link: '/products?category=Wearables' } },
-    { id: 'headphones', name: "Headphones", type: 'single-banner-large', content: { image: 'https://placehold.co/1200x250.png', link: '/products?category=Audio' } },
-];
 
 
 export default function HomepageSettingsPage() {
@@ -72,11 +34,11 @@ export default function HomepageSettingsPage() {
         const docSnap = await getDoc(docRef);
         if (docSnap.exists()) {
           const data = docSnap.data();
-          setHeroBanners(data.heroBanners || initialHeroBannersData);
-          setSections(data.sections || initialSectionsData);
+          setHeroBanners(data.heroBanners || defaultHeroBanners);
+          setSections(data.sections || defaultHomepageSections);
         } else {
-          setHeroBanners(initialHeroBannersData);
-          setSections(initialSectionsData);
+          setHeroBanners(defaultHeroBanners);
+          setSections(defaultHomepageSections);
         }
       } catch (error) {
         console.error("Failed to fetch homepage settings:", error);

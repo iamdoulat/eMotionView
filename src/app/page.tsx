@@ -4,6 +4,7 @@ import Image from 'next/image';
 import { Button } from '@/components/ui/button';
 import { ProductCard } from '@/components/product-card';
 import type { Product } from '@/lib/placeholder-data';
+import { defaultHeroBanners, defaultHomepageSections } from '@/lib/placeholder-data';
 import { ArrowRight, Star, Tag, Truck } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 import { CategoryMenu } from '@/components/category-menu';
@@ -48,20 +49,28 @@ export default async function HomePage() {
     { href: "#", label: "Support" },
   ];
 
-  // Fetch homepage settings from Firestore
-  const settingsRef = doc(db, 'settings', 'homepage');
-  const settingsSnap = await getDoc(settingsRef);
-  const settings = settingsSnap.exists() ? settingsSnap.data() : null;
+  // Fetch homepage settings from Firestore, with a fallback for public users
+  let settings: { [key: string]: any } | null = null;
+  try {
+    const settingsRef = doc(db, 'settings', 'homepage');
+    const settingsSnap = await getDoc(settingsRef);
+    if (settingsSnap.exists()) {
+      settings = settingsSnap.data();
+    }
+  } catch (error) {
+    console.warn("Could not load homepage settings, likely due to permissions. Falling back to default layout.");
+  }
+  
+  const heroBannerData = settings?.heroBanners || defaultHeroBanners;
+  const sections = settings?.sections || defaultHomepageSections;
 
-  const heroBanner = settings?.heroBanners?.find((b: any) => b.headline) || {
+  const heroBanner = heroBannerData.find((b: any) => b.headline) || heroBannerData[0] || {
     image: 'https://placehold.co/900x440.png',
     headline: 'GADGET FEST',
     subheadline: 'Up to 60% off on your favorite gadgets.',
     buttonText: 'Shop Now',
     link: '/products',
   };
-
-  const sections = settings?.sections || [];
 
   const getProductsForGrid = (sectionName: string) => {
     switch (sectionName) {

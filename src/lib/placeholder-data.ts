@@ -105,6 +105,47 @@ export type Supplier = {
   email: string;
 };
 
+// Types for Homepage Settings
+export interface FeaturedCategory {
+    id: string;
+    name: string;
+    image: string;
+}
+export interface PromoBanner {
+    id: string;
+    image: string;
+    link: string;
+}
+export interface SingleBanner {
+    image: string;
+    link: string;
+}
+export type SectionType =
+    | 'featured-categories'
+    | 'product-grid'
+    | 'promo-banner-pair'
+    | 'single-banner-large'
+    | 'promo-banner-trio'
+    | 'one-column-banner'
+    | 'two-column-banner'
+    | 'three-column-banner';
+
+export interface Section {
+    id: string;
+    name: string;
+    type: SectionType;
+    content: any;
+}
+export interface HeroBanner {
+    id: number;
+    image: string;
+    headline: string;
+    subheadline: string;
+    buttonText: string;
+    link: string;
+}
+
+
 export const products: Product[] = [
     {
       id: 'kospet-tank-t2-smartwatch',
@@ -333,3 +374,30 @@ export const suppliers: Omit<Supplier, 'id'>[] = [
     { name: 'QCY Direct', contactPerson: 'Mary QCY', email: 'contact@qcy.com' },
     { name: 'Tech Wholesalers Inc.', contactPerson: 'Sam Smith', email: 'sam@techwholesalers.com' },
 ];
+
+export const defaultHomepageSections: Section[] = [
+    { id: 'feat-cat', name: "Featured Categories", type: 'featured-categories', content: [
+        { id: 'fc1', name: 'Smart Watches', image: 'https://placehold.co/128x128.png' },
+        { id: 'fc2', name: 'Headphones', image: 'https://placehold.co/128x128.png' },
+        { id: 'fc3', name: 'Android Smart TVs', image: 'https://placehold.co/128x128.png' },
+        { id: 'fc4', name: 'Charger & Cables', image: 'https://placehold.co/128x128.png' },
+        { id: 'fc5', name: 'Powerbanks', image: 'https://placehold.co/128x128.png' },
+    ]},
+    { id: 'new-arr', name: "New Arrivals", type: 'product-grid', content: null },
+    { id: 'promo-ban', name: "Promotional Banners", type: 'promo-banner-pair', content: [
+        { id: 'promo1', image: 'https://placehold.co/800x400.png', link: '#' },
+        { id: 'promo2', image: 'https://placehold.co/800x400.png', link: '#' },
+    ] },
+    { id: 'pop-prod', name: "Popular Products", type: 'product-grid', content: null },
+    { id: 'smart-watch', name: "Smart Watches", type: 'single-banner-large', content: { image: 'https://placehold.co/1200x250.png', link: '/products?category=Wearables' } },
+    { id: 'headphones', name: "Headphones", type: 'single-banner-large', content: { image: 'https://placehold.co/1200x250.png', link: '/products?category=Audio' } },
+];
+
+export const defaultHeroBanners: HeroBanner[] = Array.from({ length: 5 }, (_, i) => ({
+    id: i + 1,
+    image: `https://placehold.co/900x440.png`,
+    headline: i === 0 ? "GADGET FEST" : "",
+    subheadline: i === 0 ? "Up to 60% off on your favorite gadgets." : "",
+    buttonText: i === 0 ? "Shop Now" : "",
+    link: i === 0 ? "/products" : "#",
+}));
