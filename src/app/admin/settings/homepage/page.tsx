@@ -30,7 +30,7 @@ interface SingleBanner {
     image: string;
     link: string;
 }
-type SectionType = 'featured-categories' | 'product-grid' | 'promo-banner-pair' | 'single-banner-large';
+type SectionType = 'featured-categories' | 'product-grid' | 'promo-banner-pair' | 'single-banner-large' | 'promo-banner-trio';
 
 interface Section {
     id: string;
@@ -169,10 +169,12 @@ function SortableSectionItem({
                         </Button>
                     </div>
                 );
+            case 'promo-banner-trio':
             case 'promo-banner-pair':
-                return (
+                const size = section.type === 'promo-banner-trio' ? '400x200px' : '800x400px';
+                 return (
                     <div className="space-y-4 py-4">
-                        <p className="text-sm text-muted-foreground">Recommended size: 800x400px</p>
+                        <p className="text-sm text-muted-foreground">Recommended size: {size}</p>
                         <div className="max-h-[60vh] space-y-4 overflow-y-auto pr-2">
                             {(editedSection.content as PromoBanner[]).map((banner, index) => (
                                 <Card key={banner.id} className="p-4">
@@ -314,6 +316,18 @@ export default function HomepageSettingsPage() {
                 ]
             };
             break;
+        case 'promo-banner-trio':
+             newSection = {
+                id,
+                name: "New Triple Banners",
+                type: 'promo-banner-trio',
+                content: [
+                    { id: `promo1-${id}`, image: 'https://placehold.co/400x200.png', link: '#' },
+                    { id: `promo2-${id}`, image: 'https://placehold.co/400x200.png', link: '#' },
+                    { id: `promo3-${id}`, image: 'https://placehold.co/400x200.png', link: '#' },
+                ]
+            };
+            break;
         case 'single-banner-large':
             newSection = {
                 id,
@@ -416,6 +430,10 @@ export default function HomepageSettingsPage() {
             <Button variant="outline" onClick={() => handleAddNewSection('product-grid')}>
               <Plus className="mr-2 h-4 w-4" />
               Add Content Section
+            </Button>
+             <Button variant="outline" onClick={() => handleAddNewSection('promo-banner-trio')}>
+              <Plus className="mr-2 h-4 w-4" />
+              Add Triple Banners (400x200)
             </Button>
             <Button variant="outline" onClick={() => handleAddNewSection('promo-banner-pair')}>
               <Plus className="mr-2 h-4 w-4" />
