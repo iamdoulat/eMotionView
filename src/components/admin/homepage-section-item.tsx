@@ -68,32 +68,37 @@ export function HomepageSectionItem({
 
     const handleSave = async () => {
         setIsUploading(true);
+        let finalContent = JSON.parse(JSON.stringify(editedSection.content));
+    
         try {
-            const sectionToSave = JSON.parse(JSON.stringify(editedSection));
-
+            const uploadResults: Record<string, string> = {};
             const uploadPromises = Object.entries(filesToUpload).map(async ([itemId, file]) => {
                 if (file) {
                     const storageRef = ref(storage, `homepage/${section.type}/${itemId}-${file.name}`);
                     await uploadBytes(storageRef, file);
                     const downloadURL = await getDownloadURL(storageRef);
-
-                    // Update URL based on section type
-                    if (Array.isArray(sectionToSave.content)) {
-                        const itemIndex = sectionToSave.content.findIndex((item: any) => item.id === itemId);
-                        if (itemIndex > -1) {
-                            sectionToSave.content[itemIndex].image = downloadURL;
-                        }
-                    } else if (typeof sectionToSave.content === 'object' && sectionToSave.content !== null) {
-                        // This is for single-banner-large
-                        if (sectionToSave.id === itemId) {
-                             sectionToSave.content.image = downloadURL;
-                        }
-                    }
+                    uploadResults[itemId] = downloadURL;
                 }
             });
-
+    
             await Promise.all(uploadPromises);
-            onSave(sectionToSave);
+    
+            if (Array.isArray(finalContent)) {
+                finalContent = finalContent.map((item: any) => {
+                    if (uploadResults[item.id]) {
+                        return { ...item, image: uploadResults[item.id] };
+                    }
+                    return item;
+                });
+            } else if (typeof finalContent === 'object' && finalContent !== null) {
+                if (uploadResults[section.id]) {
+                    finalContent.image = uploadResults[section.id];
+                }
+            }
+            
+            const finalSection = { ...editedSection, content: finalContent };
+            onSave(finalSection);
+            
         } catch (error) {
              console.error("Failed to upload images or save section", error);
         } finally {
@@ -113,6 +118,7 @@ export function HomepageSectionItem({
             setFilesToUpload(prev => ({ ...prev, [itemId]: file }));
             const previewUrl = URL.createObjectURL(file);
             updatePreview(previewUrl);
+            e.target.value = ''; // Reset file input
         }
     };
     
@@ -198,6 +204,7 @@ export function HomepageSectionItem({
                         </Button>
                     </div>
                 );
+            
             case 'promo-banner-trio':
             case 'promo-banner-pair':
             case 'one-column-banner':
@@ -210,6 +217,17 @@ export function HomepageSectionItem({
                  if (section.type === 'one-column-banner') size = '1200x400px';
                  if (section.type === 'two-column-banner') size = '600x400px';
                  if (section.type === 'three-column-banner') size = '400x400px';
+                 
+                 const updatePromoBannerPreview = (index: number, url: string) => {
+                    const newContent = [...(editedSection.content as PromoBanner[])];
+                    newContent[index].image = url;
+                    setEditedSection(prev => ({ ...prev, content: newContent }));
+                 };
+
+                 const updateSingleBannerPreview = (url: string) => {
+                    const newContent = { ...(editedSection.content as SingleBanner), image: url };
+                    setEditedSection(prev => ({ ...prev, content: newContent }));
+                 };
 
                  if (section.type === 'single-banner-large') {
                      return (
@@ -218,8 +236,11 @@ export function HomepageSectionItem({
                              <Card className="p-4">
                                 <div className="space-y-4">
                                      <div className="space-y-2">
-                                         <Label htmlFor={`single-banner-image-${section.id}`}>Image URL</Label>
-                                         <Input id={`single-banner-image-${section.id}`} value={(editedSection.content as SingleBanner)?.image || ''} onChange={(e) => handleSingleBannerChange('image', e.target.value)} />
+                                         <Label htmlFor={`single-banner-image-upload-${section.id}`}>Image</Label>
+                                         <div className="flex items-center gap-4">
+                                             <Image src={(editedSection.content as SingleBanner)?.image || 'https://placehold.co/128x128.png'} alt="Banner Preview" width={100} height={40} className="rounded-md border object-contain aspect-video" />
+                                             <Input id={`single-banner-image-upload-${section.id}`} type="file" accept="image/*" onChange={(e) => handleFileChange(section.id, e, updateSingleBannerPreview)} className="block"/>
+                                         </div>
                                      </div>
                                      <div className="space-y-2">
                                          <Label htmlFor={`single-banner-link-${section.id}`}>Link URL</Label>
@@ -240,8 +261,11 @@ export function HomepageSectionItem({
                                      <CardTitle className="text-lg mb-4">Banner {index + 1}</CardTitle>
                                     <div className="space-y-4">
                                         <div className="space-y-2">
-                                            <Label htmlFor={`promo-image-${banner.id}`}>Image URL</Label>
-                                            <Input id={`promo-image-${banner.id}`} value={banner.image} onChange={(e) => handlePromoBannerChange(index, 'image', e.target.value)} />
+                                            <Label htmlFor={`promo-image-upload-${banner.id}`}>Image</Label>
+                                            <div className="flex items-center gap-4">
+                                                <Image src={banner.image || 'https://placehold.co/128x128.png'} alt={`Banner ${index+1} Preview`} width={100} height={50} className="rounded-md border object-contain aspect-video" />
+                                                <Input id={`promo-image-upload-${banner.id}`} type="file" accept="image/*" onChange={(e) => handleFileChange(banner.id, e, (url) => updatePromoBannerPreview(index, url))} className="block" />
+                                            </div>
                                         </div>
                                         <div className="space-y-2">
                                             <Label htmlFor={`promo-link-${banner.id}`}>Link URL</Label>
