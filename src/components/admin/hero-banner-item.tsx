@@ -8,19 +8,31 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import type { HeroBanner } from '@/lib/placeholder-data';
+import Image from "next/image";
 
 export function HeroBannerItem({
     banner,
     onDelete,
     onChange,
+    onFileChange,
 }: {
     banner: HeroBanner;
     onDelete: () => void;
     onChange: (id: number, field: keyof HeroBanner, value: string) => void;
+    onFileChange: (id: number, file: File) => void;
 }) {
 
     const handleChange = (field: keyof HeroBanner, value: string) => {
         onChange(banner.id, field, value);
+    };
+
+    const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
+        if (file) {
+            onFileChange(banner.id, file);
+            const previewUrl = URL.createObjectURL(file);
+            onChange(banner.id, 'image', previewUrl);
+        }
     };
 
     return (
@@ -38,8 +50,11 @@ export function HeroBannerItem({
                 <AccordionContent>
                     <div className="grid gap-4 pt-2 p-4 border-t">
                       <div className="space-y-2">
-                        <Label htmlFor={`hero-image-${banner.id}`}>Banner Image URL</Label>
-                        <Input id={`hero-image-${banner.id}`} value={banner.image} onChange={(e) => handleChange('image', e.target.value)} />
+                        <Label htmlFor={`hero-image-${banner.id}`}>Banner Image</Label>
+                        <div className="flex items-center gap-4">
+                           <Image src={banner.image || 'https://placehold.co/128x50.png'} width={128} height={50} alt="Banner preview" className="rounded-md border object-contain aspect-video" />
+                           <Input id={`hero-image-upload-${banner.id}`} type="file" accept="image/*" onChange={handleFileSelect} className="block" />
+                        </div>
                         <p className="text-sm text-muted-foreground">Recommended size: 900x440px</p>
                       </div>
                       <div className="space-y-2">

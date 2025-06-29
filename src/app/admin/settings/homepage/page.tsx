@@ -7,7 +7,8 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Loader2, Plus } from "lucide-react";
 import { doc, getDoc, setDoc } from "firebase/firestore";
-import { db } from "@/lib/firebase";
+import { db, storage } from "@/lib/firebase";
+import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
 import { useToast } from "@/hooks/use-toast";
 import { Skeleton } from "@/components/ui/skeleton";
 import type { Section, SectionType, HeroBanner } from "@/lib/placeholder-data";
@@ -22,6 +23,8 @@ export default function HomepageSettingsPage() {
   const [heroBanners, setHeroBanners] = useState<HeroBanner[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
+  const [filesToUpload, setFilesToUpload] = useState<Record<string, File>>({});
+
   const { toast } = useToast();
   const { user, isLoading: isAuthLoading } = useAuth();
 
@@ -65,6 +68,10 @@ export default function HomepageSettingsPage() {
     
     fetchSettings();
   }, [toast, user, isAuthLoading]);
+
+  const handleFileChange = (itemId: string, file: File) => {
+    setFilesToUpload(prev => ({ ...prev, [itemId]: file }));
+  };
   
   const handleHeroBannerChange = (id: number, field: keyof HeroBanner, value: string) => {
     setHeroBanners(prev => prev.map(banner => {
@@ -93,7 +100,7 @@ export default function HomepageSettingsPage() {
     setHeroBanners(prev => prev.filter(banner => banner.id !== id));
   };
 
-  const handleSaveSection = (updatedSection: Section) => {
+  const handleSectionUpdate = (updatedSection: Section) => {
     setSections(prev => prev.map(s => s.id === updatedSection.id ? updatedSection : s));
   };
   
@@ -189,23 +196,75 @@ export default function HomepageSettingsPage() {
   };
   
   const handleSave = async () => {
-    setIsSaving(true);
-    try {
-      const settingsRef = doc(db, "public_content", "homepage");
-      await setDoc(settingsRef, { heroBanners, sections });
-      toast({
-        title: "Success",
-        description: "Homepage settings have been saved successfully.",
-      });
-    } catch (error) {
-      console.error("Error saving homepage settings:", error);
+    if (!user) {
       toast({
         variant: "destructive",
-        title: "Error",
-        description: "Could not save settings. Please try again.",
+        title: "Authentication Error",
+        description: "You must be logged in to save settings.",
       });
+      return;
+    }
+
+    setIsSaving(true);
+    try {
+        let finalHeroBanners = JSON.parse(JSON.stringify(heroBanners));
+        let finalSections = JSON.parse(JSON.stringify(sections));
+
+        const uploadPromises = Object.entries(filesToUpload).map(async ([itemId, file]) => {
+            const storageRef = ref(storage, `users/${user.uid}/uploads/homepage/${itemId}-${file.name}`);
+            await uploadBytes(storageRef, file);
+            const downloadURL = await getDownloadURL(storageRef);
+            return { itemId, downloadURL };
+        });
+
+        const uploadResults = await Promise.all(uploadPromises);
+
+        const urlMap = new Map<string, string>();
+        uploadResults.forEach(result => urlMap.set(result.itemId, result.downloadURL));
+
+        // Replace blob URLs in heroBanners
+        finalHeroBanners = finalHeroBanners.map((banner: HeroBanner) => {
+            const newUrl = urlMap.get(String(banner.id));
+            return newUrl ? { ...banner, image: newUrl } : banner;
+        });
+
+        // Replace blob URLs in sections
+        finalSections = finalSections.map((section: Section) => {
+            if (Array.isArray(section.content)) {
+                const newContent = section.content.map((item: any) => {
+                    const newUrl = urlMap.get(item.id);
+                    return newUrl ? { ...item, image: newUrl } : item;
+                });
+                return { ...section, content: newContent };
+            } else if (section.content?.image) {
+                const newUrl = urlMap.get(section.id);
+                if (newUrl) {
+                    return { ...section, content: { ...section.content, image: newUrl } };
+                }
+            }
+            return section;
+        });
+
+        const settingsRef = doc(db, "public_content", "homepage");
+        await setDoc(settingsRef, { heroBanners: finalHeroBanners, sections: finalSections });
+
+        setHeroBanners(finalHeroBanners);
+        setSections(finalSections);
+        setFilesToUpload({});
+
+        toast({
+            title: "Success",
+            description: "Homepage settings have been saved successfully.",
+        });
+    } catch (error) {
+        console.error("Error saving homepage settings:", error);
+        toast({
+            variant: "destructive",
+            title: "Error",
+            description: "Could not save settings. Please check permissions and try again.",
+        });
     } finally {
-      setIsSaving(false);
+        setIsSaving(false);
     }
   };
   
@@ -247,6 +306,7 @@ export default function HomepageSettingsPage() {
                         banner={banner}
                         onChange={handleHeroBannerChange}
                         onDelete={() => handleDeleteHeroBanner(banner.id)}
+                        onFileChange={(id, file) => handleFileChange(String(id), file)}
                     />
                 ))}
             </Accordion>
@@ -265,8 +325,9 @@ export default function HomepageSettingsPage() {
                 key={section.id} 
                 section={section}
                 user={user}
-                onSave={handleSaveSection}
+                onSave={handleSectionUpdate}
                 onDelete={() => handleDeleteSection(section.id)}
+                onFileChange={handleFileChange}
               />
             ))}
           </div>
@@ -312,4 +373,3 @@ export default function HomepageSettingsPage() {
     </div>
   );
 }
-    

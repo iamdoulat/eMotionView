@@ -6,13 +6,10 @@ import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Loader2, Pencil, Plus, Trash2 } from "lucide-react";
+import { Pencil, Plus, Trash2 } from "lucide-react";
 import { Card, CardTitle } from "../ui/card";
-import { storage } from "@/lib/firebase";
-import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
 import Image from 'next/image';
 import type { User } from 'firebase/auth';
-import { useToast } from "@/hooks/use-toast";
 
 // Data Structures
 export interface FeaturedCategory {
@@ -51,92 +48,37 @@ export function HomepageSectionItem({
     user,
     onSave,
     onDelete,
+    onFileChange,
 }: {
     section: Section;
     user: User | null;
     onSave: (updatedSection: Section) => void;
     onDelete: () => void;
+    onFileChange: (itemId: string, file: File) => void;
 }) {
     const [isDialogOpen, setIsDialogOpen] = useState(false);
     const [editedSection, setEditedSection] = useState<Section>(section);
-    const [filesToUpload, setFilesToUpload] = useState<Record<string, File | null>>({});
-    const [isUploading, setIsUploading] = useState(false);
-    const { toast } = useToast();
     
     const handleOpenChange = (open: boolean) => {
         if (open) {
             setEditedSection(JSON.parse(JSON.stringify(section))); 
-            setFilesToUpload({});
         }
         setIsDialogOpen(open);
     }
 
-    const handleSave = async () => {
-        if (!user) {
-          toast({
-            variant: "destructive",
-            title: "Authentication Error",
-            description: "You must be logged in to upload images.",
-          });
-          return;
-        }
-
-        setIsUploading(true);
-        let finalContent = JSON.parse(JSON.stringify(editedSection.content));
-    
-        try {
-            const uploadResults: Record<string, string> = {};
-            const uploadPromises = Object.entries(filesToUpload).map(async ([itemId, file]) => {
-                if (file) {
-                    const storageRef = ref(storage, `users/${user.uid}/uploads/homepage/${itemId}-${file.name}`);
-                    await uploadBytes(storageRef, file);
-                    const downloadURL = await getDownloadURL(storageRef);
-                    uploadResults[itemId] = downloadURL;
-                }
-            });
-    
-            await Promise.all(uploadPromises);
-    
-            if (Array.isArray(finalContent)) {
-                finalContent = finalContent.map((item: any) => {
-                    if (uploadResults[item.id]) {
-                        return { ...item, image: uploadResults[item.id] };
-                    }
-                    return item;
-                });
-            } else if (typeof finalContent === 'object' && finalContent !== null) {
-                // This covers single-banner-large
-                // We use section.id as the key for single images
-                if (uploadResults[section.id]) { 
-                    finalContent.image = uploadResults[section.id];
-                }
-            }
-            
-            const finalSection = { ...editedSection, content: finalContent };
-            onSave(finalSection);
-            
-        } catch (error) {
-             console.error("Failed to upload images or save section", error);
-             toast({
-                variant: "destructive",
-                title: "Upload Failed",
-                description: "Could not upload images. Please check storage permissions."
-             })
-        } finally {
-            setFilesToUpload({});
-            setIsUploading(false);
-            setIsDialogOpen(false);
-        }
+    const handleConfirmChanges = () => {
+        onSave(editedSection);
+        setIsDialogOpen(false);
     }
     
     const handleNameChange = (newName: string) => {
         setEditedSection(prev => ({ ...prev, name: newName }));
     };
 
-    const handleFileChange = (itemId: string, e: React.ChangeEvent<HTMLInputElement>, updatePreview: (url: string) => void) => {
+    const handleFileSelect = (itemId: string, e: React.ChangeEvent<HTMLInputElement>, updatePreview: (url: string) => void) => {
         const file = e.target.files?.[0];
         if (file) {
-            setFilesToUpload(prev => ({ ...prev, [itemId]: file }));
+            onFileChange(itemId, file);
             const previewUrl = URL.createObjectURL(file);
             updatePreview(previewUrl);
             e.target.value = ''; // Reset file input
@@ -204,7 +146,7 @@ export function HomepageSectionItem({
                                                     id={`cat-image-upload-${category.id}`} 
                                                     type="file" 
                                                     accept="image/*"
-                                                    onChange={(e) => handleFileChange(category.id, e, (url) => updateCategoryPreview(index, url))}
+                                                    onChange={(e) => handleFileSelect(category.id, e, (url) => updateCategoryPreview(index, url))}
                                                     className="block"
                                                 />
                                             </div>
@@ -260,7 +202,7 @@ export function HomepageSectionItem({
                                          <Label htmlFor={`single-banner-image-upload-${section.id}`}>Image</Label>
                                          <div className="flex items-center gap-4">
                                              <Image src={(editedSection.content as SingleBanner)?.image || 'https://placehold.co/128x128.png'} alt="Banner Preview" width={100} height={40} className="rounded-md border object-contain aspect-video" />
-                                             <Input id={`single-banner-image-upload-${section.id}`} type="file" accept="image/*" onChange={(e) => handleFileChange(section.id, e, updateSingleBannerPreview)} className="block"/>
+                                             <Input id={`single-banner-image-upload-${section.id}`} type="file" accept="image/*" onChange={(e) => handleFileSelect(section.id, e, updateSingleBannerPreview)} className="block"/>
                                          </div>
                                      </div>
                                      <div className="space-y-2">
@@ -285,7 +227,7 @@ export function HomepageSectionItem({
                                             <Label htmlFor={`promo-image-upload-${banner.id}`}>Image</Label>
                                             <div className="flex items-center gap-4">
                                                 <Image src={banner.image || 'https://placehold.co/128x128.png'} alt={`Banner ${index+1} Preview`} width={100} height={50} className="rounded-md border object-contain aspect-video" />
-                                                <Input id={`promo-image-upload-${banner.id}`} type="file" accept="image/*" onChange={(e) => handleFileChange(banner.id, e, (url) => updatePromoBannerPreview(index, url))} className="block" />
+                                                <Input id={`promo-image-upload-${banner.id}`} type="file" accept="image/*" onChange={(e) => handleFileSelect(banner.id, e, (url) => updatePromoBannerPreview(index, url))} className="block" />
                                             </div>
                                         </div>
                                         <div className="space-y-2">
@@ -340,11 +282,8 @@ export function HomepageSectionItem({
                 </DialogHeader>
                 {renderDialogContent()}
                 <DialogFooter>
-                     <Button variant="ghost" onClick={() => setIsDialogOpen(false)} disabled={isUploading}>Cancel</Button>
-                    <Button onClick={handleSave} disabled={isUploading}>
-                        {isUploading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                        Save Changes
-                    </Button>
+                     <Button variant="ghost" onClick={() => setIsDialogOpen(false)}>Cancel</Button>
+                    <Button onClick={handleConfirmChanges}>Confirm Changes</Button>
                 </DialogFooter>
             </DialogContent>
         </Dialog>
