@@ -37,6 +37,7 @@ import {
   DialogHeader,
   DialogTitle,
   DialogTrigger,
+  DialogDescription,
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -87,6 +88,7 @@ export default function HomepageSettingsPage() {
     const [isLoading, setIsLoading] = useState(true);
     const [isSaving, setIsSaving] = useState(false);
     const [isEditingHero, setIsEditingHero] = useState(false);
+    const [editingSectionIndex, setEditingSectionIndex] = useState<number | null>(null);
     
     const methods = useForm<HomepageFormData>({
         resolver: zodResolver(homepageSchema)
@@ -198,7 +200,7 @@ export default function HomepageSettingsPage() {
             toast({ title: 'Success', description: 'Homepage settings saved successfully.' });
             
         } catch (error: any) {
-            console.error("Error saving settings:", error);
+            console.error("Error saving settings to Firestore:", error);
             toast({
                 variant: 'destructive',
                 title: 'Save Failed',
@@ -283,7 +285,12 @@ export default function HomepageSettingsPage() {
                             <SortableContext items={sectionFields} strategy={verticalListSortingStrategy}>
                                 <div className="space-y-2">
                                     {sectionFields.map((section, index) => (
-                                        <SortableSection key={section.id} id={section.id} section={section} index={index} />
+                                        <SortableSection 
+                                            key={section.id} 
+                                            id={section.id} 
+                                            section={section} 
+                                            onEdit={() => setEditingSectionIndex(index)}
+                                        />
                                     ))}
                                 </div>
                             </SortableContext>
@@ -291,11 +298,22 @@ export default function HomepageSettingsPage() {
                     </CardContent>
                 </Card>
             </form>
+            <Dialog open={editingSectionIndex !== null} onOpenChange={(open) => !open && setEditingSectionIndex(null)}>
+                <DialogContent className="sm:max-w-3xl">
+                    {editingSectionIndex !== null && (
+                        <SectionEditor
+                            methods={methods}
+                            sectionIndex={editingSectionIndex}
+                            onClose={() => setEditingSectionIndex(null)}
+                        />
+                    )}
+                </DialogContent>
+            </Dialog>
         </FormProvider>
     );
 }
 
-function SortableSection({ id, section, index }: { id: string; section: any; index: number }) {
+function SortableSection({ id, section, onEdit }: { id: string; section: any; onEdit: () => void; }) {
     const { attributes, listeners, setNodeRef, transform, transition } = useSortable({ id });
     const style = {
         transform: CSS.Transform.toString(transform),
@@ -312,11 +330,94 @@ function SortableSection({ id, section, index }: { id: string; section: any; ind
                     <p className="font-medium">{section.name}</p>
                     <p className="text-sm text-muted-foreground capitalize">{section.type.replace(/-/g, ' ')}</p>
                 </div>
-                {/* Edit functionality can be added here */}
+                 <Button variant="ghost" size="icon" onClick={onEdit}>
+                    <Edit className="h-4 w-4" />
+                    <span className="sr-only">Edit Section</span>
+                </Button>
             </Card>
         </div>
     );
 }
+
+function SectionEditor({ methods, sectionIndex, onClose }: { methods: UseFormReturn<HomepageFormData>, sectionIndex: number, onClose: () => void }) {
+    const { control, register, watch } = methods;
+    const section = watch(`sections.${sectionIndex}`);
+    
+    const { fields } = useFieldArray({
+        control,
+        name: `sections.${sectionIndex}.content`,
+    });
+
+    const contentIsArray = Array.isArray(section.content);
+
+    return (
+        <>
+            <DialogHeader>
+                <DialogTitle>Edit Section</DialogTitle>
+                <DialogDescription>
+                    Modify the details for the "{section.name}" section.
+                </DialogDescription>
+            </DialogHeader>
+            <div className="space-y-4 py-4 max-h-[60vh] overflow-y-auto pr-2">
+                <div className="space-y-2">
+                    <Label htmlFor="section-name">Section Name</Label>
+                    <Input id="section-name" {...register(`sections.${sectionIndex}.name`)} />
+                </div>
+                
+                {section.type === 'product-grid' && (
+                    <Alert>
+                        <AlertTitle>Automatic Content</AlertTitle>
+                        <AlertDescription>
+                            The products in this section are determined by the "Section Name". For example, "New Arrivals" or "Popular Products".
+                        </AlertDescription>
+                    </Alert>
+                )}
+
+                {section.type === 'featured-categories' && contentIsArray && (
+                    <div className="space-y-3">
+                        <Label className="text-base font-medium">Categories</Label>
+                        {fields.map((field, index) => (
+                            <Card key={field.id} className="p-3 space-y-2">
+                                <p className="text-sm font-semibold">Category {index + 1}</p>
+                                <div className="space-y-2">
+                                    <Label>Name</Label>
+                                    <Input {...register(`sections.${sectionIndex}.content.${index}.name`)} />
+                                </div>
+                                <div className="space-y-2">
+                                    <Label>Image URL</Label>
+                                    <Input {...register(`sections.${sectionIndex}.content.${index}.image`)} />
+                                </div>
+                            </Card>
+                        ))}
+                    </div>
+                )}
+                
+                {section.type.includes('banner') && (
+                     <div className="space-y-3">
+                        <Label className="text-base font-medium">Banners</Label>
+                        {(contentIsArray ? fields : [section.content]).map((field, index) => (
+                             <Card key={field.id || index} className="p-3 space-y-2">
+                                <p className="text-sm font-semibold">Banner {index + 1}</p>
+                                <div className="space-y-2">
+                                    <Label>Image URL</Label>
+                                    <Input {...register(contentIsArray ? `sections.${sectionIndex}.content.${index}.image` : `sections.${sectionIndex}.content.image`)} />
+                                </div>
+                                 <div className="space-y-2">
+                                    <Label>Link URL</Label>
+                                    <Input {...register(contentIsArray ? `sections.${sectionIndex}.content.${index}.link` : `sections.${sectionIndex}.content.link`)} />
+                                </div>
+                            </Card>
+                        ))}
+                    </div>
+                )}
+            </div>
+            <DialogFooter>
+                <Button onClick={onClose}>Done</Button>
+            </DialogFooter>
+        </>
+    )
+}
+
 
 interface HeroBannerFormProps {
   onSave: () => void;
