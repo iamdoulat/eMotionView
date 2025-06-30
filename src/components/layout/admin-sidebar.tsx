@@ -103,7 +103,7 @@ export function AdminSidebar() {
                         <ChevronsUpDown className="h-4 w-4" />
                       </Button>
                     </CollapsibleTrigger>
-                    <CollapsibleContent className="pl-6 pt-1 space-y-1">
+                    <CollapsibleContent className="pt-1 space-y-1">
                       {productNavItems.map((item) => (
                         <Button
                           key={item.href}
@@ -145,7 +145,7 @@ export function AdminSidebar() {
                         <ChevronsUpDown className="h-4 w-4" />
                       </Button>
                     </CollapsibleTrigger>
-                    <CollapsibleContent className="pl-6 pt-1 space-y-1">
+                    <CollapsibleContent className="pt-1 space-y-1">
                       {settingsNavItems.map((item) => (
                         <Button
                           key={item.href}
