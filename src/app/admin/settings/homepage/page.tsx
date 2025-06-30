@@ -125,8 +125,9 @@ export default function HomepageSettingsPage() {
     useEffect(() => {
         const fetchSettings = async () => {
             if (!hasPermission) {
-                setSettings({ heroBanners: defaultHeroBanners, sections: defaultHomepageSections, footer: defaultFooterSettings });
-                reset({ heroBanners: defaultHeroBanners, sections: defaultHomepageSections, footer: defaultFooterSettings });
+                const defaultData = { heroBanners: defaultHeroBanners, sections: defaultHomepageSections, footer: defaultFooterSettings };
+                setSettings(defaultData);
+                reset(defaultData);
                 setIsLoading(false);
                 return;
             }
@@ -134,7 +135,7 @@ export default function HomepageSettingsPage() {
                 const docRef = doc(db, 'public_content', 'homepage');
                 const docSnap = await getDoc(docRef);
                 const data = docSnap.exists() ? docToJSON(docSnap) as HomepageFormData : { heroBanners: defaultHeroBanners, sections: defaultHomepageSections, footer: defaultFooterSettings };
-                if (!data.footer) data.footer = defaultFooterSettings; // Ensure footer exists
+                if (!data.footer) data.footer = defaultFooterSettings;
                 setSettings(data);
                 reset(data);
             } catch (error: any) {
@@ -142,10 +143,11 @@ export default function HomepageSettingsPage() {
                 toast({
                     variant: 'destructive',
                     title: 'Error Loading Settings',
-                    description: `Could not load settings. ${error.message}`,
+                    description: `Could not load settings. ${error.message || 'Missing or insufficient permissions.'}`,
                 });
-                setSettings({ heroBanners: defaultHeroBanners, sections: defaultHomepageSections, footer: defaultFooterSettings });
-                reset({ heroBanners: defaultHeroBanners, sections: defaultHomepageSections, footer: defaultFooterSettings });
+                const defaultData = { heroBanners: defaultHeroBanners, sections: defaultHomepageSections, footer: defaultFooterSettings };
+                setSettings(defaultData);
+                reset(defaultData);
             } finally {
                 setIsLoading(false);
             }
@@ -202,12 +204,12 @@ export default function HomepageSettingsPage() {
 
             const processedSections = await Promise.all(
                 (data.sections || []).map(async (section) => {
-                    if (!section.content) return section;
+                    if (!section.content || typeof section.content !== 'object') return section;
 
                     if (Array.isArray(section.content)) {
                         const processedContent = await Promise.all(
                             section.content.map(async (item: any) => {
-                                if (item.image instanceof File) {
+                                if (item && item.image instanceof File) {
                                     const imageUrl = await uploadImage(item.image, `homepage/sections`);
                                     return { ...item, image: imageUrl };
                                 }
@@ -215,7 +217,7 @@ export default function HomepageSettingsPage() {
                             })
                         );
                         return { ...section, content: processedContent };
-                    } else if (typeof section.content === 'object' && section.content.image instanceof File) {
+                    } else if (section.content.image instanceof File) {
                         const imageUrl = await uploadImage(section.content.image, `homepage/sections`);
                         return { ...section, content: { ...section.content, image: imageUrl } };
                     }
@@ -317,28 +319,6 @@ export default function HomepageSettingsPage() {
 
                 <Card className="mb-6">
                     <CardHeader>
-                        <div className="flex justify-between items-center">
-                            <div>
-                                <CardTitle>Footer Section</CardTitle>
-                                <CardDescription>Manage the content of your site's footer.</CardDescription>
-                            </div>
-                            <Dialog open={isEditingFooter} onOpenChange={setIsEditingFooter}>
-                                <DialogTrigger asChild>
-                                    <Button variant="outline"><Edit className="mr-2 h-4 w-4" /> Edit Footer</Button>
-                                </DialogTrigger>
-                                <DialogContent className="sm:max-w-3xl">
-                                    <FooterForm
-                                        methods={methods}
-                                        onSave={() => setIsEditingFooter(false)}
-                                    />
-                                </DialogContent>
-                            </Dialog>
-                        </div>
-                    </CardHeader>
-                </Card>
-
-                <Card>
-                    <CardHeader>
                         <CardTitle>Homepage Sections</CardTitle>
                         <CardDescription>Drag to reorder sections. Click to edit.</CardDescription>
                     </CardHeader>
@@ -358,6 +338,28 @@ export default function HomepageSettingsPage() {
                             </SortableContext>
                         </DndContext>
                     </CardContent>
+                </Card>
+
+                <Card>
+                    <CardHeader>
+                        <div className="flex justify-between items-center">
+                            <div>
+                                <CardTitle>Footer Section</CardTitle>
+                                <CardDescription>Manage the content of your site's footer.</CardDescription>
+                            </div>
+                            <Dialog open={isEditingFooter} onOpenChange={setIsEditingFooter}>
+                                <DialogTrigger asChild>
+                                    <Button variant="outline"><Edit className="mr-2 h-4 w-4" /> Edit Footer</Button>
+                                </DialogTrigger>
+                                <DialogContent className="sm:max-w-3xl">
+                                    <FooterForm
+                                        methods={methods}
+                                        onSave={() => setIsEditingFooter(false)}
+                                    />
+                                </DialogContent>
+                            </Dialog>
+                        </div>
+                    </CardHeader>
                 </Card>
             </form>
             <Dialog open={editingSectionIndex !== null} onOpenChange={(open) => !open && setEditingSectionIndex(null)}>
