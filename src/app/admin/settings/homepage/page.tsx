@@ -47,9 +47,10 @@ import { doc, getDoc, setDoc } from 'firebase/firestore';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { useAuth, type UserRole } from '@/hooks/use-auth';
 import { useToast } from '@/hooks/use-toast';
-import { defaultHeroBanners, defaultHomepageSections, type Section } from '@/lib/placeholder-data';
+import { defaultHeroBanners, defaultHomepageSections, defaultFooterSettings, type Section, type FooterSettings } from '@/lib/placeholder-data';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { ScrollArea } from '@/components/ui/scroll-area';
 
 
 const heroBannerSchema = z.object({
@@ -68,9 +69,30 @@ const sectionSchema = z.object({
   content: z.any(),
 });
 
+const footerSchema = z.object({
+  description: z.string().min(1, 'Description is required'),
+  socialLinks: z.object({
+    facebook: z.string().url().or(z.literal('#')).or(z.literal('')),
+    twitter: z.string().url().or(z.literal('#')).or(z.literal('')),
+    instagram: z.string().url().or(z.literal('#')).or(z.literal('')),
+    linkedin: z.string().url().or(z.literal('#')).or(z.literal('')),
+    youtube: z.string().url().or(z.literal('#')).or(z.literal('')),
+  }),
+  companyLinks: z.array(z.object({
+    label: z.string().min(1, 'Label is required'),
+    href: z.string().min(1, 'Link is required'),
+  })),
+  contact: z.object({
+    address: z.string().min(1, 'Address is required'),
+    phone: z.string().min(1, 'Phone is required'),
+    email: z.string().email('Invalid email'),
+  })
+});
+
 const homepageSchema = z.object({
   heroBanners: z.array(heroBannerSchema),
   sections: z.array(sectionSchema),
+  footer: footerSchema,
 });
 
 type HomepageFormData = z.infer<typeof homepageSchema>;
@@ -86,6 +108,7 @@ export default function HomepageSettingsPage() {
     const [isSaving, setIsSaving] = useState(false);
     const [isEditingHero, setIsEditingHero] = useState(false);
     const [editingSectionIndex, setEditingSectionIndex] = useState<number | null>(null);
+    const [isEditingFooter, setIsEditingFooter] = useState(false);
     
     const methods = useForm<HomepageFormData>({
         resolver: zodResolver(homepageSchema)
@@ -102,15 +125,16 @@ export default function HomepageSettingsPage() {
     useEffect(() => {
         const fetchSettings = async () => {
             if (!hasPermission) {
-                setSettings({ heroBanners: defaultHeroBanners, sections: defaultHomepageSections });
-                reset({ heroBanners: defaultHeroBanners, sections: defaultHomepageSections });
+                setSettings({ heroBanners: defaultHeroBanners, sections: defaultHomepageSections, footer: defaultFooterSettings });
+                reset({ heroBanners: defaultHeroBanners, sections: defaultHomepageSections, footer: defaultFooterSettings });
                 setIsLoading(false);
                 return;
             }
             try {
                 const docRef = doc(db, 'public_content', 'homepage');
                 const docSnap = await getDoc(docRef);
-                const data = docSnap.exists() ? docToJSON(docSnap) as HomepageFormData : { heroBanners: defaultHeroBanners, sections: defaultHomepageSections };
+                const data = docSnap.exists() ? docToJSON(docSnap) as HomepageFormData : { heroBanners: defaultHeroBanners, sections: defaultHomepageSections, footer: defaultFooterSettings };
+                if (!data.footer) data.footer = defaultFooterSettings; // Ensure footer exists
                 setSettings(data);
                 reset(data);
             } catch (error: any) {
@@ -120,8 +144,8 @@ export default function HomepageSettingsPage() {
                     title: 'Error Loading Settings',
                     description: `Could not load settings. ${error.message}`,
                 });
-                setSettings({ heroBanners: defaultHeroBanners, sections: defaultHomepageSections });
-                reset({ heroBanners: defaultHeroBanners, sections: defaultHomepageSections });
+                setSettings({ heroBanners: defaultHeroBanners, sections: defaultHomepageSections, footer: defaultFooterSettings });
+                reset({ heroBanners: defaultHeroBanners, sections: defaultHomepageSections, footer: defaultFooterSettings });
             } finally {
                 setIsLoading(false);
             }
@@ -202,8 +226,10 @@ export default function HomepageSettingsPage() {
             const dataToSave = {
                 heroBanners: processedHeroBanners,
                 sections: processedSections,
+                footer: data.footer,
             };
             
+            // This is a robust way to remove any non-serializable data before sending to Firestore
             const cleanedData = JSON.parse(JSON.stringify(dataToSave));
 
             const docRef = doc(db, 'public_content', 'homepage');
@@ -283,6 +309,28 @@ export default function HomepageSettingsPage() {
                                     <HeroBannerForm
                                       methods={methods}
                                       onSave={() => setIsEditingHero(false)}
+                                    />
+                                </DialogContent>
+                            </Dialog>
+                        </div>
+                    </CardHeader>
+                </Card>
+
+                <Card className="mb-6">
+                    <CardHeader>
+                        <div className="flex justify-between items-center">
+                            <div>
+                                <CardTitle>Footer Section</CardTitle>
+                                <CardDescription>Manage the content of your site's footer.</CardDescription>
+                            </div>
+                            <Dialog open={isEditingFooter} onOpenChange={setIsEditingFooter}>
+                                <DialogTrigger asChild>
+                                    <Button variant="outline"><Edit className="mr-2 h-4 w-4" /> Edit Footer</Button>
+                                </DialogTrigger>
+                                <DialogContent className="sm:max-w-3xl">
+                                    <FooterForm
+                                        methods={methods}
+                                        onSave={() => setIsEditingFooter(false)}
                                     />
                                 </DialogContent>
                             </Dialog>
@@ -459,7 +507,7 @@ function SectionEditor({ methods, sectionIndex, onClose }: { methods: UseFormRet
                 {section.type.includes('banner') && (
                      <div className="space-y-3">
                         <Label className="text-base font-medium">Banners</Label>
-                        {(contentIsArray ? fields : [section.content]).map((field, index) => (
+                        {(contentIsArray ? fields : [section.content]).map((field: any, index: number) => (
                              <Card key={field.id || index} className="p-3">
                                 <p className="text-sm font-semibold mb-2">Banner {index + 1}</p>
                                 {renderContentField(contentIsArray ? `sections.${sectionIndex}.content.${index}` : `sections.${sectionIndex}.content`)}
@@ -477,7 +525,7 @@ function SectionEditor({ methods, sectionIndex, onClose }: { methods: UseFormRet
 
 
 function HeroBannerForm({ onSave, methods }: { onSave: () => void; methods: UseFormReturn<HomepageFormData>; }) {
-    const { control, watch, setValue } = methods;
+    const { control, register, watch, setValue } = methods;
     const bannerIndex = 0;
     const bannerPath = `heroBanners.${bannerIndex}`;
 
@@ -497,20 +545,20 @@ function HeroBannerForm({ onSave, methods }: { onSave: () => void; methods: UseF
                 </div>
                 <div className="space-y-2">
                     <Label htmlFor="headline">Headline</Label>
-                    <Input id="headline" value={watch(`${bannerPath}.headline`) || ''} onChange={e => setValue(`${bannerPath}.headline`, e.target.value)} />
+                    <Input id="headline" {...register(`${bannerPath}.headline`)} />
                 </div>
                  <div className="space-y-2">
                     <Label htmlFor="subheadline">Subheadline</Label>
-                    <Textarea id="subheadline" value={watch(`${bannerPath}.subheadline`) || ''} onChange={e => setValue(`${bannerPath}.subheadline`, e.target.value)} />
+                    <Textarea id="subheadline" {...register(`${bannerPath}.subheadline`)} />
                 </div>
                  <div className="grid grid-cols-2 gap-4">
                      <div className="space-y-2">
                         <Label htmlFor="buttonText">Button Text</Label>
-                        <Input id="buttonText" value={watch(`${bannerPath}.buttonText`) || ''} onChange={e => setValue(`${bannerPath}.buttonText`, e.target.value)} />
+                        <Input id="buttonText" {...register(`${bannerPath}.buttonText`)} />
                     </div>
                      <div className="space-y-2">
                         <Label htmlFor="link">Button Link</Label>
-                        <Input id="link" value={watch(`${bannerPath}.link`) || ''} onChange={e => setValue(`${bannerPath}.link`, e.target.value)} />
+                        <Input id="link" {...register(`${bannerPath}.link`)} />
                     </div>
                 </div>
             </div>
@@ -518,5 +566,102 @@ function HeroBannerForm({ onSave, methods }: { onSave: () => void; methods: UseF
                 <Button onClick={onSave}>Done</Button>
             </DialogFooter>
         </div>
+    );
+}
+
+function FooterForm({ onSave, methods }: { onSave: () => void; methods: UseFormReturn<HomepageFormData>; }) {
+    const { register, control } = methods;
+    const { fields, append, remove } = useFieldArray({
+        control,
+        name: 'footer.companyLinks'
+    });
+
+    return (
+        <>
+        <DialogHeader>
+            <DialogTitle>Edit Footer</DialogTitle>
+            <DialogDescription>Modify the content displayed in your website's footer.</DialogDescription>
+        </DialogHeader>
+        <ScrollArea className="h-[70vh] pr-6">
+            <div className="space-y-6">
+                <Card className="p-4">
+                    <h3 className="text-lg font-medium mb-2">General</h3>
+                    <div className="space-y-2">
+                        <Label htmlFor="footer-desc">Description</Label>
+                        <Textarea id="footer-desc" {...register('footer.description')} />
+                    </div>
+                </Card>
+
+                <Card className="p-4">
+                    <h3 className="text-lg font-medium mb-2">Contact Information</h3>
+                    <div className="space-y-2">
+                        <Label htmlFor="footer-address">Address</Label>
+                        <Input id="footer-address" {...register('footer.contact.address')} />
+                        <Label htmlFor="footer-phone">Phone</Label>
+                        <Input id="footer-phone" {...register('footer.contact.phone')} />
+                        <Label htmlFor="footer-email">Email</Label>
+                        <Input id="footer-email" type="email" {...register('footer.contact.email')} />
+                    </div>
+                </Card>
+
+                <Card className="p-4">
+                    <h3 className="text-lg font-medium mb-2">Social Media Links</h3>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div className="space-y-2">
+                            <Label htmlFor="footer-facebook">Facebook URL</Label>
+                            <Input id="footer-facebook" {...register('footer.socialLinks.facebook')} />
+                        </div>
+                        <div className="space-y-2">
+                            <Label htmlFor="footer-twitter">Twitter URL</Label>
+                            <Input id="footer-twitter" {...register('footer.socialLinks.twitter')} />
+                        </div>
+                        <div className="space-y-2">
+                            <Label htmlFor="footer-instagram">Instagram URL</Label>
+                            <Input id="footer-instagram" {...register('footer.socialLinks.instagram')} />
+                        </div>
+                        <div className="space-y-2">
+                            <Label htmlFor="footer-linkedin">LinkedIn URL</Label>
+                            <Input id="footer-linkedin" {...register('footer.socialLinks.linkedin')} />
+                        </div>
+                        <div className="space-y-2">
+                            <Label htmlFor="footer-youtube">YouTube URL</Label>
+                            <Input id="footer-youtube" {...register('footer.socialLinks.youtube')} />
+                        </div>
+                    </div>
+                </Card>
+
+                <Card className="p-4">
+                     <div className="flex items-center justify-between mb-2">
+                        <h3 className="text-lg font-medium">Company Links</h3>
+                        <Button type="button" size="sm" variant="outline" onClick={() => append({ label: '', href: '' })}>
+                            <PlusCircle className="mr-2 h-4 w-4" /> Add Link
+                        </Button>
+                    </div>
+                    <div className="space-y-2">
+                        {fields.map((field, index) => (
+                            <div key={field.id} className="flex gap-2 items-end">
+                                <div className="grid grid-cols-2 gap-2 flex-grow">
+                                    <div className="space-y-1">
+                                        <Label>Label</Label>
+                                        <Input {...register(`footer.companyLinks.${index}.label`)} placeholder="e.g. Privacy Policy" />
+                                    </div>
+                                    <div className="space-y-1">
+                                        <Label>URL</Label>
+                                        <Input {...register(`footer.companyLinks.${index}.href`)} placeholder="/privacy" />
+                                    </div>
+                                </div>
+                                <Button type="button" variant="destructive" size="icon" onClick={() => remove(index)}>
+                                    <Trash2 className="h-4 w-4" />
+                                </Button>
+                            </div>
+                        ))}
+                    </div>
+                </Card>
+            </div>
+        </ScrollArea>
+        <DialogFooter className="pt-4">
+            <Button onClick={onSave}>Done</Button>
+        </DialogFooter>
+        </>
     );
 }

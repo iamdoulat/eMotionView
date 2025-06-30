@@ -145,6 +145,26 @@ export interface HeroBanner {
     link: string;
 }
 
+export interface FooterSettings {
+  description: string;
+  socialLinks: {
+    facebook: string;
+    twitter: string;
+    instagram: string;
+    linkedin: string;
+    youtube: string;
+  };
+  companyLinks: {
+    label: string;
+    href: string;
+  }[];
+  contact: {
+    address: string;
+    phone: string;
+    email: string;
+  };
+}
+
 
 export const products: Product[] = [
     {
@@ -401,3 +421,29 @@ export const defaultHeroBanners: HeroBanner[] = Array.from({ length: 5 }, (_, i)
     buttonText: i === 0 ? "Shop Now" : "",
     link: i === 0 ? "/products" : "#",
 }));
+
+export const defaultFooterSettings: FooterSettings = {
+    description: "Motion View is the largest Eco Product importer and Distributor in Bangladesh and now holds the leading position in the ecosystem industry.",
+    socialLinks: {
+        facebook: "#",
+        twitter: "#",
+        instagram: "#",
+        linkedin: "#",
+        youtube: "#",
+    },
+    companyLinks: [
+        { href: "/privacy", label: "Privacy Policy" },
+        { href: "#", label: "Terms and conditions" },
+        { href: "#", label: "Return and Refund Policy" },
+        { href: "#", label: "EMI" },
+        { href: "#", label: "Warranty" },
+        { href: "#", label: "Delivery Policy" },
+        { href: "#", label: "Support Center" },
+        { href: "/contact", label: "Contact Us" },
+    ],
+    contact: {
+        address: "10/25 (9th Commercial Floor), Eastern Plaza, 70 Bir Uttam C.R Datta Road, Hatirpool, Dhaka-1205",
+        phone: "09677460460",
+        email: "motionview22@gmail.com.bd",
+    },
+};

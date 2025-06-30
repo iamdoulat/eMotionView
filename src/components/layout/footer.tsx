@@ -14,6 +14,10 @@ import {
   Mail,
   MapPin
 } from "lucide-react";
+import { doc, getDoc } from 'firebase/firestore';
+import { db } from '@/lib/firebase';
+import { defaultFooterSettings, type FooterSettings } from '@/lib/placeholder-data';
+
 
 const infoItems = [
     { icon: Headset, title: 'SUPPORT 24/7', text: 'We Support Online 24 Hours' },
@@ -22,25 +26,28 @@ const infoItems = [
     { icon: Truck, title: 'Fast Delivery', text: 'Fast Delivery is our first moto' },
 ];
 
-const companyLinks = [
-    { href: "/privacy", label: "Privacy Policy" },
-    { href: "#", label: "Terms and conditions" },
-    { href: "#", label: "Return and Refund Policy" },
-    { href: "#", label: "EMI" },
-    { href: "#", label: "Warranty" },
-    { href: "#", label: "Delivery Policy" },
-    { href: "#", label: "Support Center" },
-    { href: "/contact", label: "Contact Us" },
-];
-
 const paymentLogos = Array(22).fill(0);
 
-export function Footer() {
+export async function Footer() {
   const currentYear = new Date().getFullYear();
+
+  let footerSettings: FooterSettings;
+  try {
+    const docRef = doc(db, 'public_content', 'homepage');
+    const docSnap = await getDoc(docRef);
+    if (docSnap.exists() && docSnap.data()?.footer) {
+        footerSettings = docSnap.data()?.footer as FooterSettings;
+    } else {
+        footerSettings = defaultFooterSettings;
+    }
+  } catch (error) {
+    console.warn("Could not load footer settings, falling back to default.", error);
+    footerSettings = defaultFooterSettings;
+  }
 
   return (
     <footer className="border-t">
-      {/* Pre-footer info section */}
+      {/* Pre-footer info section - static */}
       <div className="bg-background">
         <div className="container mx-auto px-4 py-12">
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-8 text-center">
@@ -55,7 +62,7 @@ export function Footer() {
         </div>
       </div>
 
-      {/* Main Footer */}
+      {/* Main Footer - dynamic */}
       <div className="bg-[#1e2128] text-gray-300">
         <div className="container mx-auto px-4 pt-16 pb-8">
           <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-12 mb-8">
@@ -66,7 +73,7 @@ export function Footer() {
                 <span className="font-bold font-headline text-2xl text-white">eMotionView</span>
               </Link>
               <p className="text-sm max-w-md">
-                Motion View is the largest Eco Product importer and Distributor in Bangladesh and now holds the leading position in the ecosystem industry.
+                {footerSettings.description}
               </p>
               <div className="flex flex-wrap gap-4 pt-4">
                 <Link href="#">
@@ -77,18 +84,18 @@ export function Footer() {
                 </Link>
               </div>
               <div className="flex space-x-4 pt-4">
-                <Link href="#"><Facebook className="h-5 w-5 text-gray-400 hover:text-white" /></Link>
-                <Link href="#"><Twitter className="h-5 w-5 text-gray-400 hover:text-white" /></Link>
-                <Link href="#"><Instagram className="h-5 w-5 text-gray-400 hover:text-white" /></Link>
-                <Link href="#"><Linkedin className="h-5 w-5 text-gray-400 hover:text-white" /></Link>
-                <Link href="#"><Youtube className="h-5 w-5 text-gray-400 hover:text-white" /></Link>
+                <Link href={footerSettings.socialLinks.facebook}><Facebook className="h-5 w-5 text-gray-400 hover:text-white" /></Link>
+                <Link href={footerSettings.socialLinks.twitter}><Twitter className="h-5 w-5 text-gray-400 hover:text-white" /></Link>
+                <Link href={footerSettings.socialLinks.instagram}><Instagram className="h-5 w-5 text-gray-400 hover:text-white" /></Link>
+                <Link href={footerSettings.socialLinks.linkedin}><Linkedin className="h-5 w-5 text-gray-400 hover:text-white" /></Link>
+                <Link href={footerSettings.socialLinks.youtube}><Youtube className="h-5 w-5 text-gray-400 hover:text-white" /></Link>
               </div>
             </div>
             
             <div className="space-y-4">
               <h4 className="font-headline font-semibold text-lg text-white">COMPANY</h4>
               <ul className="space-y-2 text-sm">
-                {companyLinks.map(link => (
+                {footerSettings.companyLinks.map(link => (
                     <li key={link.label}><Link href={link.href} className="text-gray-400 hover:text-white">{link.label}</Link></li>
                 ))}
               </ul>
@@ -99,15 +106,15 @@ export function Footer() {
               <ul className="space-y-3 text-sm">
                 <li className="flex gap-3">
                     <MapPin className="h-5 w-5 mt-1 shrink-0" />
-                    <span>10/25 (9th Commercial Floor), Eastern Plaza, 70 Bir Uttam C.R Datta Road, Hatirpool, Dhaka-1205</span>
+                    <span>{footerSettings.contact.address}</span>
                 </li>
                 <li className="flex gap-3">
                     <Phone className="h-5 w-5 shrink-0" />
-                    <span>09677460460</span>
+                    <span>{footerSettings.contact.phone}</span>
                 </li>
                 <li className="flex gap-3">
                     <Mail className="h-5 w-5 shrink-0" />
-                    <span>motionview22@gmail.com.bd</span>
+                    <span>{footerSettings.contact.email}</span>
                 </li>
               </ul>
               <h4 className="font-headline font-semibold text-lg text-white pt-4">Member of:</h4>
