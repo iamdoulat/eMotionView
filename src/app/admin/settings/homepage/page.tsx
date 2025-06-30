@@ -15,10 +15,8 @@ import { defaultHeroBanners, defaultHomepageSections } from "@/lib/placeholder-d
 import { HomepageSectionItem } from "@/components/admin/homepage-section-item";
 import { HeroBannerItem } from "@/components/admin/hero-banner-item";
 import { useAuth } from "@/hooks/use-auth";
-import { doc, getDoc } from "firebase/firestore";
+import { doc, getDoc, setDoc } from "firebase/firestore";
 import { db } from "@/lib/firebase";
-import { saveHomepageSettings } from '@/lib/actions/homepage';
-
 
 export default function HomepageSettingsPage() {
   const [sections, setSections] = useState<Section[]>([]);
@@ -249,21 +247,17 @@ export default function HomepageSettingsPage() {
         toast({
             variant: "destructive",
             title: "Image Upload Failed",
-            description: `Could not upload images. Please check your Storage rules. Error: ${error.code || 'Unknown'}`,
+            description: `Could not upload images. Error: ${error.code || 'Unknown'}`,
         });
         setIsSaving(false);
         return;
     }
     // --- End: Image Upload Logic ---
-
-    // --- Start: Firestore Save Logic (using Server Action) ---
+    
+    // --- Start: Firestore Save Logic ---
     try {
-      const result = await saveHomepageSettings({ heroBanners: finalHeroBanners, sections: finalSections });
-      if (result && result.error) {
-        const err = new Error(result.error.message || 'An unknown error occurred on the server.');
-        (err as any).code = result.error.code || 'permission-denied';
-        throw err;
-      }
+      const settingsRef = doc(db, 'public_content', 'homepage');
+      await setDoc(settingsRef, { heroBanners: finalHeroBanners, sections: finalSections });
       
       setHeroBanners(finalHeroBanners);
       setSections(finalSections);
@@ -283,7 +277,6 @@ export default function HomepageSettingsPage() {
     } finally {
         setIsSaving(false);
     }
-    // --- End: Firestore Save Logic ---
   };
 
   
