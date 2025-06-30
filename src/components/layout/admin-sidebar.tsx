@@ -56,7 +56,7 @@ const mainNavItems = [
 ];
 
 const settingsNavItems = [
-    { href: "/admin/settings/general", label: "General", icon: SlidersHorizontal },
+    { href: "/admin/settings/general", label: "General Settings", icon: SlidersHorizontal },
 ];
 
 export function AdminSidebar() {
