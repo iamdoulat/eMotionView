@@ -18,6 +18,32 @@ import { useAuth } from "@/hooks/use-auth";
 import { doc, getDoc, setDoc } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 
+/**
+ * Recursively removes keys with `undefined` values from an object or array.
+ * Firestore does not allow `undefined` values.
+ */
+const cleanupObjectForFirestore = (obj: any): any => {
+  if (obj === null || typeof obj !== 'object') {
+    return obj;
+  }
+
+  if (Array.isArray(obj)) {
+    return obj.map(cleanupObjectForFirestore).filter(v => v !== undefined);
+  }
+
+  const cleanedObj: { [key: string]: any } = {};
+  for (const key in obj) {
+    if (Object.prototype.hasOwnProperty.call(obj, key)) {
+      const value = obj[key];
+      if (value !== undefined) {
+        cleanedObj[key] = cleanupObjectForFirestore(value);
+      }
+    }
+  }
+  return cleanedObj;
+};
+
+
 export default function HomepageSettingsPage() {
   const [sections, setSections] = useState<Section[]>([]);
   const [heroBanners, setHeroBanners] = useState<HeroBanner[]>([]);
@@ -257,7 +283,12 @@ export default function HomepageSettingsPage() {
     // --- Start: Firestore Save Logic ---
     try {
       const settingsRef = doc(db, 'public_content', 'homepage');
-      await setDoc(settingsRef, { heroBanners: finalHeroBanners, sections: finalSections });
+      const dataToSave = cleanupObjectForFirestore({ 
+        heroBanners: finalHeroBanners, 
+        sections: finalSections 
+      });
+
+      await setDoc(settingsRef, dataToSave);
       
       setHeroBanners(finalHeroBanners);
       setSections(finalSections);
@@ -268,7 +299,7 @@ export default function HomepageSettingsPage() {
         description: "Homepage settings have been saved successfully.",
       });
     } catch (error: any) {
-      console.error("Error saving settings to Firestore:", error);
+      console.error("Error saving settings to Firestore:", error, "Data Sent:", { heroBanners: finalHeroBanners, sections: finalSections });
       toast({
         variant: "destructive",
         title: "Database Save Failed",
