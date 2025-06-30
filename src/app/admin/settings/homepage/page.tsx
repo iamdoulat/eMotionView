@@ -6,8 +6,7 @@ import { Accordion } from "@/components/ui/accordion";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Loader2, Plus } from "lucide-react";
-import { doc, getDoc, setDoc } from "firebase/firestore";
-import { db, storage } from "@/lib/firebase";
+import { storage } from "@/lib/firebase";
 import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
 import { useToast } from "@/hooks/use-toast";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -16,6 +15,9 @@ import { defaultHeroBanners, defaultHomepageSections } from "@/lib/placeholder-d
 import { HomepageSectionItem } from "@/components/admin/homepage-section-item";
 import { HeroBannerItem } from "@/components/admin/hero-banner-item";
 import { useAuth } from "@/hooks/use-auth";
+import { doc, getDoc } from "firebase/firestore";
+import { db } from "@/lib/firebase";
+import { saveHomepageSettings } from '@/lib/actions/homepage';
 
 
 export default function HomepageSettingsPage() {
@@ -31,13 +33,11 @@ export default function HomepageSettingsPage() {
   const hasPermission = role === 'Admin' || role === 'Manager';
 
   useEffect(() => {
-    // Wait until authentication is resolved
     if (isAuthLoading) {
       return;
     }
 
     const fetchSettings = async () => {
-      // Admins/Managers can fetch settings. Others see defaults and cannot save.
       if (!user || !hasPermission) {
           setIsLoading(false);
           setHeroBanners(defaultHeroBanners);
@@ -53,14 +53,12 @@ export default function HomepageSettingsPage() {
           setHeroBanners(data.heroBanners || defaultHeroBanners);
           setSections(data.sections || defaultHomepageSections);
         } else {
-          // If doc doesn't exist for the admin, set defaults
           setHeroBanners(defaultHeroBanners);
           setSections(defaultHomepageSections);
         }
       } catch (error) {
         console.error("Failed to fetch homepage settings:", error);
         toast({ variant: 'destructive', title: "Error", description: "Could not load homepage settings." });
-        // Fallback to defaults on error
         setHeroBanners(defaultHeroBanners);
         setSections(defaultHomepageSections);
       } finally {
@@ -208,11 +206,10 @@ export default function HomepageSettingsPage() {
     }
 
     setIsSaving(true);
-
     let finalHeroBanners = JSON.parse(JSON.stringify(heroBanners));
     let finalSections = JSON.parse(JSON.stringify(sections));
 
-    // Step 1: Upload images and get their URLs
+    // --- Start: Image Upload Logic ---
     try {
         const uploadPromises = Object.entries(filesToUpload).map(async ([itemId, file]) => {
             const safeFileName = encodeURIComponent(file.name.replace(/\s+/g, '_').replace(/[^\w.-]/g, ''));
@@ -227,7 +224,6 @@ export default function HomepageSettingsPage() {
         const urlMap = new Map<string, string>();
         uploadResults.forEach(result => urlMap.set(result.itemId, result.downloadURL));
 
-        // Update local data structures with the new image URLs
         finalHeroBanners = finalHeroBanners.map((banner: HeroBanner) => {
             const newUrl = urlMap.get(String(banner.id));
             return newUrl ? { ...banner, image: newUrl } : banner;
@@ -256,34 +252,39 @@ export default function HomepageSettingsPage() {
             description: `Could not upload images. Please check your Storage rules. Error: ${error.code || 'Unknown'}`,
         });
         setIsSaving(false);
-        return; // Stop if uploads fail
+        return;
     }
+    // --- End: Image Upload Logic ---
 
-    // Step 2: Save the complete data structure to Firestore
+    // --- Start: Firestore Save Logic (using Server Action) ---
     try {
-        const settingsRef = doc(db, "public_content", "homepage");
-        await setDoc(settingsRef, { heroBanners: finalHeroBanners, sections: finalSections });
+      const result = await saveHomepageSettings({ heroBanners: finalHeroBanners, sections: finalSections });
+      if (result && result.error) {
+        const err = new Error(result.error.message || 'An unknown error occurred on the server.');
+        (err as any).code = result.error.code || 'permission-denied';
+        throw err;
+      }
+      
+      setHeroBanners(finalHeroBanners);
+      setSections(finalSections);
+      setFilesToUpload({});
 
-        // Update UI state with the final data
-        setHeroBanners(finalHeroBanners);
-        setSections(finalSections);
-        setFilesToUpload({}); // Clear the upload queue
-
-        toast({
-            title: "Success",
-            description: "Homepage settings have been saved successfully.",
-        });
+      toast({
+        title: "Success",
+        description: "Homepage settings have been saved successfully.",
+      });
     } catch (error: any) {
-        console.error("Error saving settings to Firestore:", error);
-        toast({
-            variant: "destructive",
-            title: "Database Save Failed",
-            description: `Could not save layout to the database. Please check your Firestore rules. Error: ${error.code || 'Unknown'}`,
-        });
+      console.error("Error saving settings to Firestore:", error);
+      toast({
+        variant: "destructive",
+        title: "Database Save Failed",
+        description: `Could not save layout. Error: ${error.code || 'permission-denied'}`,
+      });
     } finally {
         setIsSaving(false);
     }
-};
+    // --- End: Firestore Save Logic ---
+  };
 
   
   if (isLoading || isAuthLoading) {
