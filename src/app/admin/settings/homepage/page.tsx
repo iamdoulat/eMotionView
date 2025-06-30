@@ -403,18 +403,20 @@ function SortableSection({ id, section, onEdit }: { id: string; section: any; on
     );
 }
 
-function ImageField({ value, onChange }: { value?: string | File; onChange: (file: File) => void; }) {
-    const [previewSrc, setPreviewSrc] = useState<string>('https://placehold.co/200x100.png');
+function ImageField({ value, onChange, previewSize = { width: 200, height: 100 } }: { value?: string | File; onChange: (file: File) => void; previewSize?: {width: number, height: number} }) {
+    const [previewSrc, setPreviewSrc] = useState<string>(`https://placehold.co/${previewSize.width}x${previewSize.height}.png`);
 
     useEffect(() => {
-        if (typeof value === 'string') {
+        if (typeof value === 'string' && value) {
             setPreviewSrc(value);
         } else if (value instanceof File) {
             const url = URL.createObjectURL(value);
             setPreviewSrc(url);
             return () => URL.revokeObjectURL(url);
+        } else {
+             setPreviewSrc(`https://placehold.co/${previewSize.width}x${previewSize.height}.png`);
         }
-    }, [value]);
+    }, [value, previewSize]);
 
     const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         if (e.target.files?.[0]) {
@@ -424,7 +426,7 @@ function ImageField({ value, onChange }: { value?: string | File; onChange: (fil
 
     return (
         <div className="space-y-2">
-            <Image src={previewSrc} alt="Banner Preview" width={200} height={100} className="rounded-md object-cover border" />
+            <Image src={previewSrc} alt="Banner Preview" width={previewSize.width} height={previewSize.height} className="rounded-md object-cover border" />
             <Input type="file" accept="image/*" onChange={handleFileChange} className="text-xs" />
         </div>
     );
@@ -497,7 +499,7 @@ function SectionEditor({ methods, sectionIndex, onClose }: { methods: UseFormRet
                                      <Controller
                                         name={`sections.${sectionIndex}.content.${index}.image`}
                                         control={control}
-                                        render={({ field: imageField }) => <ImageField value={imageField.value} onChange={imageField.onChange} />}
+                                        render={({ field: imageField }) => <ImageField value={imageField.value} onChange={imageField.onChange} previewSize={{width: 100, height: 100}} />}
                                     />
                                 </div>
                             </Card>
@@ -666,3 +668,5 @@ function FooterForm({ onSave, methods }: { onSave: () => void; methods: UseFormR
         </>
     );
 }
+
+    
