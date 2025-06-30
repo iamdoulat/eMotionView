@@ -25,6 +25,7 @@ import {
   UserCog,
   Settings,
   SlidersHorizontal,
+  LayoutTemplate,
 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from "../ui/card";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
@@ -57,6 +58,7 @@ const mainNavItems = [
 
 const settingsNavItems = [
     { href: "/admin/settings/general", label: "General Settings", icon: SlidersHorizontal },
+    { href: "/admin/settings/homepage", label: "Homepage Settings", icon: LayoutTemplate },
 ];
 
 export function AdminSidebar() {
