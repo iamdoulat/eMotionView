@@ -118,7 +118,6 @@ export default function HomepageSettingsPage() {
     useEffect(() => {
         const fetchSettings = async () => {
             if (!hasPermission) {
-                // For users without permission, load default settings without hitting Firestore
                 setSettings({ heroBanners: defaultHeroBanners, sections: defaultHomepageSections });
                 reset({ heroBanners: defaultHeroBanners, sections: defaultHomepageSections });
                 setIsLoading(false);
@@ -177,26 +176,45 @@ export default function HomepageSettingsPage() {
         }
         setIsSaving(true);
         try {
-            // Step 1: Handle Hero Banner Uploads
-            const uploadedHeroBanners = await Promise.all(data.heroBanners.map(async (banner) => {
-                if (banner.image instanceof File) {
-                    try {
-                        const sanitizedFilename = banner.image.name.replace(/[^a-zA-Z0-9.\-_]/g, '');
-                        const storageRef = ref(storage, `homepage/hero/${Date.now()}-${sanitizedFilename}`);
-                        await uploadBytes(storageRef, banner.image);
-                        return { ...banner, image: await getDownloadURL(storageRef) };
-                    } catch (uploadError: any) {
-                        console.error('Error uploading hero banner image:', uploadError);
-                        throw new Error(`Storage upload failed: ${uploadError.code || uploadError.message}`);
+            // Step 1: Handle Hero Banner Uploads and reconstruct banner objects
+            const uploadedHeroBanners = await Promise.all(
+                data.heroBanners.map(async (banner) => {
+                    let imageUrl = banner.image as string;
+                    if (banner.image instanceof File) {
+                        try {
+                            const sanitizedFilename = banner.image.name.replace(/[^a-zA-Z0-9.\-_]/g, '');
+                            const storageRef = ref(storage, `homepage/hero/${Date.now()}-${sanitizedFilename}`);
+                            await uploadBytes(storageRef, banner.image);
+                            imageUrl = await getDownloadURL(storageRef);
+                        } catch (uploadError: any) {
+                            console.error('Error uploading hero banner image:', uploadError);
+                            throw new Error(`Storage upload failed: ${uploadError.code || uploadError.message}`);
+                        }
                     }
-                }
-                return banner;
-            }));
+                    // Reconstruct the banner object to ensure it's clean and only contains schema fields
+                    return {
+                        image: imageUrl,
+                        headline: banner.headline,
+                        subheadline: banner.subheadline,
+                        buttonText: banner.buttonText,
+                        link: banner.link,
+                    };
+                })
+            );
 
-            // Step 2: Prepare Final Data
-            const finalData = { ...data, heroBanners: uploadedHeroBanners };
-            const cleanedData = cleanUndefined(finalData);
+            // Step 2: Prepare Final Data for Firestore by explicit reconstruction
+            const finalDataForFirestore = {
+                heroBanners: uploadedHeroBanners,
+                sections: data.sections.map(section => ({
+                    id: section.id,
+                    name: section.name,
+                    type: section.type,
+                    content: section.content,
+                })),
+            };
             
+            const cleanedData = cleanUndefined(finalDataForFirestore);
+
             // Step 3: Save to Firestore
             try {
                 const docRef = doc(db, 'public_content', 'homepage');
