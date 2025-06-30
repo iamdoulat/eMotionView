@@ -24,6 +24,7 @@ import {
   FileUp,
   UserCog,
   Settings,
+  SlidersHorizontal,
 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from "../ui/card";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
@@ -52,12 +53,16 @@ const mainNavItems = [
     { href: "/admin/users", label: "Staff", icon: UserCog },
     { href: "/admin/analytics", label: "Analytics", icon: LineChart },
     { href: "/admin/club-points", label: "Club Points", icon: Award },
-    { href: "/admin/settings", label: "Settings", icon: Settings },
+];
+
+const settingsNavItems = [
+    { href: "/admin/settings/general", label: "General", icon: SlidersHorizontal },
 ];
 
 export function AdminSidebar() {
     const pathname = usePathname();
     const [isProductsOpen, setIsProductsOpen] = useState(() => pathname.startsWith('/admin/products'));
+    const [isSettingsOpen, setIsSettingsOpen] = useState(() => pathname.startsWith('/admin/settings'));
 
     return (
         <aside className="sticky top-24">
@@ -127,6 +132,35 @@ export function AdminSidebar() {
                           </Link>
                       </Button>
                   ))}
+
+                  <Collapsible open={isSettingsOpen} onOpenChange={setIsSettingsOpen} className="w-full space-y-1">
+                    <CollapsibleTrigger asChild>
+                      <Button variant={pathname.startsWith('/admin/settings') ? "default" : "ghost"} className="justify-between w-full">
+                        <div className="flex items-center gap-2">
+                          <Settings className="h-4 w-4" />
+                          Settings
+                        </div>
+                        <ChevronsUpDown className="h-4 w-4" />
+                      </Button>
+                    </CollapsibleTrigger>
+                    <CollapsibleContent className="pl-6 pt-1 space-y-1">
+                      {settingsNavItems.map((item) => (
+                        <Button
+                          key={item.href}
+                          asChild
+                          variant={pathname === item.href ? "secondary" : "ghost"}
+                          className="justify-start w-full"
+                          size="sm"
+                        >
+                          <Link href={item.href}>
+                            <item.icon className="mr-2 h-4 w-4" />
+                            {item.label}
+                          </Link>
+                        </Button>
+                      ))}
+                    </CollapsibleContent>
+                  </Collapsible>
+
                   <div className="flex-grow" />
               </CardContent>
           </Card>
