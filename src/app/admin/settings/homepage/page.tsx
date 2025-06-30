@@ -50,7 +50,6 @@ import { useToast } from '@/hooks/use-toast';
 import { defaultHeroBanners, defaultHomepageSections, type Section, type HeroBanner } from '@/lib/placeholder-data';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { cleanDataForFirestore } from '@/lib/utils';
 
 const heroBannerSchema = z.object({
   id: z.number().optional(),
@@ -393,3 +392,5 @@ function HeroBannerForm({ onSave }: { onSave: () => void }) {
         </div>
     );
 }
+
+    
