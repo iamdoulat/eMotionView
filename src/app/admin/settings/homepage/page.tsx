@@ -185,6 +185,7 @@ export default function HomepageSettingsPage() {
             return;
         }
         setIsSaving(true);
+
         try {
             const uploadImage = async (file: File, path: string): Promise<string> => {
                 const storageRef = ref(storage, `${path}/${Date.now()}-${file.name.replace(/[^a-zA-Z0-9.\-_]/g, '')}`);
@@ -192,45 +193,49 @@ export default function HomepageSettingsPage() {
                 return getDownloadURL(storageRef);
             };
 
-            // Use the original form data (`data`) to check for `File` objects,
-            // but mutate a deep clone (`finalData`) to avoid altering the form state directly.
-            const finalData = JSON.parse(JSON.stringify(data));
+            const dataToSave: any = {
+                heroBanners: [],
+                sections: [],
+                footer: data.footer,
+            };
 
             // Process Hero Banners
-            if (finalData.heroBanners && Array.isArray(finalData.heroBanners)) {
-                for (let i = 0; i < finalData.heroBanners.length; i++) {
-                    const banner = data.heroBanners[i]; // Original data
-                    if (banner && banner.image instanceof File) {
-                        finalData.heroBanners[i].image = await uploadImage(banner.image, 'homepage/hero');
-                    }
+            for (const banner of data.heroBanners) {
+                let imageUrl = banner.image;
+                if (banner.image instanceof File) {
+                    imageUrl = await uploadImage(banner.image, 'homepage/hero');
                 }
+                dataToSave.heroBanners.push({ ...banner, image: imageUrl });
             }
 
             // Process Sections
-            if (finalData.sections && Array.isArray(finalData.sections)) {
-                for (let i = 0; i < finalData.sections.length; i++) {
-                    const section = data.sections[i]; // Original data
-                    const finalSection = finalData.sections[i]; // Cloned data to mutate
+            for (const section of data.sections) {
+                const newSection: Section = { ...section, content: section.content };
 
-                    if (!section.content) continue;
-
+                if (section.content) {
                     if (Array.isArray(section.content)) {
-                        // This handles sections like 'featured-categories' and multi-banners
-                        for (let j = 0; j < section.content.length; j++) {
-                            const item = section.content[j];
-                            if (item && item.image instanceof File) {
-                                finalSection.content[j].image = await uploadImage(item.image, `homepage/sections`);
+                        const newContent = [];
+                        for (const item of section.content) {
+                            let itemImageUrl = item.image;
+                            if (item.image instanceof File) {
+                                itemImageUrl = await uploadImage(item.image, `homepage/sections/${section.id}`);
                             }
+                            newContent.push({ ...item, image: itemImageUrl });
                         }
+                        newSection.content = newContent;
                     } else if (typeof section.content === 'object' && section.content.image instanceof File) {
-                        // This handles sections with a single banner object
-                        finalSection.content.image = await uploadImage(section.content.image, `homepage/sections`);
+                        const newContent = { ...section.content };
+                        newContent.image = await uploadImage(section.content.image, `homepage/sections/${section.id}`);
+                        newSection.content = newContent;
                     }
                 }
+                dataToSave.sections.push(newSection);
             }
+
+            const finalCleanData = JSON.parse(JSON.stringify(dataToSave));
             
             const docRef = doc(db, 'public_content', 'homepage');
-            await setDoc(docRef, finalData, { merge: true });
+            await setDoc(docRef, finalCleanData, { merge: true });
 
             toast({ title: 'Success', description: 'Homepage settings saved successfully.' });
         } catch (error: any) {
@@ -663,6 +668,3 @@ function FooterForm({ onSave, methods }: { onSave: () => void; methods: UseFormR
         </>
     );
 }
-
-    
-
