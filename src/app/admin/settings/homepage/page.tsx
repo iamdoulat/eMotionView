@@ -213,7 +213,7 @@ export default function HomepageSettingsPage() {
         let finalSections = JSON.parse(JSON.stringify(sections));
 
         const uploadPromises = Object.entries(filesToUpload).map(async ([itemId, file]) => {
-            const storageRef = ref(storage, `users/${user.uid}/uploads/homepage/${itemId}-${file.name}`);
+            const storageRef = ref(storage, `homepage/${itemId}-${file.name}`);
             await uploadBytes(storageRef, file);
             const downloadURL = await getDownloadURL(storageRef);
             return { itemId, downloadURL };
