@@ -51,7 +51,6 @@ import { useToast } from '@/hooks/use-toast';
 import { defaultHeroBanners, defaultHomepageSections, type Section, type HeroBanner } from '@/lib/placeholder-data';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { cleanDataForFirestore } from '@/lib/utils';
 
 
 const heroBannerSchema = z.object({
@@ -163,48 +162,41 @@ export default function HomepageSettingsPage() {
         }
         setIsSaving(true);
         try {
-            const uploadedHeroBanners = await Promise.all(
-                data.heroBanners.map(async (banner, index) => {
+            const processedHeroBanners = await Promise.all(
+                (data.heroBanners || []).map(async (banner, index) => {
                     if (banner.image instanceof File) {
-                        try {
-                            const sanitizedFilename = banner.image.name.replace(/[^a-zA-Z0-9.\-_]/g, '');
-                            const storageRef = ref(storage, `homepage/${Date.now()}-${sanitizedFilename}`);
-                            await uploadBytes(storageRef, banner.image);
-                            const imageUrl = await getDownloadURL(storageRef);
-                             return { ...banner, image: imageUrl };
-                        } catch (uploadError: any) {
-                            console.error('Error uploading hero banner image:', uploadError);
-                            throw new Error(`Image upload failed: ${uploadError.code || uploadError.message}. Check storage rules.`);
-                        }
+                        const storageRef = ref(storage, `homepage/${Date.now()}-${banner.image.name.replace(/[^a-zA-Z0-9.\-_]/g, '')}`);
+                        await uploadBytes(storageRef, banner.image);
+                        const imageUrl = await getDownloadURL(storageRef);
+                        return { ...banner, image: imageUrl };
                     }
-                    const originalBanner = settings?.heroBanners[index];
-                    return { ...banner, image: banner.image || originalBanner?.image };
+                    
+                    const existingImage = settings?.heroBanners?.[index]?.image;
+                    return { ...banner, image: banner.image || existingImage };
                 })
             );
 
-            const finalData = {
-                heroBanners: uploadedHeroBanners,
-                sections: data.sections,
+            const dataToSave = {
+                ...data,
+                heroBanners: processedHeroBanners,
             };
 
-            const cleanedData = cleanDataForFirestore(finalData);
+            const cleanedData = JSON.parse(JSON.stringify(dataToSave));
 
-            try {
-                const docRef = doc(db, 'public_content', 'homepage');
-                await setDoc(docRef, cleanedData, { merge: true });
-            } catch (dbError: any) {
-                console.error('Error saving layout to Firestore:', dbError);
-                throw new Error(`Database save failed: ${dbError.code || dbError.message}`);
-            }
+            const docRef = doc(db, 'public_content', 'homepage');
+            await setDoc(docRef, cleanedData, { merge: true });
 
             toast({ title: 'Success', description: 'Homepage settings saved successfully.' });
-            
         } catch (error: any) {
             console.error("Error saving settings to Firestore:", error);
+            const errorMessage = error.code === 'permission-denied'
+                ? 'Permission denied. Please check your Firestore security rules.'
+                : `Could not save settings. ${error.message}`;
+
             toast({
                 variant: 'destructive',
                 title: 'Save Failed',
-                description: `Could not save settings. ${error.message}`,
+                description: errorMessage,
             });
         } finally {
             setIsSaving(false);
