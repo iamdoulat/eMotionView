@@ -175,8 +175,6 @@ export default function HomepageSettingsPage() {
                             throw new Error(`Image upload failed: ${uploadError.code || uploadError.message}. Check storage rules.`);
                         }
                     }
-                    // If the image is already a URL string, return it as is.
-                    // This handles cases where the image hasn't been changed.
                     const originalBanner = settings?.heroBanners[index];
                     return { ...banner, image: banner.image || originalBanner?.image };
                 })
@@ -187,7 +185,7 @@ export default function HomepageSettingsPage() {
                 sections: data.sections,
             };
 
-            const cleanedData = JSON.parse(JSON.stringify(finalData));
+            const cleanedData = cleanDataForFirestore(finalData);
 
             try {
                 const docRef = doc(db, 'public_content', 'homepage');
@@ -391,5 +389,3 @@ function HeroBannerForm({ onSave, methods }: HeroBannerFormProps) {
         </div>
     );
 }
-
-    
