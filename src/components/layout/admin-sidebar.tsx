@@ -23,6 +23,7 @@ import {
   FileDown,
   FileUp,
   UserCog,
+  Settings,
 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from "../ui/card";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
@@ -51,6 +52,7 @@ const mainNavItems = [
     { href: "/admin/users", label: "Staff", icon: UserCog },
     { href: "/admin/analytics", label: "Analytics", icon: LineChart },
     { href: "/admin/club-points", label: "Club Points", icon: Award },
+    { href: "/admin/settings", label: "Settings", icon: Settings },
 ];
 
 export function AdminSidebar() {
