@@ -11,7 +11,6 @@ import {
   Package,
   Users,
   LineChart,
-  Settings,
   Home,
   Boxes,
   Award,
@@ -52,7 +51,6 @@ const mainNavItems = [
     { href: "/admin/users", label: "Staff", icon: UserCog },
     { href: "/admin/analytics", label: "Analytics", icon: LineChart },
     { href: "/admin/club-points", label: "Club Points", icon: Award },
-    { href: "/admin/settings", label: "Settings", icon: Settings },
 ];
 
 export function AdminSidebar() {
