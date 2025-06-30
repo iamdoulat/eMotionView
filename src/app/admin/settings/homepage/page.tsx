@@ -76,26 +76,6 @@ type HeroBannerFormData = z.infer<typeof heroBannerSchema>;
 
 const ADMIN_ROLES: UserRole[] = ['Admin', 'Manager'];
 
-function cleanUndefined(obj: any): any {
-    if (obj === null || obj === undefined) {
-        return undefined;
-    }
-    if (Array.isArray(obj)) {
-        return obj.map(v => cleanUndefined(v)).filter(v => v !== undefined);
-    }
-    if (typeof obj === 'object' && obj.constructor === Object) {
-        const newObj: { [key: string]: any } = {};
-        for (const key in obj) {
-            const value = cleanUndefined(obj[key]);
-            if (value !== undefined) {
-                newObj[key] = value;
-            }
-        }
-        return newObj;
-    }
-    return obj;
-}
-
 
 export default function HomepageSettingsPage() {
     const { user, role, isLoading: isAuthLoading } = useAuth();
@@ -213,7 +193,8 @@ export default function HomepageSettingsPage() {
                 })),
             };
             
-            const cleanedData = cleanUndefined(finalDataForFirestore);
+            // Use JSON stringify and parse to strip any non-serializable data (like undefined, functions, etc.)
+            const cleanedData = JSON.parse(JSON.stringify(finalDataForFirestore));
 
             // Step 3: Save to Firestore
             try {
