@@ -199,22 +199,24 @@ export default function HomepageSettingsPage() {
   
   const handleSave = async () => {
     if (!user || !hasPermission) {
-      toast({
-        variant: "destructive",
-        title: "Permission Denied",
-        description: "You do not have the required permissions to save these settings.",
-      });
-      return;
+        toast({
+            variant: "destructive",
+            title: "Permission Denied",
+            description: "You do not have the required permissions to save these settings.",
+        });
+        return;
     }
 
     setIsSaving(true);
-    try {
-        let finalHeroBanners = JSON.parse(JSON.stringify(heroBanners));
-        let finalSections = JSON.parse(JSON.stringify(sections));
 
+    let finalHeroBanners = JSON.parse(JSON.stringify(heroBanners));
+    let finalSections = JSON.parse(JSON.stringify(sections));
+
+    // Step 1: Upload images and get their URLs
+    try {
         const uploadPromises = Object.entries(filesToUpload).map(async ([itemId, file]) => {
-            const safeFileName = encodeURIComponent(file.name.replace(/\s/g, '_'));
-            const storageRef = ref(storage, `homepage/${itemId}-${Date.now()}-${safeFileName}`);
+            const safeFileName = encodeURIComponent(file.name.replace(/\s+/g, '_').replace(/[^\w.-]/g, ''));
+            const storageRef = ref(storage, `homepage/${Date.now()}-${safeFileName}`);
             await uploadBytes(storageRef, file);
             const downloadURL = await getDownloadURL(storageRef);
             return { itemId, downloadURL };
@@ -225,13 +227,12 @@ export default function HomepageSettingsPage() {
         const urlMap = new Map<string, string>();
         uploadResults.forEach(result => urlMap.set(result.itemId, result.downloadURL));
 
-        // Replace blob URLs in heroBanners
+        // Update local data structures with the new image URLs
         finalHeroBanners = finalHeroBanners.map((banner: HeroBanner) => {
             const newUrl = urlMap.get(String(banner.id));
             return newUrl ? { ...banner, image: newUrl } : banner;
         });
 
-        // Replace blob URLs in sections
         finalSections = finalSections.map((section: Section) => {
             if (Array.isArray(section.content)) {
                 const newContent = section.content.map((item: any) => {
@@ -247,35 +248,43 @@ export default function HomepageSettingsPage() {
             }
             return section;
         });
+    } catch (error: any) {
+        console.error("Error during image upload to Firebase Storage:", error);
+        toast({
+            variant: "destructive",
+            title: "Image Upload Failed",
+            description: `Could not upload images. Please check your Storage rules. Error: ${error.code || 'Unknown'}`,
+        });
+        setIsSaving(false);
+        return; // Stop if uploads fail
+    }
 
+    // Step 2: Save the complete data structure to Firestore
+    try {
         const settingsRef = doc(db, "public_content", "homepage");
         await setDoc(settingsRef, { heroBanners: finalHeroBanners, sections: finalSections });
 
+        // Update UI state with the final data
         setHeroBanners(finalHeroBanners);
         setSections(finalSections);
-        setFilesToUpload({});
+        setFilesToUpload({}); // Clear the upload queue
 
         toast({
             title: "Success",
             description: "Homepage settings have been saved successfully.",
         });
     } catch (error: any) {
-        console.error("Error saving homepage settings:", error);
-        let description = "Could not save settings. Please check permissions and try again.";
-        if (error.code?.includes('storage')) {
-            description = "Image upload failed. Please check your Firebase Storage permissions.";
-        } else if (error.code) {
-             description = `An error occurred: ${error.code}. Please check your console for details.`;
-        }
+        console.error("Error saving settings to Firestore:", error);
         toast({
             variant: "destructive",
-            title: "Error",
-            description,
+            title: "Database Save Failed",
+            description: `Could not save layout to the database. Please check your Firestore rules. Error: ${error.code || 'Unknown'}`,
         });
     } finally {
         setIsSaving(false);
     }
-  };
+};
+
   
   if (isLoading || isAuthLoading) {
       return (
