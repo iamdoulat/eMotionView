@@ -224,12 +224,11 @@ export default function HomepageSettingsPage() {
             );
             
             const dataToSave = {
-                heroBanners: processedHeroBanners,
-                sections: processedSections,
-                footer: data.footer,
+                heroBanners: processedHeroBanners || [],
+                sections: processedSections || [],
+                footer: data.footer || defaultFooterSettings,
             };
             
-            // This is a robust way to remove any non-serializable data before sending to Firestore
             const cleanedData = JSON.parse(JSON.stringify(dataToSave));
 
             const docRef = doc(db, 'public_content', 'homepage');
@@ -525,7 +524,7 @@ function SectionEditor({ methods, sectionIndex, onClose }: { methods: UseFormRet
 
 
 function HeroBannerForm({ onSave, methods }: { onSave: () => void; methods: UseFormReturn<HomepageFormData>; }) {
-    const { control, register, watch, setValue } = methods;
+    const { control, register } = methods;
     const bannerIndex = 0;
     const bannerPath = `heroBanners.${bannerIndex}`;
 

@@ -1,77 +1,46 @@
-
 rules_version = '2';
 
 service cloud.firestore {
   match /databases/{database}/documents {
-
-    // ===== Helper Functions =====
-
-    function isAuthenticated() {
-      return request.auth != null;
-    }
-
-    // Safely checks if the currently authenticated user is an Admin.
-    // This checks for the existence of the user document before accessing its data.
+    
+    // Helper Functions
     function isAdmin() {
-      return isAuthenticated()
-             && exists(/databases/$(database)/documents/users/$(request.auth.uid))
-             && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'Admin';
+      return request.auth != null && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role in ['Admin', 'Manager'];
     }
 
-    // Checks if the UID in a request matches the authenticated user's UID.
     function isOwner(userId) {
-      return isAuthenticated() && request.auth.uid == userId;
+      return request.auth != null && request.auth.uid == userId;
     }
 
-    // ===== Collection Rules =====
-
-    // Products, Categories, Brands, etc. can be read by anyone, but only written by Admins.
+    // Collection Rules
     match /products/{productId} {
-      allow read: if true;
-      allow write: if isAdmin();
-    }
-    match /categories/{categoryId} {
-      allow read: if true;
-      allow write: if isAdmin();
-    }
-    match /brands/{brandId} {
-      allow read: if true;
-      allow write: if isAdmin();
-    }
-    match /attributes/{attributeId} {
-      allow read: if true;
-      allow write: if isAdmin();
-    }
-    match /suppliers/{supplierId} {
-      allow read: if true;
+      allow read;
       allow write: if isAdmin();
     }
 
-    // Wishlists can only be accessed by their owner. The document ID is the user's UID.
-    match /wishlists/{userId} {
-      allow read, write: if isOwner(userId);
-    }
-
-    // Reviews can be created by any authenticated user for themselves.
-    // They can be read by anyone if approved. Admins can manage all reviews.
     match /reviews/{reviewId} {
-      allow get: if resource.data.status == 'approved' || isAdmin();
-      allow list: if true; // The client-side query should filter for 'approved' status.
-      allow create: if isAuthenticated() && isOwner(request.resource.data.userId);
+      allow get: if resource.data.status == 'approved';
+      allow list: if query.get('status') == 'approved';
+      allow create: if request.auth != null;
       allow update, delete: if isAdmin();
     }
 
-    // Customers can create and manage their own data. Admins can manage all customers.
-    match /customers/{userId} {
-      allow create: if isOwner(userId);
-      allow get, update: if isOwner(userId) || isAdmin();
-      allow list, delete: if isAdmin();
+    match /users/{userId} {
+      allow read, write: if isAdmin();
     }
 
-    // Users (Staff/Admins) can read their own data. Admins can manage all users.
-    match /users/{userId} {
-      allow get: if isOwner(userId) || isAdmin();
-      allow list, create, update, delete: if isAdmin();
+    match /customers/{userId} {
+      allow get, update: if isOwner(userId) || isAdmin();
+      allow list, create, delete: if isAdmin();
+    }
+
+    match /wishlists/{userId} {
+       allow read, write: if isOwner(userId);
+    }
+
+    match /public_content/{document=**} {
+      allow read;
+      allow write: if isAdmin();
     }
   }
 }
