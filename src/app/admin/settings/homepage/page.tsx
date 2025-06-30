@@ -2,7 +2,7 @@
 "use client";
 
 import { useState, useEffect, useMemo } from 'react';
-import { useForm, useFieldArray, type SubmitHandler, FormProvider } from 'react-hook-form';
+import { useForm, useFieldArray, type SubmitHandler, FormProvider, type UseFormReturn } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import Image from 'next/image';
@@ -50,8 +50,10 @@ import { useToast } from '@/hooks/use-toast';
 import { defaultHeroBanners, defaultHomepageSections, type Section, type HeroBanner } from '@/lib/placeholder-data';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { cleanDataForFirestore } from '@/lib/utils';
 
 const heroBannerSchema = z.object({
+  id: z.number().optional(),
   image: z.union([z.instanceof(File), z.string()]),
   headline: z.string().min(1, 'Headline is required'),
   subheadline: z.string().min(1, 'Subheadline is required'),
@@ -85,7 +87,9 @@ export default function HomepageSettingsPage() {
     const [isSaving, setIsSaving] = useState(false);
     const [isEditingHero, setIsEditingHero] = useState(false);
     
-    const methods = useForm<HomepageFormData>();
+    const methods = useForm<HomepageFormData>({
+        resolver: zodResolver(homepageSchema)
+    });
     const { control, handleSubmit, reset } = methods;
 
     const { fields: sectionFields, move: moveSection } = useFieldArray({
@@ -158,21 +162,26 @@ export default function HomepageSettingsPage() {
         try {
             // Step 1: Handle Hero Banner Uploads and reconstruct banner objects
             const uploadedHeroBanners = await Promise.all(
-                data.heroBanners.map(async (banner) => {
-                    let imageUrl = banner.image as string;
+                data.heroBanners.map(async (banner, index) => {
+                    let imageUrl = banner.image as string; // Assume it's a string (URL) by default
+                    
+                    // Check if it's a File object, which means it's a new upload
                     if (banner.image instanceof File) {
                         try {
                             const sanitizedFilename = banner.image.name.replace(/[^a-zA-Z0-9.\-_]/g, '');
-                            const storageRef = ref(storage, `homepage/hero/${Date.now()}-${sanitizedFilename}`);
+                            const storageRef = ref(storage, `homepage/${Date.now()}-${sanitizedFilename}`);
                             await uploadBytes(storageRef, banner.image);
                             imageUrl = await getDownloadURL(storageRef);
                         } catch (uploadError: any) {
                             console.error('Error uploading hero banner image:', uploadError);
-                            throw new Error(`Storage upload failed: ${uploadError.code || uploadError.message}`);
+                            // Provide a more specific error message to the user
+                            throw new Error(`Image upload failed: ${uploadError.code || uploadError.message}. Check storage rules.`);
                         }
                     }
+
                     // Reconstruct the banner object to ensure it's clean and only contains schema fields
                     return {
+                        id: banner.id || index, // Ensure there is an id
                         image: imageUrl,
                         headline: banner.headline,
                         subheadline: banner.subheadline,
@@ -181,7 +190,7 @@ export default function HomepageSettingsPage() {
                     };
                 })
             );
-
+            
             // Step 2: Prepare Final Data for Firestore by explicit reconstruction
             const finalDataForFirestore = {
                 heroBanners: uploadedHeroBanners,
@@ -192,8 +201,7 @@ export default function HomepageSettingsPage() {
                     content: section.content,
                 })),
             };
-            
-            // Use JSON stringify and parse to strip any non-serializable data (like undefined, functions, etc.)
+
             const cleanedData = JSON.parse(JSON.stringify(finalDataForFirestore));
 
             // Step 3: Save to Firestore
@@ -272,7 +280,9 @@ export default function HomepageSettingsPage() {
                                     <Button variant="outline"><Edit className="mr-2 h-4 w-4" /> Edit Hero</Button>
                                 </DialogTrigger>
                                 <DialogContent className="sm:max-w-[600px]">
-                                    <HeroBannerForm onSave={() => setIsEditingHero(false)} />
+                                    <FormProvider {...methods}>
+                                        <HeroBannerForm onSave={() => setIsEditingHero(false)} />
+                                    </FormProvider>
                                 </DialogContent>
                             </Dialog>
                         </div>
