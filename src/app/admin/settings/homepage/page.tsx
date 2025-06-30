@@ -213,7 +213,8 @@ export default function HomepageSettingsPage() {
         let finalSections = JSON.parse(JSON.stringify(sections));
 
         const uploadPromises = Object.entries(filesToUpload).map(async ([itemId, file]) => {
-            const storageRef = ref(storage, `homepage/${itemId}-${file.name}`);
+            const safeFileName = encodeURIComponent(file.name.replace(/\s/g, '_'));
+            const storageRef = ref(storage, `homepage/${itemId}-${Date.now()}-${safeFileName}`);
             await uploadBytes(storageRef, file);
             const downloadURL = await getDownloadURL(storageRef);
             return { itemId, downloadURL };
@@ -258,12 +259,18 @@ export default function HomepageSettingsPage() {
             title: "Success",
             description: "Homepage settings have been saved successfully.",
         });
-    } catch (error) {
+    } catch (error: any) {
         console.error("Error saving homepage settings:", error);
+        let description = "Could not save settings. Please check permissions and try again.";
+        if (error.code?.includes('storage')) {
+            description = "Image upload failed. Please check your Firebase Storage permissions.";
+        } else if (error.code) {
+             description = `An error occurred: ${error.code}. Please check your console for details.`;
+        }
         toast({
             variant: "destructive",
             title: "Error",
-            description: "Could not save settings. Please check permissions and try again.",
+            description,
         });
     } finally {
         setIsSaving(false);
@@ -294,7 +301,7 @@ export default function HomepageSettingsPage() {
                     <CardTitle>Hero Banners</CardTitle>
                     <CardDescription>Manage the rotating banners at the top of your homepage.</CardDescription>
                 </div>
-                <Button onClick={handleAddHeroBanner}>
+                <Button onClick={handleAddHeroBanner} disabled={!hasPermission}>
                     <Plus className="mr-2 h-4 w-4" />
                     Add Banner
                 </Button>
@@ -334,31 +341,31 @@ export default function HomepageSettingsPage() {
             ))}
           </div>
           <div className="mt-4 border-t pt-4 flex flex-wrap gap-2">
-            <Button variant="outline" onClick={() => handleAddNewSection('product-grid')}>
+            <Button variant="outline" onClick={() => handleAddNewSection('product-grid')} disabled={!hasPermission}>
               <Plus className="mr-2 h-4 w-4" />
               Add Content Section
             </Button>
-             <Button variant="outline" onClick={() => handleAddNewSection('promo-banner-trio')}>
+             <Button variant="outline" onClick={() => handleAddNewSection('promo-banner-trio')} disabled={!hasPermission}>
               <Plus className="mr-2 h-4 w-4" />
               Add Triple Banners
             </Button>
-            <Button variant="outline" onClick={() => handleAddNewSection('promo-banner-pair')}>
+            <Button variant="outline" onClick={() => handleAddNewSection('promo-banner-pair')} disabled={!hasPermission}>
               <Plus className="mr-2 h-4 w-4" />
               Add Paired Banners
             </Button>
-            <Button variant="outline" onClick={() => handleAddNewSection('single-banner-large')}>
+            <Button variant="outline" onClick={() => handleAddNewSection('single-banner-large')} disabled={!hasPermission}>
               <Plus className="mr-2 h-4 w-4" />
               Add Large Banner
             </Button>
-            <Button variant="outline" onClick={() => handleAddNewSection('one-column-banner')}>
+            <Button variant="outline" onClick={() => handleAddNewSection('one-column-banner')} disabled={!hasPermission}>
               <Plus className="mr-2 h-4 w-4" />
               Add 1-Column Banner
             </Button>
-            <Button variant="outline" onClick={() => handleAddNewSection('two-column-banner')}>
+            <Button variant="outline" onClick={() => handleAddNewSection('two-column-banner')} disabled={!hasPermission}>
               <Plus className="mr-2 h-4 w-4" />
               Add 2-Column Banners
             </Button>
-            <Button variant="outline" onClick={() => handleAddNewSection('three-column-banner')}>
+            <Button variant="outline" onClick={() => handleAddNewSection('three-column-banner')} disabled={!hasPermission}>
               <Plus className="mr-2 h-4 w-4" />
               Add 3-Column Banners
             </Button>
