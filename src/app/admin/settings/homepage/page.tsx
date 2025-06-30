@@ -26,7 +26,9 @@ export default function HomepageSettingsPage() {
   const [filesToUpload, setFilesToUpload] = useState<Record<string, File>>({});
 
   const { toast } = useToast();
-  const { user, isLoading: isAuthLoading } = useAuth();
+  const { user, role, isLoading: isAuthLoading } = useAuth();
+
+  const hasPermission = role === 'Admin' || role === 'Manager';
 
   useEffect(() => {
     // Wait until authentication is resolved
@@ -35,8 +37,8 @@ export default function HomepageSettingsPage() {
     }
 
     const fetchSettings = async () => {
-      // Don't fetch if user is not logged in (which means they're not an admin)
-      if (!user) {
+      // Admins/Managers can fetch settings. Others see defaults and cannot save.
+      if (!user || !hasPermission) {
           setIsLoading(false);
           setHeroBanners(defaultHeroBanners);
           setSections(defaultHomepageSections);
@@ -67,7 +69,7 @@ export default function HomepageSettingsPage() {
     };
     
     fetchSettings();
-  }, [toast, user, isAuthLoading]);
+  }, [toast, user, role, isAuthLoading, hasPermission]);
 
   const handleFileChange = (itemId: string, file: File) => {
     setFilesToUpload(prev => ({ ...prev, [itemId]: file }));
@@ -196,11 +198,11 @@ export default function HomepageSettingsPage() {
   };
   
   const handleSave = async () => {
-    if (!user) {
+    if (!user || !hasPermission) {
       toast({
         variant: "destructive",
-        title: "Authentication Error",
-        description: "You must be logged in to save settings.",
+        title: "Permission Denied",
+        description: "You do not have the required permissions to save these settings.",
       });
       return;
     }
@@ -365,7 +367,7 @@ export default function HomepageSettingsPage() {
       </Card>
       
       <div className="flex justify-end">
-          <Button size="lg" onClick={handleSave} disabled={isSaving}>
+          <Button size="lg" onClick={handleSave} disabled={isSaving || !hasPermission}>
             {isSaving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
             Save Changes
           </Button>
