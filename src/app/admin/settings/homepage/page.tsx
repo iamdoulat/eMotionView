@@ -2,7 +2,7 @@
 "use client";
 
 import { useState, useEffect, useMemo } from 'react';
-import { useForm, useFieldArray, type SubmitHandler, FormProvider, type UseFormReturn } from 'react-hook-form';
+import { useForm, useFieldArray, type SubmitHandler, FormProvider, type UseFormReturn, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import Image from 'next/image';
@@ -27,7 +27,6 @@ import {
   CardDescription,
   CardHeader,
   CardTitle,
-  CardFooter
 } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import {
@@ -42,13 +41,13 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { Loader2, GripVertical, PlusCircle, Edit, Trash2, Upload, XCircle } from "lucide-react";
+import { Loader2, GripVertical, PlusCircle, Edit, Trash2 } from "lucide-react";
 import { db, storage, docToJSON } from '@/lib/firebase';
 import { doc, getDoc, setDoc } from 'firebase/firestore';
-import { ref, uploadBytes, getDownloadURL, deleteObject } from 'firebase/storage';
+import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { useAuth, type UserRole } from '@/hooks/use-auth';
 import { useToast } from '@/hooks/use-toast';
-import { defaultHeroBanners, defaultHomepageSections, type Section, type HeroBanner } from '@/lib/placeholder-data';
+import { defaultHeroBanners, defaultHomepageSections, type Section } from '@/lib/placeholder-data';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 
@@ -75,7 +74,6 @@ const homepageSchema = z.object({
 });
 
 type HomepageFormData = z.infer<typeof homepageSchema>;
-type HeroBannerFormData = z.infer<typeof heroBannerSchema>;
 
 const ADMIN_ROLES: UserRole[] = ['Admin', 'Manager'];
 
@@ -162,25 +160,50 @@ export default function HomepageSettingsPage() {
         }
         setIsSaving(true);
         try {
+            const uploadImage = async (file: File, path: string) => {
+                const storageRef = ref(storage, `${path}/${Date.now()}-${file.name.replace(/[^a-zA-Z0-9.\-_]/g, '')}`);
+                await uploadBytes(storageRef, file);
+                return getDownloadURL(storageRef);
+            };
+
             const processedHeroBanners = await Promise.all(
-                (data.heroBanners || []).map(async (banner, index) => {
+                (data.heroBanners || []).map(async (banner) => {
                     if (banner.image instanceof File) {
-                        const storageRef = ref(storage, `homepage/${Date.now()}-${banner.image.name.replace(/[^a-zA-Z0-9.\-_]/g, '')}`);
-                        await uploadBytes(storageRef, banner.image);
-                        const imageUrl = await getDownloadURL(storageRef);
+                        const imageUrl = await uploadImage(banner.image, 'homepage/hero');
                         return { ...banner, image: imageUrl };
                     }
-                    
-                    const existingImage = settings?.heroBanners?.[index]?.image;
-                    return { ...banner, image: banner.image || existingImage };
+                    return banner;
                 })
             );
 
-            const dataToSave = {
-                ...data,
-                heroBanners: processedHeroBanners,
-            };
+            const processedSections = await Promise.all(
+                (data.sections || []).map(async (section) => {
+                    if (!section.content) return section;
 
+                    if (Array.isArray(section.content)) {
+                        const processedContent = await Promise.all(
+                            section.content.map(async (item: any) => {
+                                if (item.image instanceof File) {
+                                    const imageUrl = await uploadImage(item.image, `homepage/sections`);
+                                    return { ...item, image: imageUrl };
+                                }
+                                return item;
+                            })
+                        );
+                        return { ...section, content: processedContent };
+                    } else if (typeof section.content === 'object' && section.content.image instanceof File) {
+                        const imageUrl = await uploadImage(section.content.image, `homepage/sections`);
+                        return { ...section, content: { ...section.content, image: imageUrl } };
+                    }
+                    return section;
+                })
+            );
+            
+            const dataToSave = {
+                heroBanners: processedHeroBanners,
+                sections: processedSections,
+            };
+            
             const cleanedData = JSON.parse(JSON.stringify(dataToSave));
 
             const docRef = doc(db, 'public_content', 'homepage');
@@ -258,8 +281,8 @@ export default function HomepageSettingsPage() {
                                 </DialogTrigger>
                                 <DialogContent className="sm:max-w-[600px]">
                                     <HeroBannerForm
-                                      onSave={() => setIsEditingHero(false)}
                                       methods={methods}
+                                      onSave={() => setIsEditingHero(false)}
                                     />
                                 </DialogContent>
                             </Dialog>
@@ -331,6 +354,33 @@ function SortableSection({ id, section, onEdit }: { id: string; section: any; on
     );
 }
 
+function ImageField({ value, onChange }: { value?: string | File; onChange: (file: File) => void; }) {
+    const [previewSrc, setPreviewSrc] = useState<string>('https://placehold.co/200x100.png');
+
+    useEffect(() => {
+        if (typeof value === 'string') {
+            setPreviewSrc(value);
+        } else if (value instanceof File) {
+            const url = URL.createObjectURL(value);
+            setPreviewSrc(url);
+            return () => URL.revokeObjectURL(url);
+        }
+    }, [value]);
+
+    const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        if (e.target.files?.[0]) {
+            onChange(e.target.files[0]);
+        }
+    };
+
+    return (
+        <div className="space-y-2">
+            <Image src={previewSrc} alt="Banner Preview" width={200} height={100} className="rounded-md object-cover border" />
+            <Input type="file" accept="image/*" onChange={handleFileChange} className="text-xs" />
+        </div>
+    );
+}
+
 function SectionEditor({ methods, sectionIndex, onClose }: { methods: UseFormReturn<HomepageFormData>, sectionIndex: number, onClose: () => void }) {
     const { control, register, watch } = methods;
     const section = watch(`sections.${sectionIndex}`);
@@ -341,6 +391,25 @@ function SectionEditor({ methods, sectionIndex, onClose }: { methods: UseFormRet
     });
 
     const contentIsArray = Array.isArray(section.content);
+    
+    const renderContentField = (basePath: string) => {
+        return (
+            <div className="space-y-4">
+                 <div className="space-y-2">
+                    <Label>Image</Label>
+                    <Controller
+                        name={`${basePath}.image`}
+                        control={control}
+                        render={({ field }) => <ImageField value={field.value} onChange={field.onChange} />}
+                    />
+                </div>
+                 <div className="space-y-2">
+                    <Label>Link URL</Label>
+                    <Input {...register(`${basePath}.link`)} />
+                </div>
+            </div>
+        )
+    }
 
     return (
         <>
@@ -369,15 +438,18 @@ function SectionEditor({ methods, sectionIndex, onClose }: { methods: UseFormRet
                     <div className="space-y-3">
                         <Label className="text-base font-medium">Categories</Label>
                         {fields.map((field, index) => (
-                            <Card key={field.id} className="p-3 space-y-2">
-                                <p className="text-sm font-semibold">Category {index + 1}</p>
+                            <Card key={field.id} className="p-3 grid grid-cols-2 gap-4">
                                 <div className="space-y-2">
                                     <Label>Name</Label>
                                     <Input {...register(`sections.${sectionIndex}.content.${index}.name`)} />
                                 </div>
                                 <div className="space-y-2">
-                                    <Label>Image URL</Label>
-                                    <Input {...register(`sections.${sectionIndex}.content.${index}.image`)} />
+                                    <Label>Image</Label>
+                                     <Controller
+                                        name={`sections.${sectionIndex}.content.${index}.image`}
+                                        control={control}
+                                        render={({ field: imageField }) => <ImageField value={imageField.value} onChange={imageField.onChange} />}
+                                    />
                                 </div>
                             </Card>
                         ))}
@@ -388,16 +460,9 @@ function SectionEditor({ methods, sectionIndex, onClose }: { methods: UseFormRet
                      <div className="space-y-3">
                         <Label className="text-base font-medium">Banners</Label>
                         {(contentIsArray ? fields : [section.content]).map((field, index) => (
-                             <Card key={field.id || index} className="p-3 space-y-2">
-                                <p className="text-sm font-semibold">Banner {index + 1}</p>
-                                <div className="space-y-2">
-                                    <Label>Image URL</Label>
-                                    <Input {...register(contentIsArray ? `sections.${sectionIndex}.content.${index}.image` : `sections.${sectionIndex}.content.image`)} />
-                                </div>
-                                 <div className="space-y-2">
-                                    <Label>Link URL</Label>
-                                    <Input {...register(contentIsArray ? `sections.${sectionIndex}.content.${index}.link` : `sections.${sectionIndex}.content.link`)} />
-                                </div>
+                             <Card key={field.id || index} className="p-3">
+                                <p className="text-sm font-semibold mb-2">Banner {index + 1}</p>
+                                {renderContentField(contentIsArray ? `sections.${sectionIndex}.content.${index}` : `sections.${sectionIndex}.content`)}
                             </Card>
                         ))}
                     </div>
@@ -411,32 +476,10 @@ function SectionEditor({ methods, sectionIndex, onClose }: { methods: UseFormRet
 }
 
 
-interface HeroBannerFormProps {
-  onSave: () => void;
-  methods: UseFormReturn<HomepageFormData>;
-}
-
-function HeroBannerForm({ onSave, methods }: HeroBannerFormProps) {
+function HeroBannerForm({ onSave, methods }: { onSave: () => void; methods: UseFormReturn<HomepageFormData>; }) {
     const { control, watch, setValue } = methods;
-    const { fields } = useFieldArray({ control, name: "heroBanners" });
-
-    // For simplicity, we'll edit the first hero banner. This can be expanded to a carousel editor.
     const bannerIndex = 0;
-    const currentBanner = watch(`heroBanners.${bannerIndex}`);
-
-    const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-        if (e.target.files?.[0]) {
-            setValue(`heroBanners.${bannerIndex}.image`, e.target.files[0]);
-        }
-    };
-    
-    // Fallback for cases where the image might not be set yet.
-    const imageSrc = currentBanner?.image
-        ? currentBanner.image instanceof File
-            ? URL.createObjectURL(currentBanner.image)
-            : currentBanner.image
-        : 'https://placehold.co/100x50.png';
-
+    const bannerPath = `heroBanners.${bannerIndex}`;
 
     return (
         <div>
@@ -444,35 +487,30 @@ function HeroBannerForm({ onSave, methods }: HeroBannerFormProps) {
                 <DialogTitle>Edit Hero Banner</DialogTitle>
             </DialogHeader>
             <div className="space-y-4 py-4">
-                 <div className="space-y-2">
+                <div className="space-y-2">
                     <Label>Banner Image</Label>
-                    <div className="flex items-center gap-4">
-                        <Image
-                            src={imageSrc}
-                            alt="Banner preview"
-                            width={100}
-                            height={50}
-                            className="rounded-md object-cover"
-                        />
-                        <Input type="file" accept="image/*" onChange={handleFileChange} />
-                    </div>
+                    <Controller
+                        name={`${bannerPath}.image`}
+                        control={control}
+                        render={({ field }) => <ImageField value={field.value} onChange={field.onChange} />}
+                    />
                 </div>
                 <div className="space-y-2">
                     <Label htmlFor="headline">Headline</Label>
-                    <Input id="headline" value={currentBanner?.headline || ''} onChange={e => setValue(`heroBanners.${bannerIndex}.headline`, e.target.value)} />
+                    <Input id="headline" value={watch(`${bannerPath}.headline`) || ''} onChange={e => setValue(`${bannerPath}.headline`, e.target.value)} />
                 </div>
                  <div className="space-y-2">
                     <Label htmlFor="subheadline">Subheadline</Label>
-                    <Textarea id="subheadline" value={currentBanner?.subheadline || ''} onChange={e => setValue(`heroBanners.${bannerIndex}.subheadline`, e.target.value)} />
+                    <Textarea id="subheadline" value={watch(`${bannerPath}.subheadline`) || ''} onChange={e => setValue(`${bannerPath}.subheadline`, e.target.value)} />
                 </div>
                  <div className="grid grid-cols-2 gap-4">
                      <div className="space-y-2">
                         <Label htmlFor="buttonText">Button Text</Label>
-                        <Input id="buttonText" value={currentBanner?.buttonText || ''} onChange={e => setValue(`heroBanners.${bannerIndex}.buttonText`, e.target.value)} />
+                        <Input id="buttonText" value={watch(`${bannerPath}.buttonText`) || ''} onChange={e => setValue(`${bannerPath}.buttonText`, e.target.value)} />
                     </div>
                      <div className="space-y-2">
                         <Label htmlFor="link">Button Link</Label>
-                        <Input id="link" value={currentBanner?.link || ''} onChange={e => setValue(`heroBanners.${bannerIndex}.link`, e.target.value)} />
+                        <Input id="link" value={watch(`${bannerPath}.link`) || ''} onChange={e => setValue(`${bannerPath}.link`, e.target.value)} />
                     </div>
                 </div>
             </div>
