@@ -106,7 +106,7 @@ export default function HomepageSettingsPage() {
     const [settings, setSettings] = useState<HomepageFormData | null>(null);
     const [isLoading, setIsLoading] = useState(true);
     const [isSaving, setIsSaving] = useState(false);
-    const [isEditingHero, setIsEditingHero] = useState(false);
+    const [editingHeroIndex, setEditingHeroIndex] = useState<number | null>(null);
     const [editingSectionIndex, setEditingSectionIndex] = useState<number | null>(null);
     const [isEditingFooter, setIsEditingFooter] = useState(false);
     
@@ -186,55 +186,51 @@ export default function HomepageSettingsPage() {
         }
         setIsSaving(true);
         try {
-            const uploadImage = async (file: File, path: string) => {
+            const uploadImage = async (file: File, path: string): Promise<string> => {
                 const storageRef = ref(storage, `${path}/${Date.now()}-${file.name.replace(/[^a-zA-Z0-9.\-_]/g, '')}`);
                 await uploadBytes(storageRef, file);
                 return getDownloadURL(storageRef);
             };
 
-            const processedHeroBanners = await Promise.all(
-                (data.heroBanners || []).map(async (banner) => {
-                    if (banner.image instanceof File) {
-                        const imageUrl = await uploadImage(banner.image, 'homepage/hero');
-                        return { ...banner, image: imageUrl };
-                    }
-                    return banner;
-                })
-            );
+            // Use the original form data (`data`) to check for `File` objects,
+            // but mutate a deep clone (`finalData`) to avoid altering the form state directly.
+            const finalData = JSON.parse(JSON.stringify(data));
 
-            const processedSections = await Promise.all(
-                (data.sections || []).map(async (section) => {
-                    if (!section.content || typeof section.content !== 'object') return section;
+            // Process Hero Banners
+            if (finalData.heroBanners && Array.isArray(finalData.heroBanners)) {
+                for (let i = 0; i < finalData.heroBanners.length; i++) {
+                    const banner = data.heroBanners[i]; // Original data
+                    if (banner && banner.image instanceof File) {
+                        finalData.heroBanners[i].image = await uploadImage(banner.image, 'homepage/hero');
+                    }
+                }
+            }
+
+            // Process Sections
+            if (finalData.sections && Array.isArray(finalData.sections)) {
+                for (let i = 0; i < finalData.sections.length; i++) {
+                    const section = data.sections[i]; // Original data
+                    const finalSection = finalData.sections[i]; // Cloned data to mutate
+
+                    if (!section.content) continue;
 
                     if (Array.isArray(section.content)) {
-                        const processedContent = await Promise.all(
-                            section.content.map(async (item: any) => {
-                                if (item && item.image instanceof File) {
-                                    const imageUrl = await uploadImage(item.image, `homepage/sections`);
-                                    return { ...item, image: imageUrl };
-                                }
-                                return item;
-                            })
-                        );
-                        return { ...section, content: processedContent };
-                    } else if (section.content.image instanceof File) {
-                        const imageUrl = await uploadImage(section.content.image, `homepage/sections`);
-                        return { ...section, content: { ...section.content, image: imageUrl } };
+                        // This handles sections like 'featured-categories' and multi-banners
+                        for (let j = 0; j < section.content.length; j++) {
+                            const item = section.content[j];
+                            if (item && item.image instanceof File) {
+                                finalSection.content[j].image = await uploadImage(item.image, `homepage/sections`);
+                            }
+                        }
+                    } else if (typeof section.content === 'object' && section.content.image instanceof File) {
+                        // This handles sections with a single banner object
+                        finalSection.content.image = await uploadImage(section.content.image, `homepage/sections`);
                     }
-                    return section;
-                })
-            );
+                }
+            }
             
-            const dataToSave = {
-                heroBanners: processedHeroBanners || [],
-                sections: processedSections || [],
-                footer: data.footer || defaultFooterSettings,
-            };
-            
-            const cleanedData = JSON.parse(JSON.stringify(dataToSave));
-
             const docRef = doc(db, 'public_content', 'homepage');
-            await setDoc(docRef, cleanedData, { merge: true });
+            await setDoc(docRef, finalData, { merge: true });
 
             toast({ title: 'Success', description: 'Homepage settings saved successfully.' });
         } catch (error: any) {
@@ -302,14 +298,15 @@ export default function HomepageSettingsPage() {
                                 <CardTitle>Hero Section</CardTitle>
                                 <CardDescription>Manage the main hero banner on your homepage.</CardDescription>
                             </div>
-                            <Dialog open={isEditingHero} onOpenChange={setIsEditingHero}>
+                            <Dialog open={editingHeroIndex !== null} onOpenChange={(open) => !open && setEditingHeroIndex(null)}>
                                 <DialogTrigger asChild>
-                                    <Button variant="outline"><Edit className="mr-2 h-4 w-4" /> Edit Hero</Button>
+                                    <Button variant="outline" onClick={() => setEditingHeroIndex(0)}><Edit className="mr-2 h-4 w-4" /> Edit Hero</Button>
                                 </DialogTrigger>
                                 <DialogContent className="sm:max-w-[600px]">
                                     <HeroBannerForm
                                       methods={methods}
-                                      onSave={() => setIsEditingHero(false)}
+                                      bannerIndex={0}
+                                      onSave={() => setEditingHeroIndex(null)}
                                     />
                                 </DialogContent>
                             </Dialog>
@@ -339,8 +336,7 @@ export default function HomepageSettingsPage() {
                         </DndContext>
                     </CardContent>
                 </Card>
-
-                <Card>
+                 <Card>
                     <CardHeader>
                         <div className="flex justify-between items-center">
                             <div>
@@ -527,9 +523,8 @@ function SectionEditor({ methods, sectionIndex, onClose }: { methods: UseFormRet
 }
 
 
-function HeroBannerForm({ onSave, methods }: { onSave: () => void; methods: UseFormReturn<HomepageFormData>; }) {
+function HeroBannerForm({ onSave, methods, bannerIndex }: { onSave: () => void; methods: UseFormReturn<HomepageFormData>; bannerIndex: number; }) {
     const { control, register } = methods;
-    const bannerIndex = 0;
     const bannerPath = `heroBanners.${bannerIndex}`;
 
     return (
@@ -670,3 +665,4 @@ function FooterForm({ onSave, methods }: { onSave: () => void; methods: UseFormR
 }
 
     
+
