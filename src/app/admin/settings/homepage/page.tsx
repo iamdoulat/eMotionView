@@ -44,16 +44,18 @@ import { Textarea } from "@/components/ui/textarea";
 import { Loader2, GripVertical, PlusCircle, Edit, Trash2, Upload, XCircle } from "lucide-react";
 import { db, storage, docToJSON } from '@/lib/firebase';
 import { doc, getDoc, setDoc } from 'firebase/firestore';
-import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
+import { ref, uploadBytes, getDownloadURL, deleteObject } from 'firebase/storage';
 import { useAuth, type UserRole } from '@/hooks/use-auth';
 import { useToast } from '@/hooks/use-toast';
 import { defaultHeroBanners, defaultHomepageSections, type Section, type HeroBanner } from '@/lib/placeholder-data';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { cleanDataForFirestore } from '@/lib/utils';
+
 
 const heroBannerSchema = z.object({
   id: z.number().optional(),
-  image: z.union([z.instanceof(File), z.string()]),
+  image: z.union([z.instanceof(File), z.string()]).optional(),
   headline: z.string().min(1, 'Headline is required'),
   subheadline: z.string().min(1, 'Subheadline is required'),
   buttonText: z.string().min(1, 'Button text is required'),
@@ -109,7 +111,7 @@ export default function HomepageSettingsPage() {
             try {
                 const docRef = doc(db, 'public_content', 'homepage');
                 const docSnap = await getDoc(docRef);
-                const data = docSnap.exists() ? docSnap.data() as HomepageFormData : { heroBanners: defaultHeroBanners, sections: defaultHomepageSections };
+                const data = docSnap.exists() ? docToJSON(docSnap) as HomepageFormData : { heroBanners: defaultHeroBanners, sections: defaultHomepageSections };
                 setSettings(data);
                 reset(data);
             } catch (error: any) {
@@ -159,54 +161,37 @@ export default function HomepageSettingsPage() {
         }
         setIsSaving(true);
         try {
-            // Step 1: Handle Hero Banner Uploads and reconstruct banner objects
             const uploadedHeroBanners = await Promise.all(
                 data.heroBanners.map(async (banner, index) => {
-                    let imageUrl = banner.image as string; // Assume it's a string (URL) by default
-                    
-                    // Check if it's a File object, which means it's a new upload
                     if (banner.image instanceof File) {
                         try {
                             const sanitizedFilename = banner.image.name.replace(/[^a-zA-Z0-9.\-_]/g, '');
                             const storageRef = ref(storage, `homepage/${Date.now()}-${sanitizedFilename}`);
                             await uploadBytes(storageRef, banner.image);
-                            imageUrl = await getDownloadURL(storageRef);
+                            const imageUrl = await getDownloadURL(storageRef);
+                             return { ...banner, image: imageUrl };
                         } catch (uploadError: any) {
                             console.error('Error uploading hero banner image:', uploadError);
-                            // Provide a more specific error message to the user
                             throw new Error(`Image upload failed: ${uploadError.code || uploadError.message}. Check storage rules.`);
                         }
                     }
-
-                    // Reconstruct the banner object to ensure it's clean and only contains schema fields
-                    return {
-                        id: banner.id || index, // Ensure there is an id
-                        image: imageUrl,
-                        headline: banner.headline,
-                        subheadline: banner.subheadline,
-                        buttonText: banner.buttonText,
-                        link: banner.link,
-                    };
+                    // If the image is already a URL string, return it as is.
+                    // This handles cases where the image hasn't been changed.
+                    const originalBanner = settings?.heroBanners[index];
+                    return { ...banner, image: banner.image || originalBanner?.image };
                 })
             );
-            
-            // Step 2: Prepare Final Data for Firestore by explicit reconstruction
-            const finalDataForFirestore = {
+
+            const finalData = {
                 heroBanners: uploadedHeroBanners,
-                sections: data.sections.map(section => ({
-                    id: section.id,
-                    name: section.name,
-                    type: section.type,
-                    content: section.content,
-                })),
+                sections: data.sections,
             };
 
-            const cleanedData = JSON.parse(JSON.stringify(finalDataForFirestore));
+            const cleanedData = JSON.parse(JSON.stringify(finalData));
 
-            // Step 3: Save to Firestore
             try {
                 const docRef = doc(db, 'public_content', 'homepage');
-                await setDoc(docRef, cleanedData);
+                await setDoc(docRef, cleanedData, { merge: true });
             } catch (dbError: any) {
                 console.error('Error saving layout to Firestore:', dbError);
                 throw new Error(`Database save failed: ${dbError.code || dbError.message}`);
@@ -225,6 +210,7 @@ export default function HomepageSettingsPage() {
             setIsSaving(false);
         }
     };
+
 
     if (isLoading || isAuthLoading) {
         return (
@@ -279,9 +265,10 @@ export default function HomepageSettingsPage() {
                                     <Button variant="outline"><Edit className="mr-2 h-4 w-4" /> Edit Hero</Button>
                                 </DialogTrigger>
                                 <DialogContent className="sm:max-w-[600px]">
-                                    <FormProvider {...methods}>
-                                        <HeroBannerForm onSave={() => setIsEditingHero(false)} />
-                                    </FormProvider>
+                                    <HeroBannerForm
+                                      onSave={() => setIsEditingHero(false)}
+                                      methods={methods}
+                                    />
                                 </DialogContent>
                             </Dialog>
                         </div>
@@ -333,10 +320,14 @@ function SortableSection({ id, section, index }: { id: string; section: any; ind
     );
 }
 
+interface HeroBannerFormProps {
+  onSave: () => void;
+  methods: UseFormReturn<HomepageFormData>;
+}
 
-function HeroBannerForm({ onSave }: { onSave: () => void }) {
-    const { control, watch, setValue, getValues } = useFormContext<HomepageFormData>();
-    const { fields, update } = useFieldArray({ control, name: "heroBanners" });
+function HeroBannerForm({ onSave, methods }: HeroBannerFormProps) {
+    const { control, watch, setValue } = methods;
+    const { fields } = useFieldArray({ control, name: "heroBanners" });
 
     // For simplicity, we'll edit the first hero banner. This can be expanded to a carousel editor.
     const bannerIndex = 0;
@@ -348,6 +339,14 @@ function HeroBannerForm({ onSave }: { onSave: () => void }) {
         }
     };
     
+    // Fallback for cases where the image might not be set yet.
+    const imageSrc = currentBanner?.image
+        ? currentBanner.image instanceof File
+            ? URL.createObjectURL(currentBanner.image)
+            : currentBanner.image
+        : 'https://placehold.co/100x50.png';
+
+
     return (
         <div>
             <DialogHeader>
@@ -358,7 +357,7 @@ function HeroBannerForm({ onSave }: { onSave: () => void }) {
                     <Label>Banner Image</Label>
                     <div className="flex items-center gap-4">
                         <Image
-                            src={currentBanner.image instanceof File ? URL.createObjectURL(currentBanner.image) : currentBanner.image}
+                            src={imageSrc}
                             alt="Banner preview"
                             width={100}
                             height={50}
@@ -369,20 +368,20 @@ function HeroBannerForm({ onSave }: { onSave: () => void }) {
                 </div>
                 <div className="space-y-2">
                     <Label htmlFor="headline">Headline</Label>
-                    <Input id="headline" value={currentBanner.headline} onChange={e => setValue(`heroBanners.${bannerIndex}.headline`, e.target.value)} />
+                    <Input id="headline" value={currentBanner?.headline || ''} onChange={e => setValue(`heroBanners.${bannerIndex}.headline`, e.target.value)} />
                 </div>
                  <div className="space-y-2">
                     <Label htmlFor="subheadline">Subheadline</Label>
-                    <Textarea id="subheadline" value={currentBanner.subheadline} onChange={e => setValue(`heroBanners.${bannerIndex}.subheadline`, e.target.value)} />
+                    <Textarea id="subheadline" value={currentBanner?.subheadline || ''} onChange={e => setValue(`heroBanners.${bannerIndex}.subheadline`, e.target.value)} />
                 </div>
                  <div className="grid grid-cols-2 gap-4">
                      <div className="space-y-2">
                         <Label htmlFor="buttonText">Button Text</Label>
-                        <Input id="buttonText" value={currentBanner.buttonText} onChange={e => setValue(`heroBanners.${bannerIndex}.buttonText`, e.target.value)} />
+                        <Input id="buttonText" value={currentBanner?.buttonText || ''} onChange={e => setValue(`heroBanners.${bannerIndex}.buttonText`, e.target.value)} />
                     </div>
                      <div className="space-y-2">
                         <Label htmlFor="link">Button Link</Label>
-                        <Input id="link" value={currentBanner.link} onChange={e => setValue(`heroBanners.${bannerIndex}.link`, e.target.value)} />
+                        <Input id="link" value={currentBanner?.link || ''} onChange={e => setValue(`heroBanners.${bannerIndex}.link`, e.target.value)} />
                     </div>
                 </div>
             </div>
