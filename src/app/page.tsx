@@ -3,16 +3,17 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { Button } from '@/components/ui/button';
 import { ProductCard } from '@/components/product-card';
-import type { Product } from '@/lib/placeholder-data';
+import type { Product, HeroBanner as HeroBannerType } from '@/lib/placeholder-data';
 import { defaultHeroBanners, defaultHomepageSections } from '@/lib/placeholder-data';
 import { ArrowRight, Star, Tag, Truck } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 import { CategoryMenu } from '@/components/category-menu';
-import { Carousel, CarouselContent, CarouselItem } from '@/components/ui/carousel';
+import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from '@/components/ui/carousel';
 import { collection, getDocs, limit, query, where, doc, getDoc } from 'firebase/firestore';
 import { db, docToJSON } from '@/lib/firebase';
 import { enrichProductsWithReviews } from '@/lib/product-utils';
 import { cn } from '@/lib/utils';
+import Autoplay from "embla-carousel-autoplay";
 
 const BannerImage = ({ banner, className }: { banner: { image: string, link: string, name?: string }, className?: string }) => (
     <Link href={banner.link} className={cn("block rounded-lg overflow-hidden group transition-all duration-300 ease-in-out hover:-translate-y-1 hover:shadow-xl", className)}>
@@ -61,16 +62,9 @@ export default async function HomePage() {
     console.warn("Could not load homepage settings, likely due to permissions. Falling back to default layout.");
   }
   
-  const heroBannerData = settings?.heroBanners || defaultHeroBanners;
+  const heroBanners = settings?.heroBanners || defaultHeroBanners;
   const sections = settings?.sections || defaultHomepageSections;
 
-  const heroBanner = heroBannerData.find((b: any) => b.headline) || heroBannerData[0] || {
-    image: 'https://placehold.co/900x440.png',
-    headline: 'GADGET FEST',
-    subheadline: 'Up to 60% off on your favorite gadgets.',
-    buttonText: 'Shop Now',
-    link: '/products',
-  };
 
   const getProductsForGrid = (sectionName: string) => {
     switch (sectionName) {
@@ -100,30 +94,44 @@ export default async function HomePage() {
                     ))}
                   </nav>
                   
-                  <div className="relative h-[440px] w-full rounded-lg overflow-hidden group">
-                    <Image 
-                      src={heroBanner.image}
-                      alt={heroBanner.headline}
-                      fill
-                      style={{objectFit: 'cover'}}
-                      className="transition-transform duration-300 group-hover:scale-105"
-                      data-ai-hint="gadget festival sale"
-                      priority
-                    />
-                     <div className="absolute inset-0 bg-gradient-to-r from-black/60 to-transparent p-8 md:p-16 flex flex-col justify-center items-start">
-                        <h1 className="font-headline text-4xl font-bold tracking-tight text-white sm:text-6xl max-w-md">
-                            {heroBanner.headline}
-                        </h1>
-                        <p className="mt-4 text-xl leading-8 text-neutral-200 max-w-md">
-                            {heroBanner.subheadline}
-                        </p>
-                        <div className="mt-6">
-                            <Button asChild size="lg">
-                                <Link href={heroBanner.link}>{heroBanner.buttonText}</Link>
-                            </Button>
-                        </div>
-                    </div>
-                  </div>
+                  <Carousel
+                    opts={{ loop: true }}
+                    plugins={[Autoplay({ delay: 5000, stopOnInteraction: true })]}
+                    className="w-full relative"
+                  >
+                    <CarouselContent className="h-[440px]">
+                      {heroBanners.map((banner: HeroBannerType) => (
+                        <CarouselItem key={banner.id}>
+                          <div className="relative h-full w-full rounded-lg overflow-hidden group">
+                            <Image
+                              src={banner.image}
+                              alt={banner.headline}
+                              fill
+                              style={{ objectFit: 'cover' }}
+                              className="transition-transform duration-300 group-hover:scale-105"
+                              data-ai-hint="gadget festival sale"
+                              priority={banner.id === heroBanners[0].id}
+                            />
+                            <div className="absolute inset-0 bg-gradient-to-r from-black/60 to-transparent p-8 md:p-16 flex flex-col justify-center items-start">
+                              <h1 className="font-headline text-4xl font-bold tracking-tight text-white sm:text-6xl max-w-md">
+                                {banner.headline}
+                              </h1>
+                              <p className="mt-4 text-xl leading-8 text-neutral-200 max-w-md">
+                                {banner.subheadline}
+                              </p>
+                              <div className="mt-6">
+                                <Button asChild size="lg">
+                                  <Link href={banner.link}>{banner.buttonText}</Link>
+                                </Button>
+                              </div>
+                            </div>
+                          </div>
+                        </CarouselItem>
+                      ))}
+                    </CarouselContent>
+                    <CarouselPrevious className="absolute left-4 top-1/2 -translate-y-1/2 z-10 hidden md:flex" />
+                    <CarouselNext className="absolute right-4 top-1/2 -translate-y-1/2 z-10 hidden md:flex" />
+                  </Carousel>
                 </div>
             </div>
         </div>
