@@ -1,3 +1,4 @@
+
 import type {NextConfig} from 'next';
 
 const withPWA = require('@ducanh2912/next-pwa').default({
@@ -36,6 +37,11 @@ const nextConfig: NextConfig = {
         pathname: '/**',
       },
     ],
+  },
+  webpack: (config, { isServer }) => {
+    // Allows importing Embla Carousel plugins
+    config.externals.push('embla-carousel-autoplay');
+    return config;
   },
 };
 

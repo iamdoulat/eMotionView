@@ -114,11 +114,11 @@ export interface FeaturedCategory {
 export interface PromoBanner {
     id: string;
     image: string;
-    link: string;
+    link?: string;
 }
 export interface SingleBanner {
     image: string;
-    link: string;
+    link?: string;
 }
 export type SectionType =
     | 'featured-categories'
@@ -139,10 +139,10 @@ export interface Section {
 export interface HeroBanner {
     id: number;
     image: string;
-    headline: string;
-    subheadline: string;
-    buttonText: string;
-    link: string;
+    headline?: string;
+    subheadline?: string;
+    buttonText?: string;
+    link?: string;
 }
 
 export interface FooterSettings {
@@ -413,14 +413,24 @@ export const defaultHomepageSections: Section[] = [
     { id: 'headphones', name: "Headphones", type: 'single-banner-large', content: { image: 'https://placehold.co/1200x250.png', link: '/products?category=Audio' } },
 ];
 
-export const defaultHeroBanners: HeroBanner[] = Array.from({ length: 5 }, (_, i) => ({
-    id: i + 1,
-    image: `https://placehold.co/900x440.png`,
-    headline: i === 0 ? "GADGET FEST" : "",
-    subheadline: i === 0 ? "Up to 60% off on your favorite gadgets." : "",
-    buttonText: i === 0 ? "Shop Now" : "",
-    link: i === 0 ? "/products" : "#",
-}));
+export const defaultHeroBanners: HeroBanner[] = [
+    {
+        id: 1,
+        image: `https://placehold.co/900x440.png`,
+        headline: "GADGET FEST",
+        subheadline: "Up to 60% off on your favorite gadgets.",
+        buttonText: "Shop Now",
+        link: "/products",
+    },
+    {
+        id: 2,
+        image: `https://placehold.co/900x440.png`,
+    },
+     {
+        id: 3,
+        image: `https://placehold.co/900x440.png`,
+    },
+];
 
 export const defaultFooterSettings: FooterSettings = {
     description: "Motion View is the largest Eco Product importer and Distributor in Bangladesh and now holds the leading position in the ecosystem industry.",

@@ -15,8 +15,8 @@ import { enrichProductsWithReviews } from '@/lib/product-utils';
 import { cn } from '@/lib/utils';
 import Autoplay from "embla-carousel-autoplay";
 
-const BannerImage = ({ banner, className }: { banner: { image: string, link: string, name?: string }, className?: string }) => (
-    <Link href={banner.link} className={cn("block rounded-lg overflow-hidden group transition-all duration-300 ease-in-out hover:-translate-y-1 hover:shadow-xl", className)}>
+const BannerImage = ({ banner, className }: { banner: { image: string, link?: string, name?: string }, className?: string }) => {
+    const bannerContent = (
         <Image
             src={banner.image || 'https://placehold.co/800x400.png'}
             alt={banner.name || 'Promotional Banner'}
@@ -25,8 +25,18 @@ const BannerImage = ({ banner, className }: { banner: { image: string, link: str
             className="w-full h-auto object-cover transition-transform duration-300 group-hover:scale-105"
             data-ai-hint="promotional banner"
         />
-    </Link>
-);
+    );
+
+    if (banner.link) {
+        return (
+            <Link href={banner.link} className={cn("block rounded-lg overflow-hidden group transition-all duration-300 ease-in-out hover:-translate-y-1 hover:shadow-xl", className)}>
+                {bannerContent}
+            </Link>
+        );
+    }
+    
+    return <div className={cn("block rounded-lg overflow-hidden", className)}>{bannerContent}</div>
+};
 
 
 export default async function HomePage() {
@@ -96,16 +106,15 @@ export default async function HomePage() {
                   
                   <Carousel
                     opts={{ loop: true }}
-                    plugins={[Autoplay({ delay: 5000, stopOnInteraction: true })]}
                     className="w-full relative"
                   >
                     <CarouselContent className="h-[440px]">
-                      {heroBanners.map((banner: HeroBannerType) => (
+                      {heroBanners.map((banner: HeroBannerType, index: number) => (
                         <CarouselItem key={banner.id}>
                           <div className="relative h-full w-full rounded-lg overflow-hidden group">
                             <Image
                               src={banner.image}
-                              alt={banner.headline}
+                              alt={banner.headline || `Hero Banner ${index + 1}`}
                               fill
                               style={{ objectFit: 'cover' }}
                               className="transition-transform duration-300 group-hover:scale-105"
@@ -113,17 +122,23 @@ export default async function HomePage() {
                               priority={banner.id === heroBanners[0].id}
                             />
                             <div className="absolute inset-0 bg-gradient-to-r from-black/60 to-transparent p-8 md:p-16 flex flex-col justify-center items-start">
-                              <h1 className="font-headline text-4xl font-bold tracking-tight text-white sm:text-6xl max-w-md">
-                                {banner.headline}
-                              </h1>
-                              <p className="mt-4 text-xl leading-8 text-neutral-200 max-w-md">
-                                {banner.subheadline}
-                              </p>
-                              <div className="mt-6">
-                                <Button asChild size="lg">
-                                  <Link href={banner.link}>{banner.buttonText}</Link>
-                                </Button>
-                              </div>
+                              {banner.headline && (
+                                <h1 className="font-headline text-4xl font-bold tracking-tight text-white sm:text-6xl max-w-md">
+                                  {banner.headline}
+                                </h1>
+                              )}
+                              {banner.subheadline && (
+                                <p className="mt-4 text-xl leading-8 text-neutral-200 max-w-md">
+                                  {banner.subheadline}
+                                </p>
+                              )}
+                              {banner.buttonText && banner.link && (
+                                <div className="mt-6">
+                                  <Button asChild size="lg">
+                                    <Link href={banner.link}>{banner.buttonText}</Link>
+                                  </Button>
+                                </div>
+                              )}
                             </div>
                           </div>
                         </CarouselItem>

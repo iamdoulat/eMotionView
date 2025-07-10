@@ -50,10 +50,10 @@ import { CSS } from '@dnd-kit/utilities';
 
 const heroSchema = z.object({
   id: z.coerce.number().optional(),
-  headline: z.string().min(1, 'Headline is required'),
-  subheadline: z.string().min(1, 'Subheadline is required'),
-  buttonText: z.string().min(1, 'Button text is required'),
-  link: z.string().min(1, 'Link is required'),
+  headline: z.string().optional(),
+  subheadline: z.string().optional(),
+  buttonText: z.string().optional(),
+  link: z.string().optional(),
   image: z.union([z.instanceof(FileList).optional(), z.string().optional()]),
 });
 
@@ -83,21 +83,25 @@ function SortableBannerItem({ banner, onEdit, onDelete }: { banner: HeroBanner; 
                     <div {...attributes} {...listeners} className="cursor-grab p-2">
                         <GripVertical className="h-5 w-5 text-muted-foreground" />
                     </div>
-                    <NextImage src={banner.image} alt={banner.headline} width={60} height={34} className="rounded-md object-cover h-9 w-16" />
-                    <span>{banner.headline}</span>
+                    <NextImage src={banner.image} alt={banner.headline || 'Hero Banner'} width={60} height={34} className="rounded-md object-cover h-9 w-16" />
+                    <span>{banner.headline || "Untitled Banner"}</span>
                 </div>
             </AccordionTrigger>
             <AccordionContent>
                 <div className="flex items-start justify-between p-4 bg-secondary/50 border-t">
                     <div className="space-y-4">
-                         <div>
-                            <p className="text-sm font-semibold">Subheadline:</p>
-                            <p className="text-sm text-muted-foreground">{banner.subheadline}</p>
-                         </div>
-                         <div>
-                            <p className="text-sm font-semibold">Button:</p>
-                            <p className="text-sm text-muted-foreground">{banner.buttonText} (links to {banner.link})</p>
-                         </div>
+                         {banner.subheadline && (
+                             <div>
+                                <p className="text-sm font-semibold">Subheadline:</p>
+                                <p className="text-sm text-muted-foreground">{banner.subheadline}</p>
+                             </div>
+                         )}
+                         {banner.buttonText && (
+                             <div>
+                                <p className="text-sm font-semibold">Button:</p>
+                                <p className="text-sm text-muted-foreground">{banner.buttonText} (links to {banner.link || '#'})</p>
+                             </div>
+                         )}
                     </div>
                     <div className="flex flex-col gap-2 shrink-0 ml-4">
                         <Button size="sm" variant="outline" onClick={() => onEdit(banner)}>
@@ -188,6 +192,10 @@ export default function HomepageHeroSettingsPage() {
                 const storageRef = ref(storage, `homepage/hero/${Date.now()}-${file.name}`);
                 const uploadResult = await uploadBytes(storageRef, file);
                 imageUrl = await getDownloadURL(uploadResult.ref);
+            } else if (!imageUrl) {
+                 toast({ variant: 'destructive', title: 'Error', description: 'An image is required for the hero banner.' });
+                 setIsSubmitting(false);
+                 return;
             }
             
             const newBannerData: HeroBanner = {
@@ -279,28 +287,28 @@ export default function HomepageHeroSettingsPage() {
                             <div className="space-y-4 py-4">
                                <FormField control={form.control} name="headline" render={({ field }) => (
                                     <FormItem>
-                                    <FormLabel>Headline</FormLabel>
+                                    <FormLabel>Headline (Optional)</FormLabel>
                                     <FormControl><Input placeholder="e.g. GADGET FEST" {...field} /></FormControl>
                                     <FormMessage />
                                     </FormItem>
                                 )}/>
                                <FormField control={form.control} name="subheadline" render={({ field }) => (
                                     <FormItem>
-                                    <FormLabel>Subheadline</FormLabel>
+                                    <FormLabel>Subheadline (Optional)</FormLabel>
                                     <FormControl><Input placeholder="e.g. Up to 60% off..." {...field} /></FormControl>
                                     <FormMessage />
                                     </FormItem>
                                 )}/>
                                <FormField control={form.control} name="buttonText" render={({ field }) => (
                                     <FormItem>
-                                    <FormLabel>Button Text</FormLabel>
+                                    <FormLabel>Button Text (Optional)</FormLabel>
                                     <FormControl><Input placeholder="e.g. Shop Now" {...field} /></FormControl>
                                     <FormMessage />
                                     </FormItem>
                                 )}/>
                                <FormField control={form.control} name="link" render={({ field }) => (
                                     <FormItem>
-                                    <FormLabel>Button Link</FormLabel>
+                                    <FormLabel>Button Link (Optional)</FormLabel>
                                     <FormControl><Input placeholder="e.g. /products" {...field} /></FormControl>
                                     <FormMessage />
                                     </FormItem>
@@ -346,4 +354,3 @@ export default function HomepageHeroSettingsPage() {
         </div>
     );
 }
-
