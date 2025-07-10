@@ -59,8 +59,8 @@ const mainNavItems = [
 
 const settingsNavItems = [
     { href: "/admin/settings/general", label: "General Settings", icon: SlidersHorizontal },
-    { href: "/admin/settings/homepage", label: "Featured Categories", icon: LayoutTemplate },
     { href: "/admin/settings/homepage-hero", label: "Homepage Hero", icon: Image },
+    { href: "/admin/settings/homepage", label: "Featured Categories", icon: LayoutTemplate },
 ];
 
 export function AdminSidebar() {
