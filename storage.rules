@@ -1,21 +1,22 @@
-
 rules_version = '2';
 
 service firebase.storage {
   match /b/{bucket}/o {
-    
-    // Helper function to check if the user is an admin or manager by looking up their role in Firestore.
+
+    // Helper function to check if user is an administrator or manager
     function isAdmin() {
-      return request.auth != null && 
+      // Check if the user is authenticated and their role is Admin or Manager in Firestore
+      return request.auth != null &&
              get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role in ['Admin', 'Manager'];
     }
-
-    // Match all files in the storage bucket.
+    
+    // Allow public read access to all files by default
+    // This allows anyone to view images, which is necessary for the storefront.
     match /{allPaths=**} {
-      // Allow anyone to read files (e.g., view images on the site).
       allow read;
       
-      // Only allow writes (create, update, delete) if the user is an admin or manager.
+      // Restrict all write operations (create, update, delete) to admins and managers.
+      // This is a secure catch-all rule.
       allow write: if isAdmin();
     }
   }
