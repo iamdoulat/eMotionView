@@ -21,20 +21,27 @@ export function useAuth() {
         const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
             if (firebaseUser) {
                 let userRole: UserRole | undefined;
-                
-                try {
-                    // Try fetching from 'users' collection first (for Admin/Staff)
-                    const userDocRef = doc(db, "users", firebaseUser.uid);
-                    const userDocSnap = await getDoc(userDocRef);
-                    if (userDocSnap.exists()) {
-                        userRole = userDocSnap.data().role;
-                    }
-                } catch (error) {
-                    // This will likely be a permissions error if the user is a customer. We can ignore it.
-                    if (error instanceof FirebaseError && error.code !== 'permission-denied') {
-                        console.error("Error fetching staff user data:", error);
+
+                // A simple heuristic: if displayName or email is missing, they are likely a customer.
+                // This avoids unnecessary Firestore reads for regular customer logins.
+                const isLikelyStaff = firebaseUser.displayName || firebaseUser.email;
+
+                if (isLikelyStaff) {
+                     try {
+                        // Try fetching from 'users' collection first (for Admin/Staff)
+                        const userDocRef = doc(db, "users", firebaseUser.uid);
+                        const userDocSnap = await getDoc(userDocRef);
+                        if (userDocSnap.exists()) {
+                            userRole = userDocSnap.data().role;
+                        }
+                    } catch (error) {
+                        // This will likely be a permissions error if the user is a customer. We can ignore it.
+                        if (error instanceof FirebaseError && error.code !== 'permission-denied') {
+                            console.error("Error fetching staff user data:", error);
+                        }
                     }
                 }
+               
 
                 // If no role was found in 'users', check 'customers' collection.
                 if (!userRole) {
