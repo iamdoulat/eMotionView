@@ -193,49 +193,33 @@ export default function HomepageSettingsPage() {
                 return getDownloadURL(storageRef);
             };
     
-            // Create a new clean object for Firestore
-            const dataToSave: { heroBanners: any[], sections: any[], footer: any } = {
-                heroBanners: [],
-                sections: [],
-                footer: formData.footer,
-            };
+            const dataToSave = JSON.parse(JSON.stringify(formData));
     
-            // Process Hero Banners
-            for (const banner of formData.heroBanners) {
-                let imageUrl = banner.image;
+            for (let i = 0; i < dataToSave.heroBanners.length; i++) {
+                const banner = formData.heroBanners[i];
                 if (banner.image instanceof File) {
-                    imageUrl = await uploadImage(banner.image, 'homepage/hero');
+                    dataToSave.heroBanners[i].image = await uploadImage(banner.image, 'homepage/hero');
                 }
-                dataToSave.heroBanners.push({ ...banner, image: imageUrl });
             }
     
-            // Process Sections
-            for (const section of formData.sections) {
-                let newContent = section.content;
+            for (let i = 0; i < dataToSave.sections.length; i++) {
+                const section = formData.sections[i];
                 if (Array.isArray(section.content)) {
-                    newContent = await Promise.all(
-                        section.content.map(async (item) => {
-                            if (item.image instanceof File) {
-                                const imageUrl = await uploadImage(item.image, `homepage/sections/${section.id}`);
-                                return { ...item, image: imageUrl };
-                            }
-                            return item;
-                        })
-                    );
+                    for (let j = 0; j < section.content.length; j++) {
+                        const item = section.content[j];
+                        if (item.image instanceof File) {
+                            dataToSave.sections[i].content[j].image = await uploadImage(item.image, `homepage/sections/${section.id}`);
+                        }
+                    }
                 } else if (section.content && typeof section.content === 'object' && section.content.image instanceof File) {
-                    const imageUrl = await uploadImage(section.content.image, `homepage/sections/${section.id}`);
-                    newContent = { ...section.content, image: imageUrl };
+                    dataToSave.sections[i].content.image = await uploadImage(section.content.image, `homepage/sections/${section.id}`);
                 }
-                dataToSave.sections.push({ ...section, content: newContent });
             }
     
-            // Final sanitization to remove any undefined values or non-serializable data
-            const finalCleanData = JSON.parse(JSON.stringify(dataToSave));
-            
             const docRef = doc(db, 'public_content', 'homepage');
-            await setDoc(docRef, finalCleanData, { merge: true });
+            await setDoc(docRef, dataToSave, { merge: true });
             
-            reset(finalCleanData); // Update form state with new URLs
+            reset(dataToSave);
     
             toast({ title: 'Success', description: 'Homepage settings saved successfully.' });
         } catch (error: any) {
@@ -670,7 +654,5 @@ function FooterForm({ onSave, methods }: { onSave: () => void; methods: UseFormR
         </>
     );
 }
-
-    
 
     
