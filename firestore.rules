@@ -1,85 +1,54 @@
-
 rules_version = '2';
 
 service cloud.firestore {
   match /databases/{database}/documents {
     
-    // Helper Functions
-    function isOwner(userId) {
-      return request.auth != null && request.auth.uid == userId;
-    }
-    
     function isAdmin() {
+      // Check if the user's role is Admin by looking up their document in the 'users' collection.
       return request.auth != null && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'Admin';
     }
 
-    function isStaff() {
-      return request.auth != null && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role in ['Admin', 'Manager', 'Staff'];
-    }
-
-    // Collection Rules
-    
-    // Products can be read by anyone, but only written by staff.
+    // Products can be read by anyone, but only written by admins.
     match /products/{productId} {
       allow read;
-      allow write: if isStaff();
+      allow write: if isAdmin();
     }
     
-    // Categories, Brands, etc. can be read by anyone, written by staff.
-    match /categories/{docId} {
-      allow read;
-      allow write: if isStaff();
-    }
-    match /brands/{docId} {
-      allow read;
-      allow write: if isStaff();
-    }
-    match /attributes/{docId} {
-      allow read;
-      allow write: if isStaff();
-    }
-    match /suppliers/{docId} {
-      allow read;
-      allow write: if isStaff();
-    }
-
-    // Reviews can be created by any logged-in user.
-    // They can only be viewed if their status is 'approved'.
-    // Staff can update or delete any review.
-    match /reviews/{reviewId} {
-      allow get: if resource.data.status == 'approved';
-      allow list: if query.get('status') == 'approved';
-      allow create: if request.auth != null;
-      allow update, delete: if isStaff();
-    }
-
-    // Staff user documents. 
-    // An individual user (staff or customer) can read their own document to check their role.
-    // Only Admins can list, create, or delete staff members.
-    // An individual staff member can update their own profile.
+    // An authenticated user can read their own user document.
+    // Admins can manage all users.
     match /users/{userId} {
-      allow get: if request.auth != null;
-      allow update: if isOwner(userId);
-      allow list, create, delete: if isAdmin();
+        allow read: if request.auth.uid == userId;
+        allow write: if isAdmin();
+        allow list: if isAdmin();
     }
 
-    // Customer documents. Staff can manage all customers.
-    // A customer can only get or update their own document.
+    // Customers can read/write their own data. Admins can manage all customers.
     match /customers/{userId} {
-      allow get, update: if isOwner(userId) || isStaff();
-      allow list, create, delete: if isStaff();
+        allow read, write: if request.auth.uid == userId;
+        allow list, update, delete: if isAdmin();
     }
-
+    
+    // Reviews can be read if approved, created by any auth'd user, managed by admin.
+    match /reviews/{reviewId} {
+        // Allow reading a single document if its status is 'approved'.
+        allow get: if resource.data.status == 'approved';
+        // Allow listing documents only if the query explicitly filters for approved reviews.
+        // This is crucial for the product details page to fetch reviews.
+        allow list: if query.get('status') == 'approved';
+        
+        allow create: if request.auth != null;
+        allow update, delete: if isAdmin();
+    }
+    
     // Wishlists are private to the owner.
     match /wishlists/{userId} {
-       allow read, write: if isOwner(userId);
+       allow read, write: if request.auth.uid == userId;
     }
-
-    // Public content (like homepage settings) can be read by anyone,
-    // but only written to by staff.
+    
+    // Homepage public content can be read by anyone and written by admins.
     match /public_content/{document=**} {
       allow read;
-      allow write: if isStaff();
+      allow write: if isAdmin();
     }
   }
 }
