@@ -193,11 +193,14 @@ export default function HomepageSettingsPage() {
                 return getDownloadURL(storageRef);
             };
     
+            // Deep clone the form data to avoid mutating the form state directly
+            const dataToSave = JSON.parse(JSON.stringify(formData));
+    
             // Process Hero Banners
             for (let i = 0; i < formData.heroBanners.length; i++) {
-                const banner = formData.heroBanners[i];
-                if (banner.image instanceof File) {
-                    formData.heroBanners[i].image = await uploadImage(banner.image, 'homepage/hero');
+                const bannerFile = formData.heroBanners[i].image;
+                if (bannerFile instanceof File) {
+                    dataToSave.heroBanners[i].image = await uploadImage(bannerFile, 'homepage/hero');
                 }
             }
     
@@ -206,18 +209,16 @@ export default function HomepageSettingsPage() {
                 const section = formData.sections[i];
                 if (Array.isArray(section.content)) {
                     for (let j = 0; j < section.content.length; j++) {
-                        const item = section.content[j];
-                        if (item.image instanceof File) {
-                            formData.sections[i].content[j].image = await uploadImage(item.image, `homepage/sections/${section.id}`);
+                        const itemFile = section.content[j].image;
+                        if (itemFile instanceof File) {
+                            dataToSave.sections[i].content[j].image = await uploadImage(itemFile, `homepage/sections/${section.id}`);
                         }
                     }
                 } else if (section.content && typeof section.content === 'object' && section.content.image instanceof File) {
-                    formData.sections[i].content.image = await uploadImage(section.content.image, `homepage/sections/${section.id}`);
+                    const itemFile = section.content.image;
+                    dataToSave.sections[i].content.image = await uploadImage(itemFile, `homepage/sections/${section.id}`);
                 }
             }
-
-            // Create a clean, serializable object for Firestore
-            const dataToSave = JSON.parse(JSON.stringify(formData));
     
             const docRef = doc(db, 'public_content', 'homepage');
             await setDoc(docRef, dataToSave, { merge: true });
@@ -329,6 +330,7 @@ export default function HomepageSettingsPage() {
                             </DndContext>
                         </CardContent>
                     </Card>
+
                     <Card>
                         <CardHeader>
                             <div className="flex justify-between items-center">
@@ -659,5 +661,7 @@ function FooterForm({ onSave, methods }: { onSave: () => void; methods: UseFormR
         </>
     );
 }
+
+    
 
     
