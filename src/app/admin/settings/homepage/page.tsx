@@ -196,7 +196,7 @@ export default function HomepageSettingsPage() {
             const dataToSave: any = {
                 heroBanners: [],
                 sections: [],
-                footer: formData.footer,
+                footer: formData.footer || defaultFooterSettings,
             };
 
             // Process Hero Banners
@@ -406,11 +406,11 @@ function SortableSection({ id, section, onEdit }: { id: string; section: any; on
 }
 
 function ImageField({ value, onChange, previewSize: previewSizeProp = { width: 200, height: 100 } }: { value?: string | File; onChange: (file: File) => void; previewSize?: {width: number, height: number} }) {
-    const [previewSrc, setPreviewSrc] = useState<string>('');
-    
     // Memoize previewSize to prevent re-renders
     const previewSize = useMemo(() => previewSizeProp, [previewSizeProp.width, previewSizeProp.height]);
-
+    
+    const [previewSrc, setPreviewSrc] = useState<string>(() => `https://placehold.co/${previewSize.width}x${previewSize.height}.png`);
+    
     useEffect(() => {
         if (typeof value === 'string' && value) {
             setPreviewSrc(value);
@@ -672,3 +672,5 @@ function FooterForm({ onSave, methods }: { onSave: () => void; methods: UseFormR
         </>
     );
 }
+
+    
