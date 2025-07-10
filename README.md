@@ -1,5 +1,7 @@
 # Firebase Studio
 
-This is a NextJS starter in Firebase Studio.
+This is a eCommerce site by Nextjs, Firebase, Firestore, Typescript, Tailwind CSS, and React.
 
-To get started, take a look at src/app/page.tsx.
+# Contact
+Contact: https://cards.mddoulat.com/iamdoulat
+
