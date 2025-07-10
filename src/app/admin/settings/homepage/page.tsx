@@ -185,55 +185,65 @@ export default function HomepageSettingsPage() {
             return;
         }
         setIsSaving(true);
-
+    
         try {
             const uploadImage = async (file: File, path: string): Promise<string> => {
                 const storageRef = ref(storage, `${path}/${Date.now()}-${file.name.replace(/[^a-zA-Z0-9.\-_]/g, '')}`);
                 await uploadBytes(storageRef, file);
                 return getDownloadURL(storageRef);
             };
-
-            const dataToSave: HomepageFormData = JSON.parse(JSON.stringify(formData));
+    
+            // Create a new clean object for Firestore
+            const dataToSave: { heroBanners: any[], sections: any[], footer: any } = {
+                heroBanners: [],
+                sections: [],
+                footer: formData.footer,
+            };
     
             // Process Hero Banners
-            for (let i = 0; i < formData.heroBanners.length; i++) {
-                const banner = formData.heroBanners[i];
+            for (const banner of formData.heroBanners) {
+                let imageUrl = banner.image;
                 if (banner.image instanceof File) {
-                    const imageUrl = await uploadImage(banner.image, 'homepage/hero');
-                    dataToSave.heroBanners[i].image = imageUrl;
+                    imageUrl = await uploadImage(banner.image, 'homepage/hero');
                 }
+                dataToSave.heroBanners.push({ ...banner, image: imageUrl });
             }
     
             // Process Sections
-            for (let i = 0; i < formData.sections.length; i++) {
-                const section = formData.sections[i];
-                const newSectionContent = dataToSave.sections[i].content;
-
+            for (const section of formData.sections) {
+                let newContent = section.content;
                 if (Array.isArray(section.content)) {
-                    for (let j = 0; j < section.content.length; j++) {
-                        const item = section.content[j];
-                        if (item.image instanceof File) {
-                            newSectionContent[j].image = await uploadImage(item.image, `homepage/sections/${section.id}`);
-                        }
-                    }
+                    newContent = await Promise.all(
+                        section.content.map(async (item) => {
+                            if (item.image instanceof File) {
+                                const imageUrl = await uploadImage(item.image, `homepage/sections/${section.id}`);
+                                return { ...item, image: imageUrl };
+                            }
+                            return item;
+                        })
+                    );
                 } else if (section.content && typeof section.content === 'object' && section.content.image instanceof File) {
-                     newSectionContent.image = await uploadImage(section.content.image, `homepage/sections/${section.id}`);
+                    const imageUrl = await uploadImage(section.content.image, `homepage/sections/${section.id}`);
+                    newContent = { ...section.content, image: imageUrl };
                 }
+                dataToSave.sections.push({ ...section, content: newContent });
             }
-            
+    
+            // Final sanitization to remove any undefined values or non-serializable data
             const finalCleanData = JSON.parse(JSON.stringify(dataToSave));
             
             const docRef = doc(db, 'public_content', 'homepage');
             await setDoc(docRef, finalCleanData, { merge: true });
+            
             reset(finalCleanData); // Update form state with new URLs
-
+    
             toast({ title: 'Success', description: 'Homepage settings saved successfully.' });
         } catch (error: any) {
             console.error("Error saving settings to Firestore:", error);
             const errorMessage = error.code === 'permission-denied'
                 ? 'Permission denied. Please check your Firestore security rules.'
                 : `Could not save settings. ${error.message}`;
-
+    
             toast({
                 variant: 'destructive',
                 title: 'Save Failed',
