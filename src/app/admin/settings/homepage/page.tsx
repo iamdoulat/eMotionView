@@ -193,28 +193,31 @@ export default function HomepageSettingsPage() {
                 return getDownloadURL(storageRef);
             };
     
-            const dataToSave = JSON.parse(JSON.stringify(formData));
-    
-            for (let i = 0; i < dataToSave.heroBanners.length; i++) {
+            // Process Hero Banners
+            for (let i = 0; i < formData.heroBanners.length; i++) {
                 const banner = formData.heroBanners[i];
                 if (banner.image instanceof File) {
-                    dataToSave.heroBanners[i].image = await uploadImage(banner.image, 'homepage/hero');
+                    formData.heroBanners[i].image = await uploadImage(banner.image, 'homepage/hero');
                 }
             }
     
-            for (let i = 0; i < dataToSave.sections.length; i++) {
+            // Process Sections
+            for (let i = 0; i < formData.sections.length; i++) {
                 const section = formData.sections[i];
                 if (Array.isArray(section.content)) {
                     for (let j = 0; j < section.content.length; j++) {
                         const item = section.content[j];
                         if (item.image instanceof File) {
-                            dataToSave.sections[i].content[j].image = await uploadImage(item.image, `homepage/sections/${section.id}`);
+                            formData.sections[i].content[j].image = await uploadImage(item.image, `homepage/sections/${section.id}`);
                         }
                     }
                 } else if (section.content && typeof section.content === 'object' && section.content.image instanceof File) {
-                    dataToSave.sections[i].content.image = await uploadImage(section.content.image, `homepage/sections/${section.id}`);
+                    formData.sections[i].content.image = await uploadImage(section.content.image, `homepage/sections/${section.id}`);
                 }
             }
+
+            // Create a clean, serializable object for Firestore
+            const dataToSave = JSON.parse(JSON.stringify(formData));
     
             const docRef = doc(db, 'public_content', 'homepage');
             await setDoc(docRef, dataToSave, { merge: true });
@@ -280,72 +283,74 @@ export default function HomepageSettingsPage() {
                     </Button>
                 </div>
                 
-                <Card className="mb-6">
-                    <CardHeader>
-                        <div className="flex justify-between items-center">
-                            <div>
-                                <CardTitle>Hero Section</CardTitle>
-                                <CardDescription>Manage the main hero banner on your homepage.</CardDescription>
-                            </div>
-                            <Dialog open={editingHeroIndex !== null} onOpenChange={(open) => !open && setEditingHeroIndex(null)}>
-                                <DialogTrigger asChild>
-                                    <Button variant="outline" onClick={() => setEditingHeroIndex(0)}><Edit className="mr-2 h-4 w-4" /> Edit Hero</Button>
-                                </DialogTrigger>
-                                <DialogContent className="sm:max-w-[600px]">
-                                    <HeroBannerForm
-                                      methods={methods}
-                                      bannerIndex={0}
-                                      onSave={() => setEditingHeroIndex(null)}
-                                    />
-                                </DialogContent>
-                            </Dialog>
-                        </div>
-                    </CardHeader>
-                </Card>
-
-                <Card className="mb-6">
-                    <CardHeader>
-                        <CardTitle>Homepage Sections</CardTitle>
-                        <CardDescription>Drag to reorder sections. Click to edit.</CardDescription>
-                    </CardHeader>
-                    <CardContent>
-                        <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
-                            <SortableContext items={sectionFields} strategy={verticalListSortingStrategy}>
-                                <div className="space-y-2">
-                                    {sectionFields.map((section, index) => (
-                                        <SortableSection 
-                                            key={section.id} 
-                                            id={section.id} 
-                                            section={section} 
-                                            onEdit={() => setEditingSectionIndex(index)}
-                                        />
-                                    ))}
+                <div className="space-y-6">
+                    <Card>
+                        <CardHeader>
+                            <div className="flex justify-between items-center">
+                                <div>
+                                    <CardTitle>Hero Section</CardTitle>
+                                    <CardDescription>Manage the main hero banner on your homepage.</CardDescription>
                                 </div>
-                            </SortableContext>
-                        </DndContext>
-                    </CardContent>
-                </Card>
-                 <Card>
-                    <CardHeader>
-                        <div className="flex justify-between items-center">
-                            <div>
-                                <CardTitle>Footer Section</CardTitle>
-                                <CardDescription>Manage the content of your site's footer.</CardDescription>
-                            </div>
-                            <Dialog open={isEditingFooter} onOpenChange={setIsEditingFooter}>
-                                <DialogTrigger asChild>
-                                    <Button variant="outline"><Edit className="mr-2 h-4 w-4" /> Edit Footer</Button>
-                                </DialogTrigger>
-                                <DialogContent className="sm:max-w-3xl">
-                                    <FooterForm
+                                <Dialog open={editingHeroIndex !== null} onOpenChange={(open) => !open && setEditingHeroIndex(null)}>
+                                    <DialogTrigger asChild>
+                                        <Button variant="outline" onClick={() => setEditingHeroIndex(0)}><Edit className="mr-2 h-4 w-4" /> Edit Hero</Button>
+                                    </DialogTrigger>
+                                    <DialogContent className="sm:max-w-[600px]">
+                                        <HeroBannerForm
                                         methods={methods}
-                                        onSave={() => setIsEditingFooter(false)}
-                                    />
-                                </DialogContent>
-                            </Dialog>
-                        </div>
-                    </CardHeader>
-                </Card>
+                                        bannerIndex={0}
+                                        onSave={() => setEditingHeroIndex(null)}
+                                        />
+                                    </DialogContent>
+                                </Dialog>
+                            </div>
+                        </CardHeader>
+                    </Card>
+
+                    <Card>
+                        <CardHeader>
+                            <CardTitle>Homepage Sections</CardTitle>
+                            <CardDescription>Drag to reorder sections. Click to edit.</CardDescription>
+                        </CardHeader>
+                        <CardContent>
+                            <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
+                                <SortableContext items={sectionFields} strategy={verticalListSortingStrategy}>
+                                    <div className="space-y-2">
+                                        {sectionFields.map((section, index) => (
+                                            <SortableSection 
+                                                key={section.id} 
+                                                id={section.id} 
+                                                section={section} 
+                                                onEdit={() => setEditingSectionIndex(index)}
+                                            />
+                                        ))}
+                                    </div>
+                                </SortableContext>
+                            </DndContext>
+                        </CardContent>
+                    </Card>
+                    <Card>
+                        <CardHeader>
+                            <div className="flex justify-between items-center">
+                                <div>
+                                    <CardTitle>Footer Section</CardTitle>
+                                    <CardDescription>Manage the content of your site's footer.</CardDescription>
+                                </div>
+                                <Dialog open={isEditingFooter} onOpenChange={setIsEditingFooter}>
+                                    <DialogTrigger asChild>
+                                        <Button variant="outline"><Edit className="mr-2 h-4 w-4" /> Edit Footer</Button>
+                                    </DialogTrigger>
+                                    <DialogContent className="sm:max-w-3xl">
+                                        <FooterForm
+                                            methods={methods}
+                                            onSave={() => setIsEditingFooter(false)}
+                                        />
+                                    </DialogContent>
+                                </Dialog>
+                            </div>
+                        </CardHeader>
+                    </Card>
+                </div>
             </form>
             <Dialog open={editingSectionIndex !== null} onOpenChange={(open) => !open && setEditingSectionIndex(null)}>
                 <DialogContent className="sm:max-w-3xl">
