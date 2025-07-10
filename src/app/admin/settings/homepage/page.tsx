@@ -51,7 +51,7 @@ interface FeaturedCategory {
 const categorySchema = z.object({
   id: z.string().optional(),
   name: z.string().min(1, 'Category name is required'),
-  image: z.union([z.instanceof(File).optional(), z.string().optional()]),
+  image: z.union([z.instanceof(FileList).optional(), z.string().optional()]),
 });
 
 type CategoryFormData = z.infer<typeof categorySchema>;
@@ -122,7 +122,7 @@ export default function HomepageSettingsPage() {
                 return section;
             });
             
-            await setDoc(docRef, { ...existingData, sections: updatedSections }, { merge: true });
+            await setDoc(docRef, { sections: updatedSections }, { merge: true });
             setCategories(allCategories);
             toast({ title: 'Success', description: 'Homepage settings updated successfully.' });
         } catch (error) {
@@ -138,8 +138,8 @@ export default function HomepageSettingsPage() {
         let imageUrl = editingCategory?.image || '';
         
         try {
-            if (data.image instanceof File) {
-                const file = data.image;
+            if (data.image instanceof FileList && data.image.length > 0) {
+                const file = data.image[0];
                 const storageRef = ref(storage, `homepage/categories/${Date.now()}-${file.name}`);
                 const uploadResult = await uploadBytes(storageRef, file);
                 imageUrl = await getDownloadURL(uploadResult.ref);
@@ -230,8 +230,8 @@ export default function HomepageSettingsPage() {
                             </div>
                             <div className="space-y-2">
                                 <Label htmlFor="image">Image</Label>
-                                <Input id="image" type="file" accept="image/*" onChange={(e) => form.setValue('image', e.target.files?.[0])} />
-                                {editingCategory?.image && !form.getValues('image') && (
+                                <Input id="image" type="file" accept="image/*" {...form.register('image')} />
+                                {editingCategory?.image && !form.watch('image') && (
                                     <div className="text-sm text-muted-foreground mt-2">
                                         Current image: <Image src={editingCategory.image} alt="current" width={40} height={40} className="inline-block h-10 w-10 object-cover rounded-md" />
                                     </div>

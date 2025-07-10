@@ -3,23 +3,36 @@ rules_version = '2';
 
 service firebase.storage {
   match /b/{bucket}/o {
+
+    function isAdmin() {
+      return request.auth != null && 
+             (firestore.get(/databases/(default)/documents/users/$(request.auth.uid)).data.role == 'Admin' ||
+              firestore.get(/databases/(default)/documents/users/$(request.auth.uid)).data.role == 'Manager');
+    }
     
-    // Helper function to check if user is an admin or manager
-    function isStaff() {
-      // Allow if user is authenticated and their role in Firestore is Admin or Manager
-      let userRole = get(/databases/(default)/documents/users/$(request.auth.uid)).data.role;
-      return request.auth != null && (userRole == 'Admin' || userRole == 'Manager');
+    // Product images are publicly readable, but only admins can write
+    match /products/{allPaths=**} {
+      allow read: if true;
+      allow write: if isAdmin();
     }
 
-    // Allow public read access to all files
-    match /{allPaths=**} {
+    // User avatars can be read by anyone, but can only be written by the owner or an admin
+    match /avatars/{userId}/{allPaths=**} {
       allow read: if true;
+      allow write: if request.auth.uid == userId || isAdmin();
+    }
+
+    // Homepage assets can be read by anyone, but only admins can write
+    match /homepage/{allPaths=**} {
+        allow read: if true;
+        allow write: if isAdmin();
     }
     
-    // Allow writes ONLY for staff members.
-    // This single rule covers all write operations (create, update, delete) for all paths.
+    // By default, only admins can write to any other path
+    // and nothing is publicly readable unless specified above.
     match /{allPaths=**} {
-      allow write: if isStaff();
+        allow read: if false;
+        allow write: if isAdmin();
     }
   }
 }
