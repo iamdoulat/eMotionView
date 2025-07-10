@@ -193,42 +193,34 @@ export default function HomepageSettingsPage() {
                 return getDownloadURL(storageRef);
             };
 
-            const dataToSave = {
-                heroBanners: [] as any[],
-                sections: [] as any[],
-                footer: formData.footer || defaultFooterSettings,
-            };
+            const dataToSave: HomepageFormData = JSON.parse(JSON.stringify(formData));
     
             // Process Hero Banners
-            for (const banner of formData.heroBanners) {
-                let imageUrl = banner.image;
+            for (let i = 0; i < formData.heroBanners.length; i++) {
+                const banner = formData.heroBanners[i];
                 if (banner.image instanceof File) {
-                    imageUrl = await uploadImage(banner.image, 'homepage/hero');
+                    const imageUrl = await uploadImage(banner.image, 'homepage/hero');
+                    dataToSave.heroBanners[i].image = imageUrl;
                 }
-                dataToSave.heroBanners.push({ ...banner, image: imageUrl });
             }
     
             // Process Sections
-            for (const section of formData.sections) {
-                const newSection: Section = JSON.parse(JSON.stringify(section));
+            for (let i = 0; i < formData.sections.length; i++) {
+                const section = formData.sections[i];
+                const newSectionContent = dataToSave.sections[i].content;
 
-                if (newSection.content && Array.isArray(newSection.content)) {
-                    for (let i = 0; i < newSection.content.length; i++) {
-                        const originalContentItem = formData.sections.find(s => s.id === section.id)?.content[i];
-                        if (originalContentItem?.image instanceof File) {
-                            newSection.content[i].image = await uploadImage(originalContentItem.image, `homepage/sections/${section.id}`);
+                if (Array.isArray(section.content)) {
+                    for (let j = 0; j < section.content.length; j++) {
+                        const item = section.content[j];
+                        if (item.image instanceof File) {
+                            newSectionContent[j].image = await uploadImage(item.image, `homepage/sections/${section.id}`);
                         }
                     }
-                } else if (newSection.content && typeof newSection.content === 'object' && !Array.isArray(newSection.content)) {
-                    const originalContentItem = formData.sections.find(s => s.id === section.id)?.content;
-                    if (originalContentItem?.image instanceof File) {
-                       newSection.content.image = await uploadImage(originalContentItem.image, `homepage/sections/${section.id}`);
-                    }
+                } else if (section.content && typeof section.content === 'object' && section.content.image instanceof File) {
+                     newSectionContent.image = await uploadImage(section.content.image, `homepage/sections/${section.id}`);
                 }
-                dataToSave.sections.push(newSection);
             }
             
-            // Final sanitization step
             const finalCleanData = JSON.parse(JSON.stringify(dataToSave));
             
             const docRef = doc(db, 'public_content', 'homepage');
@@ -668,5 +660,7 @@ function FooterForm({ onSave, methods }: { onSave: () => void; methods: UseFormR
         </>
     );
 }
+
+    
 
     
