@@ -1,3 +1,4 @@
+
 rules_version = '2';
 
 service cloud.firestore {
@@ -7,79 +8,74 @@ service cloud.firestore {
     function isOwner(userId) {
       return request.auth != null && request.auth.uid == userId;
     }
-
-    function isAdmin() {
-      // Checks if the user has an 'Admin' or 'Manager' role in the 'users' collection.
+    
+    function isStaff() {
+      // Check if the user's role is Admin or Manager by looking up their document in the 'users' collection.
+      // This requires that the user has read access to their own document in /users/{userId}.
       return request.auth != null && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role in ['Admin', 'Manager'];
     }
 
     // Collection Rules
-
-    // Users collection (for admins, staff)
-    match /users/{userId} {
-      // Admins can read/write any user document.
-      // A user can read their own document to allow isAdmin() to work.
-      allow read: if isAdmin() || isOwner(userId);
-      allow write: if isAdmin();
-    }
-
-    // Customers collection
-    match /customers/{userId} {
-      // A customer can read/update their own profile. Admins can manage any customer.
-      allow get, update: if isOwner(userId) || isAdmin();
-      // Only admins can list, create, or delete customers.
-      allow list, create, delete: if isAdmin();
-    }
     
-    // Public content (homepage settings, etc.)
-    match /public_content/{document=**} {
-      // Anyone can read public content.
-      allow read;
-      // Only admins can write to public content.
-      allow write: if isAdmin();
-    }
-
-    // Products and related collections
+    // Products can be read by anyone, but only written by staff.
     match /products/{productId} {
       allow read;
-      allow write: if isAdmin();
-    }
-
-    match /categories/{docId} {
-      allow read;
-      allow write: if isAdmin();
+      allow write: if isStaff();
     }
     
+    // Categories, Brands, etc. can be read by anyone, written by staff.
+    match /categories/{docId} {
+      allow read;
+      allow write: if isStaff();
+    }
     match /brands/{docId} {
-        allow read;
-        allow write: if isAdmin();
+      allow read;
+      allow write: if isStaff();
     }
-
     match /attributes/{docId} {
-        allow read;
-        allow write: if isAdmin();
+      allow read;
+      allow write: if isStaff();
     }
-
     match /suppliers/{docId} {
-        allow read;
-        allow write: if isAdmin();
+      allow read;
+      allow write: if isStaff();
     }
 
-    // Reviews collection
+    // Reviews can be created by any logged-in user.
+    // They can only be viewed if their status is 'approved'.
+    // Staff can update or delete any review.
     match /reviews/{reviewId} {
-      // Anyone can get a single approved review, or list all approved reviews.
       allow get: if resource.data.status == 'approved';
       allow list: if query.get('status') == 'approved';
-      // Any authenticated user can create a review (which defaults to 'pending').
       allow create: if request.auth != null;
-      // Only admins can update (approve/reject/reply) or delete reviews.
-      allow update, delete: if isAdmin();
+      allow update, delete: if isStaff();
     }
 
-    // Wishlists collection
+    // Staff user documents. Only staff can list/create/delete them.
+    // An individual staff member can read their own document (required for isStaff() to work).
+    // An individual staff member can update their own document.
+    match /users/{userId} {
+      allow get, update: if isOwner(userId);
+      allow list, create, delete: if isStaff();
+    }
+
+    // Customer documents. Staff can manage all customers.
+    // A customer can only get or update their own document.
+    match /customers/{userId} {
+      allow get, update: if isOwner(userId) || isStaff();
+      allow list, create, delete: if isStaff();
+    }
+
+    // Wishlists are private to the owner.
     match /wishlists/{userId} {
-       // Only the owner of the wishlist can read or write to it.
        allow read, write: if isOwner(userId);
+    }
+
+    // Public content (like homepage settings) can be read by anyone,
+    // but only written to by staff.
+    match /public_content/{document=**} {
+      allow read;
+      allow write: if isStaff();
     }
   }
 }
