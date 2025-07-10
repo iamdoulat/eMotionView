@@ -20,7 +20,6 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-  DialogDescription,
 } from "@/components/ui/dialog";
 import {
     AlertDialog,
@@ -35,12 +34,12 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Loader2, PlusCircle, Edit, Trash2 } from "lucide-react";
-import { db, storage } from '@/lib/firebase';
+import { db } from '@/lib/firebase';
 import { doc, getDoc, setDoc } from 'firebase/firestore';
-import { ref, uploadBytes, getDownloadURL, deleteObject } from 'firebase/storage';
 import { useToast } from '@/hooks/use-toast';
 import { Skeleton } from '@/components/ui/skeleton';
 import { defaultHomepageSections } from '@/lib/placeholder-data';
+import { uploadFile } from '@/lib/actions/storage';
 
 interface FeaturedCategory {
   id: string;
@@ -100,7 +99,7 @@ export default function HomepageSettingsPage() {
     const handleOpenForm = (category?: FeaturedCategory) => {
         if (category) {
             setEditingCategory(category);
-            form.reset(category);
+            form.reset({ name: category.name, image: category.image });
         } else {
             setEditingCategory(null);
             form.reset({ id: `cat-${Date.now()}`, name: '', image: undefined });
@@ -112,7 +111,6 @@ export default function HomepageSettingsPage() {
         setIsSubmitting(true);
         try {
             const docRef = doc(db, SETTINGS_DOC_PATH);
-            // We fetch existing sections to not overwrite other homepage settings
             const docSnap = await getDoc(docRef);
             const existingData = docSnap.exists() ? docSnap.data() : { sections: defaultHomepageSections };
             
@@ -136,18 +134,25 @@ export default function HomepageSettingsPage() {
 
     const onSubmit: SubmitHandler<CategoryFormData> = async (data) => {
         setIsSubmitting(true);
+        let imageUrl = editingCategory?.image || '';
+        
         try {
-            let imageUrl = editingCategory?.image || '';
-            
             if (data.image instanceof File) {
                 const file = data.image;
-                const storageRef = ref(storage, `homepage/categories/${Date.now()}-${file.name}`);
-                await uploadBytes(storageRef, file);
-                imageUrl = await getDownloadURL(storageRef);
+                const formData = new FormData();
+                formData.append('file', file);
+                formData.append('path', 'homepage/categories');
+
+                const result = await uploadFile(formData);
+
+                if (result.error) {
+                    throw new Error(result.error);
+                }
+                imageUrl = result.url!;
             }
             
             const newCategoryData: FeaturedCategory = {
-                id: editingCategory?.id || `cat-${Date.now()}`,
+                id: editingCategory?.id || data.id || `cat-${Date.now()}`,
                 name: data.name,
                 image: imageUrl,
             };
@@ -162,28 +167,17 @@ export default function HomepageSettingsPage() {
             await handleSaveChanges(updatedCategories);
             setIsFormOpen(false);
 
-        } catch (error) {
+        } catch (error: any) {
             console.error("Error saving category:", error);
-            toast({ variant: 'destructive', title: 'Error', description: 'Could not save the category.' });
+            toast({ variant: 'destructive', title: 'Error', description: error.message || 'Could not save the category.' });
+        } finally {
             setIsSubmitting(false);
         }
     };
     
     const handleDelete = async () => {
         if (!categoryToDelete) return;
-        
         const updatedCategories = categories.filter(c => c.id !== categoryToDelete.id);
-        
-        // Optionally delete image from storage
-        if (categoryToDelete.image.includes('firebasestorage')) {
-            try {
-                const imageRef = ref(storage, categoryToDelete.image);
-                await deleteObject(imageRef);
-            } catch (error) {
-                console.warn("Could not delete image from storage, it might have already been removed.", error);
-            }
-        }
-        
         await handleSaveChanges(updatedCategories);
         setCategoryToDelete(null);
     }
@@ -243,6 +237,11 @@ export default function HomepageSettingsPage() {
                             <div className="space-y-2">
                                 <Label htmlFor="image">Image</Label>
                                 <Input id="image" type="file" accept="image/*" onChange={(e) => form.setValue('image', e.target.files?.[0])} />
+                                {editingCategory?.image && !form.getValues('image') && (
+                                    <div className="text-sm text-muted-foreground mt-2">
+                                        Current image: <Image src={editingCategory.image} alt="current" width={40} height={40} className="inline-block h-10 w-10 object-cover rounded-md" />
+                                    </div>
+                                )}
                             </div>
                         </div>
                         <DialogFooter>
