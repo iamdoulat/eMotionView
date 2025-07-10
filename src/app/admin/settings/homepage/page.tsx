@@ -193,12 +193,12 @@ export default function HomepageSettingsPage() {
                 return getDownloadURL(storageRef);
             };
 
-            const dataToSave: any = {
-                heroBanners: [],
-                sections: [],
+            const dataToSave = {
+                heroBanners: [] as any[],
+                sections: [] as any[],
                 footer: formData.footer || defaultFooterSettings,
             };
-
+    
             // Process Hero Banners
             for (const banner of formData.heroBanners) {
                 let imageUrl = banner.image;
@@ -207,31 +207,28 @@ export default function HomepageSettingsPage() {
                 }
                 dataToSave.heroBanners.push({ ...banner, image: imageUrl });
             }
-
+    
             // Process Sections
             for (const section of formData.sections) {
-                const newSection: Section = { ...section, content: section.content };
+                const newSection: Section = JSON.parse(JSON.stringify(section));
 
-                if (section.content) {
-                    if (Array.isArray(section.content)) {
-                        const newContent = [];
-                        for (const item of section.content) {
-                            let itemImageUrl = item.image;
-                            if (item.image instanceof File) {
-                                itemImageUrl = await uploadImage(item.image, `homepage/sections/${section.id}`);
-                            }
-                            newContent.push({ ...item, image: itemImageUrl });
+                if (newSection.content && Array.isArray(newSection.content)) {
+                    for (let i = 0; i < newSection.content.length; i++) {
+                        const originalContentItem = formData.sections.find(s => s.id === section.id)?.content[i];
+                        if (originalContentItem?.image instanceof File) {
+                            newSection.content[i].image = await uploadImage(originalContentItem.image, `homepage/sections/${section.id}`);
                         }
-                        newSection.content = newContent;
-                    } else if (typeof section.content === 'object' && section.content.image instanceof File) {
-                        const newContent = { ...section.content };
-                        newContent.image = await uploadImage(section.content.image, `homepage/sections/${section.id}`);
-                        newSection.content = newContent;
+                    }
+                } else if (newSection.content && typeof newSection.content === 'object' && !Array.isArray(newSection.content)) {
+                    const originalContentItem = formData.sections.find(s => s.id === section.id)?.content;
+                    if (originalContentItem?.image instanceof File) {
+                       newSection.content.image = await uploadImage(originalContentItem.image, `homepage/sections/${section.id}`);
                     }
                 }
                 dataToSave.sections.push(newSection);
             }
-
+            
+            // Final sanitization step
             const finalCleanData = JSON.parse(JSON.stringify(dataToSave));
             
             const docRef = doc(db, 'public_content', 'homepage');
@@ -525,7 +522,7 @@ function SectionEditor({ methods, sectionIndex, onClose }: { methods: UseFormRet
                 )}
             </div>
             <DialogFooter>
-                <Button onClick={onClose}>Done</Button>
+                <Button onClick={onClose}>Save</Button>
             </DialogFooter>
         </>
     )
@@ -570,7 +567,7 @@ function HeroBannerForm({ onSave, methods, bannerIndex }: { onSave: () => void; 
                 </div>
             </div>
             <DialogFooter>
-                <Button onClick={onSave}>Done</Button>
+                <Button onClick={onSave}>Save</Button>
             </DialogFooter>
         </div>
     );
@@ -667,10 +664,8 @@ function FooterForm({ onSave, methods }: { onSave: () => void; methods: UseFormR
             </div>
         </ScrollArea>
         <DialogFooter className="pt-4">
-            <Button onClick={onSave}>Done</Button>
+            <Button onClick={onSave}>Save</Button>
         </DialogFooter>
         </>
     );
 }
-
-    
