@@ -19,6 +19,9 @@ import html2canvas from "html2canvas";
 export default function OrderDetailPage() {
   const params = useParams<{ id: string }>();
   const [order, setOrder] = useState<Order | null | undefined>(undefined);
+  const [formattedDate, setFormattedDate] = useState('');
+  const [formattedInvoiceDate, setFormattedInvoiceDate] = useState('');
+
   const pdfRef = useRef<HTMLDivElement>(null);
   const id = params.id;
 
@@ -28,6 +31,10 @@ export default function OrderDetailPage() {
         const allOrders = [...initialOrders, ...storedOrders];
         const foundOrder = allOrders.find(o => o.id === id);
         setOrder(foundOrder);
+        if (foundOrder) {
+            setFormattedDate(new Date(foundOrder.date).toLocaleDateString());
+            setFormattedInvoiceDate(new Date(foundOrder.date).toLocaleDateString());
+        }
     } else {
         setOrder(null);
     }
@@ -103,7 +110,7 @@ export default function OrderDetailPage() {
               <div style={{ textAlign: 'right' }}>
                 <h2 style={{ fontSize: '2rem', fontWeight: 'bold', margin: 0 }}>INVOICE</h2>
                 <p style={{ margin: '0.25rem 0 0' }}><strong>Invoice #:</strong> {order.orderNumber}</p>
-                <p style={{ margin: '0.25rem 0 0' }}><strong>Date:</strong> {new Date(order.date).toLocaleDateString()}</p>
+                <p style={{ margin: '0.25rem 0 0' }}><strong>Date:</strong> {formattedInvoiceDate}</p>
               </div>
             </div>
 
@@ -176,7 +183,7 @@ export default function OrderDetailPage() {
           <CardHeader>
             <CardTitle>Order Summary</CardTitle>
             <div className="flex items-center gap-4 text-sm text-muted-foreground">
-              <span>Date: {new Date(order.date).toLocaleDateString()}</span>
+              <span>Date: {formattedDate}</span>
               <Separator orientation="vertical" className="h-4" />
               <span>Total: ${order.total.toFixed(2)}</span>
               <Separator orientation="vertical" className="h-4" />
