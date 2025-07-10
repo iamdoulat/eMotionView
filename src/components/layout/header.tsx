@@ -12,7 +12,6 @@ import { Search, ShoppingCart, Menu, Phone, User, Heart, LayoutGrid, LogOut, Pac
 import { Badge } from "@/components/ui/badge"
 import { cn } from "@/lib/utils"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
-import { products, categories, brands, suppliers, attributes } from "@/lib/placeholder-data"
 import { Separator } from "@/components/ui/separator"
 import { ScrollArea } from "../ui/scroll-area"
 import { useCart } from "@/hooks/use-cart"
@@ -34,14 +33,6 @@ const categoryLinks = [
     { name: 'Network Components', href: '/products?category=Accessories' },
 ]
 
-type SearchResult = {
-    type: 'Product' | 'Category' | 'Brand' | 'Supplier' | 'Attribute';
-    name: string;
-    href: string;
-    context?: string;
-    image?: string;
-}
-
 export function Header() {
   const [isScrolled, setIsScrolled] = useState(false);
   const [currentUser, setCurrentUser] = useState<FirebaseUser | null>(null);
@@ -51,8 +42,6 @@ export function Header() {
   
   // Search state
   const [searchTerm, setSearchTerm] = useState('');
-  const [searchResults, setSearchResults] = useState<SearchResult[]>([]);
-  const [isSearchLoading, setIsSearchLoading] = useState(false);
   const [isSearchFocused, setIsSearchFocused] = useState(false);
   const searchWrapperRef = useRef<HTMLElement>(null);
   
@@ -82,71 +71,20 @@ export function Header() {
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
-  useEffect(() => {
-    if (searchTerm.length < 3) {
-      setSearchResults([]);
-      return;
-    }
-
-    setIsSearchLoading(true);
-    const debounceTimer = setTimeout(() => {
-      const query = searchTerm.toLowerCase();
-
-      const productResults: SearchResult[] = products
-        .filter(p => p.name.toLowerCase().includes(query))
-        .slice(0, 5)
-        .map(p => ({ type: 'Product', name: p.name, href: `/products/${p.permalink || p.id}`, image: p.images[0] }));
-
-      const categoryResults: SearchResult[] = categories
-        .filter(c => c.name.toLowerCase().includes(query))
-        .slice(0, 3)
-        .map(c => ({ type: 'Category', name: c.name, href: `/products?category=${encodeURIComponent(c.name)}` }));
-      
-      const brandResults: SearchResult[] = brands
-        .filter(b => b.name.toLowerCase().includes(query))
-        .slice(0, 3)
-        .map(b => ({ type: 'Brand', name: b.name, href: `/products?brand=${encodeURIComponent(b.name)}` }));
-
-      const supplierResults: SearchResult[] = suppliers
-        .filter(s => s.name.toLowerCase().includes(query))
-        .slice(0, 2)
-        .map(s => ({ type: 'Supplier', name: s.name, href: `/admin/products/suppliers` }));
-
-      const attributeResults: SearchResult[] = [];
-      attributes.forEach(attr => {
-        attr.values.forEach(val => {
-          if (val.toLowerCase().includes(query)) {
-            if (!attributeResults.find(r => r.name === val)) {
-              attributeResults.push({ type: 'Attribute', name: val, context: attr.name, href: `/products?q=${encodeURIComponent(val)}` });
-            }
-          }
-        });
-      });
-
-      const combinedResults = [...productResults, ...categoryResults, ...brandResults, ...supplierResults, ...attributeResults.slice(0, 3)];
-      setSearchResults(combinedResults);
-      setIsSearchLoading(false);
-    }, 300);
-
-    return () => clearTimeout(debounceTimer);
-  }, [searchTerm]);
-
   const handleLogout = async () => {
     await signOut(auth);
     router.push('/sign-in');
     router.refresh();
   };
-
-  const handleResultClick = () => {
-    setIsSearchFocused(false);
-    setSearchTerm('');
-  };
-
-  const groupedResults = searchResults.reduce((acc, result) => {
-    (acc[result.type] = acc[result.type] || []).push(result);
-    return acc;
-  }, {} as Record<string, SearchResult[]>);
   
+  const handleSearchSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (searchTerm.trim()) {
+        router.push(`/products?q=${encodeURIComponent(searchTerm.trim())}`);
+        setIsSearchFocused(false);
+    }
+  }
+
   const searchInput = (
     <Input 
       type="search" 
@@ -162,54 +100,6 @@ export function Header() {
     <Button type="submit" size="icon" className="absolute right-1 top-1/2 -translate-y-1/2 rounded-full bg-primary text-primary-foreground hover:bg-primary/90 h-8 w-8 md:h-10 md:w-10">
       <Search className={cn("h-5 w-5 transition-transform duration-500", isSearchFocused && "rotate-[360deg]")} />
     </Button>
-  );
-
-  const searchResultsPanel = (
-    <div className="absolute top-full mt-2 w-full rounded-b-lg border-x border-b bg-background shadow-lg z-50 max-h-[70vh]">
-      <ScrollArea className="max-h-[calc(70vh-4rem)]">
-        {isSearchLoading ? (
-          <div className="p-6 text-center text-muted-foreground">Searching...</div>
-        ) : searchResults.length > 0 ? (
-          <div className="p-2">
-            {Object.entries(groupedResults).map(([type, results]) => (
-              <div key={type}>
-                <h4 className="px-3 py-2 text-xs font-semibold text-muted-foreground">{type}s</h4>
-                <ul className="space-y-1">
-                  {results.map((result) => (
-                    <li key={`${type}-${result.name}`}>
-                      <Link href={result.href} className="flex items-center gap-4 p-3 rounded-md hover:bg-accent" onClick={handleResultClick}>
-                        {result.image ? (
-                          <Image src={result.image} alt={result.name} width={40} height={40} className="rounded" data-ai-hint="product"/>
-                        ) : (
-                          <div className="h-10 w-10 flex items-center justify-center bg-secondary rounded">
-                            {type === 'Category' && <Boxes className="h-5 w-5 text-muted-foreground" />}
-                            {type === 'Brand' && <Tag className="h-5 w-5 text-muted-foreground" />}
-                            {type === 'Supplier' && <Building className="h-5 w-5 text-muted-foreground" />}
-                            {type === 'Attribute' && <ChevronsRight className="h-5 w-5 text-muted-foreground" />}
-                          </div>
-                        )}
-                        <div className="flex-1 overflow-hidden">
-                          <p className="truncate font-medium">{result.name}</p>
-                          {result.context && <p className="text-xs text-muted-foreground truncate">in {result.context}</p>}
-                        </div>
-                      </Link>
-                    </li>
-                  ))}
-                </ul>
-                <Separator className="my-1 last-of-type:hidden" />
-              </div>
-            ))}
-          </div>
-        ) : (
-          <div className="p-6 text-center text-muted-foreground">No results found for "{searchTerm}"</div>
-        )}
-      </ScrollArea>
-      <div className="p-2 border-t text-center">
-        <Button variant="link" size="sm" asChild>
-          <Link href={`/products?q=${encodeURIComponent(searchTerm)}`} onClick={handleResultClick}>View all results</Link>
-        </Button>
-      </div>
-    </div>
   );
 
   const CartButton = ({ className }: { className?: string }) => (
@@ -380,11 +270,10 @@ export function Header() {
             {/* Desktop Search */}
             <div className="w-full max-w-2xl hidden md:block">
               <div className={cn("w-full transition-all duration-300", isScrolled ? 'max-w-lg' : 'max-w-2xl')}>
-                  <form className="relative" onSubmit={(e) => e.preventDefault()}>
+                  <form className="relative" onSubmit={handleSearchSubmit}>
                       {searchInput}
                       {searchButton}
                   </form>
-                  {isSearchFocused && searchTerm.length >= 3 && searchResultsPanel}
               </div>
             </div>
         </div>
@@ -432,14 +321,11 @@ export function Header() {
 
       {/* Mobile Search Bar */}
       <div className="container mx-auto px-4 py-3 border-t relative md:hidden">
-          <form className="relative" onSubmit={(e) => e.preventDefault()}>
+          <form className="relative" onSubmit={handleSearchSubmit}>
              {searchInput}
              {searchButton}
           </form>
-          {isSearchFocused && searchTerm.length >= 3 && searchResultsPanel}
       </div>
     </header>
   )
 }
-
-    
