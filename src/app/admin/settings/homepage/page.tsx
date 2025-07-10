@@ -403,7 +403,6 @@ function SortableSection({ id, section, onEdit }: { id: string; section: any; on
 }
 
 function ImageField({ value, onChange, previewSize: previewSizeProp = { width: 200, height: 100 } }: { value?: string | File; onChange: (file: File) => void; previewSize?: {width: number, height: number} }) {
-    // Memoize previewSize to prevent re-renders
     const previewSize = useMemo(() => previewSizeProp, [previewSizeProp.width, previewSizeProp.height]);
     
     const [previewSrc, setPreviewSrc] = useState<string>(() => `https://placehold.co/${previewSize.width}x${previewSize.height}.png`);
@@ -522,7 +521,7 @@ function SectionEditor({ methods, sectionIndex, onClose }: { methods: UseFormRet
                 )}
             </div>
             <DialogFooter>
-                <Button onClick={onClose}>Save</Button>
+                <Button onClick={onClose}>Save Changes</Button>
             </DialogFooter>
         </>
     )
@@ -567,7 +566,7 @@ function HeroBannerForm({ onSave, methods, bannerIndex }: { onSave: () => void; 
                 </div>
             </div>
             <DialogFooter>
-                <Button onClick={onSave}>Save</Button>
+                <Button onClick={onSave}>Save Changes</Button>
             </DialogFooter>
         </div>
     );
@@ -664,8 +663,10 @@ function FooterForm({ onSave, methods }: { onSave: () => void; methods: UseFormR
             </div>
         </ScrollArea>
         <DialogFooter className="pt-4">
-            <Button onClick={onSave}>Save</Button>
+            <Button onClick={onSave}>Save Changes</Button>
         </DialogFooter>
         </>
     );
 }
+
+    
