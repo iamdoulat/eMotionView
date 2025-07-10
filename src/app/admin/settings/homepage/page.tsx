@@ -1,11 +1,13 @@
 
 "use client";
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState } from 'react';
 import { useForm, type SubmitHandler } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import Image from 'next/image';
+import { useHomepageSettings } from '@/hooks/use-homepage-settings';
+
 import {
   Card,
   CardContent,
@@ -34,20 +36,8 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Loader2, PlusCircle, Edit, Trash2 } from "lucide-react";
-import { db, storage } from '@/lib/firebase';
-import { doc, getDoc, setDoc } from 'firebase/firestore';
-import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
-import { useToast } from '@/hooks/use-toast';
 import { Skeleton } from '@/components/ui/skeleton';
-import { defaultHomepageSections } from '@/lib/placeholder-data';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
-
-
-interface FeaturedCategory {
-  id: string;
-  name: string;
-  image: string;
-}
 
 const categorySchema = z.object({
   id: z.string().optional(),
@@ -57,48 +47,25 @@ const categorySchema = z.object({
 
 type CategoryFormData = z.infer<typeof categorySchema>;
 
-const SETTINGS_DOC_PATH = 'public_content/homepage';
-
 export default function HomepageSettingsPage() {
-    const { toast } = useToast();
-    const [categories, setCategories] = useState<FeaturedCategory[]>([]);
-    const [isLoading, setIsLoading] = useState(true);
-    const [isSubmitting, setIsSubmitting] = useState(false);
+    const {
+        categories,
+        isLoading,
+        isSubmitting,
+        addCategory,
+        updateCategory,
+        deleteCategory
+    } = useHomepageSettings();
     
     const [isFormOpen, setIsFormOpen] = useState(false);
-    const [editingCategory, setEditingCategory] = useState<FeaturedCategory | null>(null);
-    const [categoryToDelete, setCategoryToDelete] = useState<FeaturedCategory | null>(null);
+    const [editingCategory, setEditingCategory] = useState<any | null>(null);
+    const [categoryToDelete, setCategoryToDelete] = useState<any | null>(null);
 
     const form = useForm<CategoryFormData>({
         resolver: zodResolver(categorySchema)
     });
 
-    const fetchCategories = useCallback(async () => {
-        setIsLoading(true);
-        try {
-            const docRef = doc(db, SETTINGS_DOC_PATH);
-            const docSnap = await getDoc(docRef);
-            if (docSnap.exists()) {
-                const data = docSnap.data();
-                const featuredCategoriesSection = data.sections?.find((s: any) => s.type === 'featured-categories');
-                setCategories(featuredCategoriesSection?.content || []);
-            } else {
-                 const defaultFeaturedCategories = defaultHomepageSections.find(s => s.type === 'featured-categories');
-                 setCategories(defaultFeaturedCategories?.content || []);
-            }
-        } catch (error) {
-            console.error("Failed to fetch categories:", error);
-            toast({ variant: 'destructive', title: 'Error', description: 'Could not load categories.' });
-        } finally {
-            setIsLoading(false);
-        }
-    }, [toast]);
-
-    useEffect(() => {
-        fetchCategories();
-    }, [fetchCategories]);
-
-    const handleOpenForm = (category?: FeaturedCategory) => {
+    const handleOpenForm = (category?: any) => {
         if (category) {
             setEditingCategory(category);
             form.reset({ name: category.name, image: category.image });
@@ -109,71 +76,20 @@ export default function HomepageSettingsPage() {
         setIsFormOpen(true);
     };
 
-    const handleSaveChanges = async (allCategories: FeaturedCategory[]) => {
-        setIsSubmitting(true);
-        try {
-            const docRef = doc(db, SETTINGS_DOC_PATH);
-            const docSnap = await getDoc(docRef);
-            const existingData = docSnap.exists() ? docSnap.data() : { sections: defaultHomepageSections };
-            
-            const updatedSections = existingData.sections.map((section: any) => {
-                if (section.type === 'featured-categories') {
-                    return { ...section, content: allCategories };
-                }
-                return section;
-            });
-            
-            await setDoc(docRef, { sections: updatedSections }, { merge: true });
-            setCategories(allCategories);
-            toast({ title: 'Success', description: 'Homepage settings updated successfully.' });
-        } catch (error) {
-            console.error("Error updating document:", error);
-            toast({ variant: 'destructive', title: 'Save Failed', description: 'Could not update homepage settings.' });
-        } finally {
-            setIsSubmitting(false);
-        }
-    }
-
     const onSubmit: SubmitHandler<CategoryFormData> = async (data) => {
-        setIsSubmitting(true);
-        let imageUrl = editingCategory?.image || '';
+        const file = data.image instanceof FileList && data.image.length > 0 ? data.image[0] : undefined;
         
-        try {
-            if (data.image instanceof FileList && data.image.length > 0) {
-                const file = data.image[0];
-                const storageRef = ref(storage, `homepage/categories/${Date.now()}-${file.name}`);
-                const uploadResult = await uploadBytes(storageRef, file);
-                imageUrl = await getDownloadURL(uploadResult.ref);
-            }
-            
-            const newCategoryData: FeaturedCategory = {
-                id: editingCategory?.id || data.id || `cat-${Date.now()}`,
-                name: data.name,
-                image: imageUrl,
-            };
-
-            let updatedCategories;
-            if (editingCategory) {
-                updatedCategories = categories.map(c => c.id === editingCategory.id ? newCategoryData : c);
-            } else {
-                updatedCategories = [...categories, newCategoryData];
-            }
-            
-            await handleSaveChanges(updatedCategories);
-            setIsFormOpen(false);
-
-        } catch (error: any) {
-            console.error("Error saving category:", error);
-            toast({ variant: 'destructive', title: 'Error', description: error.message || 'Could not save the category.' });
-        } finally {
-            setIsSubmitting(false);
+        if (editingCategory) {
+            await updateCategory(editingCategory, data.name, file);
+        } else {
+            await addCategory(data.name, file);
         }
+        setIsFormOpen(false);
     };
     
-    const handleDelete = async () => {
+    const handleDeleteConfirm = async () => {
         if (!categoryToDelete) return;
-        const updatedCategories = categories.filter(c => c.id !== categoryToDelete.id);
-        await handleSaveChanges(updatedCategories);
+        await deleteCategory(categoryToDelete.id);
         setCategoryToDelete(null);
     }
 
@@ -270,7 +186,7 @@ export default function HomepageSettingsPage() {
                     </AlertDialogHeader>
                     <AlertDialogFooter>
                         <AlertDialogCancel onClick={() => setCategoryToDelete(null)}>Cancel</AlertDialogCancel>
-                        <AlertDialogAction onClick={handleDelete} className="bg-destructive hover:bg-destructive/90">Delete</AlertDialogAction>
+                        <AlertDialogAction onClick={handleDeleteConfirm} className="bg-destructive hover:bg-destructive/90">Delete</AlertDialogAction>
                     </AlertDialogFooter>
                 </AlertDialogContent>
             </AlertDialog>
