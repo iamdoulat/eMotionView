@@ -24,7 +24,7 @@ import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
 import { useToast } from '@/hooks/use-toast';
 import { Skeleton } from '@/components/ui/skeleton';
 import { defaultHeroBanners, type HeroBanner } from '@/lib/placeholder-data';
-import { Form, FormControl, FormField, FormItem, FormMessage } from '@/components/ui/form';
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 
 const heroSchema = z.object({
   headline: z.string().min(1, 'Headline is required'),
