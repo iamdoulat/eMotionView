@@ -12,7 +12,6 @@ import {
   CardDescription,
   CardHeader,
   CardTitle,
-  CardFooter
 } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -47,7 +46,6 @@ import { DndContext, closestCenter, type DragEndEvent } from '@dnd-kit/core';
 import { arrayMove, SortableContext, useSortable, verticalListSortingStrategy } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 
-
 const heroSchema = z.object({
   id: z.coerce.number().optional(),
   headline: z.string().optional(),
@@ -60,7 +58,6 @@ const heroSchema = z.object({
 type HeroFormData = z.infer<typeof heroSchema>;
 
 const SETTINGS_DOC_PATH = 'public_content/homepage';
-
 
 function SortableBannerItem({ banner, onEdit, onDelete }: { banner: HeroBanner; onEdit: (banner: HeroBanner) => void; onDelete: (banner: HeroBanner) => void; }) {
     const {
@@ -131,35 +128,31 @@ export default function HomepageHeroSettingsPage() {
         resolver: zodResolver(heroSchema)
     });
 
-    const fetchHeroData = useCallback(async () => {
-        setIsLoading(true);
-        try {
-            const docRef = doc(db, SETTINGS_DOC_PATH);
-            const docSnap = await getDoc(docRef);
-            if (docSnap.exists() && docSnap.data()?.heroBanners) {
-                setBanners(docSnap.data().heroBanners);
-            } else {
-                 setBanners(defaultHeroBanners);
-            }
-        } catch (error) {
-            console.error("Failed to fetch hero data:", error);
-            toast({ variant: 'destructive', title: 'Error', description: 'Could not load hero data.' });
-        } finally {
-            setIsLoading(false);
-        }
-    }, [toast]);
-
     useEffect(() => {
-        fetchHeroData();
-    }, [fetchHeroData]);
+      const fetchHeroData = async () => {
+          setIsLoading(true);
+          try {
+              const docRef = doc(db, SETTINGS_DOC_PATH);
+              const docSnap = await getDoc(docRef);
+              if (docSnap.exists() && docSnap.data()?.heroBanners) {
+                  setBanners(docSnap.data().heroBanners);
+              } else {
+                   setBanners(defaultHeroBanners);
+              }
+          } catch (error) {
+              console.error("Failed to fetch hero data:", error);
+              toast({ variant: 'destructive', title: 'Error', description: 'Could not load hero data.' });
+          } finally {
+              setIsLoading(false);
+          }
+      };
+      fetchHeroData();
+    }, [toast]);
 
     const handleOpenForm = (banner?: HeroBanner) => {
         if (banner) {
             setEditingBanner(banner);
-            form.reset({
-                ...banner,
-                image: banner.image
-            });
+            form.reset({ ...banner, image: banner.image });
         } else {
             setEditingBanner(null);
             form.reset({ id: Date.now(), headline: '', subheadline: '', buttonText: '', link: '', image: undefined });
@@ -192,8 +185,8 @@ export default function HomepageHeroSettingsPage() {
                 const storageRef = ref(storage, `homepage/hero/${Date.now()}-${file.name}`);
                 const uploadResult = await uploadBytes(storageRef, file);
                 imageUrl = await getDownloadURL(uploadResult.ref);
-            } else if (!imageUrl) {
-                 toast({ variant: 'destructive', title: 'Error', description: 'An image is required for the hero banner.' });
+            } else if (!imageUrl && !editingBanner) {
+                 toast({ variant: 'destructive', title: 'Error', description: 'An image is required for a new hero banner.' });
                  setIsSubmitting(false);
                  return;
             }
@@ -237,8 +230,8 @@ export default function HomepageHeroSettingsPage() {
             const oldIndex = banners.findIndex((b) => b.id === active.id);
             const newIndex = banners.findIndex((b) => b.id === over.id);
             const newOrder = arrayMove(banners, oldIndex, newIndex);
-            setBanners(newOrder); // Optimistically update UI
-            handleSaveChanges(newOrder); // Persist changes
+            setBanners(newOrder); 
+            handleSaveChanges(newOrder); 
         }
     };
 
@@ -343,7 +336,7 @@ export default function HomepageHeroSettingsPage() {
                 <AlertDialogContent>
                     <AlertDialogHeader>
                         <AlertDialogTitle>Are you sure?</AlertDialogTitle>
-                        <AlertDialogDescription>This will permanently delete the hero banner "{bannerToDelete?.headline}". This action cannot be undone.</AlertDialogDescription>
+                        <AlertDialogDescription>This will permanently delete the hero banner "{bannerToDelete?.headline || 'this banner'}". This action cannot be undone.</AlertDialogDescription>
                     </AlertDialogHeader>
                     <AlertDialogFooter>
                         <AlertDialogCancel onClick={() => setBannerToDelete(null)}>Cancel</AlertDialogCancel>
