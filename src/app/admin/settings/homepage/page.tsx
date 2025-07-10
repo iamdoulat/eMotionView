@@ -175,7 +175,7 @@ export default function HomepageSettingsPage() {
         }
     };
     
-    const onSubmit: SubmitHandler<HomepageFormData> = async (data) => {
+    const onSubmit: SubmitHandler<HomepageFormData> = async (formData) => {
         if (!hasPermission) {
             toast({
                 variant: 'destructive',
@@ -196,11 +196,11 @@ export default function HomepageSettingsPage() {
             const dataToSave: any = {
                 heroBanners: [],
                 sections: [],
-                footer: data.footer,
+                footer: formData.footer,
             };
 
             // Process Hero Banners
-            for (const banner of data.heroBanners) {
+            for (const banner of formData.heroBanners) {
                 let imageUrl = banner.image;
                 if (banner.image instanceof File) {
                     imageUrl = await uploadImage(banner.image, 'homepage/hero');
@@ -209,7 +209,7 @@ export default function HomepageSettingsPage() {
             }
 
             // Process Sections
-            for (const section of data.sections) {
+            for (const section of formData.sections) {
                 const newSection: Section = { ...section, content: section.content };
 
                 if (section.content) {
@@ -236,6 +236,7 @@ export default function HomepageSettingsPage() {
             
             const docRef = doc(db, 'public_content', 'homepage');
             await setDoc(docRef, finalCleanData, { merge: true });
+            reset(finalCleanData); // Update form state with new URLs
 
             toast({ title: 'Success', description: 'Homepage settings saved successfully.' });
         } catch (error: any) {
@@ -404,8 +405,11 @@ function SortableSection({ id, section, onEdit }: { id: string; section: any; on
     );
 }
 
-function ImageField({ value, onChange, previewSize = { width: 200, height: 100 } }: { value?: string | File; onChange: (file: File) => void; previewSize?: {width: number, height: number} }) {
-    const [previewSrc, setPreviewSrc] = useState<string>(`https://placehold.co/${previewSize.width}x${previewSize.height}.png`);
+function ImageField({ value, onChange, previewSize: previewSizeProp = { width: 200, height: 100 } }: { value?: string | File; onChange: (file: File) => void; previewSize?: {width: number, height: number} }) {
+    const [previewSrc, setPreviewSrc] = useState<string>('');
+    
+    // Memoize previewSize to prevent re-renders
+    const previewSize = useMemo(() => previewSizeProp, [previewSizeProp.width, previewSizeProp.height]);
 
     useEffect(() => {
         if (typeof value === 'string' && value) {
