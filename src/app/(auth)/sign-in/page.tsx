@@ -106,7 +106,9 @@ export default function SignInPage() {
                     </Link>
                   </div>
                   <FormControl>
-                    <Input type="password" placeholder="••••••" {...field} />
+                    <div className="relative">
+                        <Input type="password" placeholder="••••••" {...field} />
+                    </div>
                   </FormControl>
                   <FormMessage />
                 </FormItem>
