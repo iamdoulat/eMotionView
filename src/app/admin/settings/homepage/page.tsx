@@ -34,12 +34,13 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Loader2, PlusCircle, Edit, Trash2 } from "lucide-react";
-import { db } from '@/lib/firebase';
+import { db, storage } from '@/lib/firebase';
 import { doc, getDoc, setDoc } from 'firebase/firestore';
+import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
 import { useToast } from '@/hooks/use-toast';
 import { Skeleton } from '@/components/ui/skeleton';
 import { defaultHomepageSections } from '@/lib/placeholder-data';
-import { uploadFile } from '@/lib/actions/storage';
+
 
 interface FeaturedCategory {
   id: string;
@@ -139,16 +140,9 @@ export default function HomepageSettingsPage() {
         try {
             if (data.image instanceof File) {
                 const file = data.image;
-                const formData = new FormData();
-                formData.append('file', file);
-                formData.append('path', 'homepage/categories');
-
-                const result = await uploadFile(formData);
-
-                if (result.error) {
-                    throw new Error(result.error);
-                }
-                imageUrl = result.url!;
+                const storageRef = ref(storage, `homepage/categories/${Date.now()}-${file.name}`);
+                const uploadResult = await uploadBytes(storageRef, file);
+                imageUrl = await getDownloadURL(uploadResult.ref);
             }
             
             const newCategoryData: FeaturedCategory = {

@@ -3,16 +3,23 @@ rules_version = '2';
 
 service firebase.storage {
   match /b/{bucket}/o {
+    
+    // Helper function to check if user is an admin or manager
+    function isStaff() {
+      // Allow if user is authenticated and their role in Firestore is Admin or Manager
+      let userRole = get(/databases/(default)/documents/users/$(request.auth.uid)).data.role;
+      return request.auth != null && (userRole == 'Admin' || userRole == 'Manager');
+    }
 
-    // By default, allow public read access to all files.
-    // This is common for files like product images that need to be displayed publicly.
+    // Allow public read access to all files
     match /{allPaths=**} {
-      allow read;
-
-      // Deny all write operations (create, update, delete) from the client-side.
-      // This forces all uploads to go through a secure backend or server action,
-      // which is a more secure pattern.
-      allow write: if false;
+      allow read: if true;
+    }
+    
+    // Allow writes ONLY for staff members.
+    // This single rule covers all write operations (create, update, delete) for all paths.
+    match /{allPaths=**} {
+      allow write: if isStaff();
     }
   }
 }
