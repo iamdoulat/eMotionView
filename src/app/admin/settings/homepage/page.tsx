@@ -40,6 +40,7 @@ import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
 import { useToast } from '@/hooks/use-toast';
 import { Skeleton } from '@/components/ui/skeleton';
 import { defaultHomepageSections } from '@/lib/placeholder-data';
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 
 
 interface FeaturedCategory {
@@ -192,26 +193,38 @@ export default function HomepageSettingsPage() {
                 </CardHeader>
                 <CardContent>
                     {isLoading ? (
-                        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-                            {[...Array(4)].map((_, i) => <Skeleton key={i} className="h-48 w-full" />)}
+                        <div className="space-y-2">
+                           {[...Array(4)].map((_, i) => <Skeleton key={i} className="h-12 w-full" />)}
                         </div>
                     ) : (
-                        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-                            {categories.map((cat) => (
-                                <Card key={cat.id} className="overflow-hidden">
-                                    <div className="aspect-square relative bg-secondary">
-                                        <Image src={cat.image} alt={cat.name} fill className="object-cover" />
-                                    </div>
-                                    <div className="p-4">
-                                        <h3 className="font-semibold truncate">{cat.name}</h3>
-                                        <div className="flex gap-2 mt-2">
-                                            <Button size="sm" variant="outline" className="w-full" onClick={() => handleOpenForm(cat)}><Edit className="mr-2 h-4 w-4" /> Edit</Button>
-                                            <Button size="sm" variant="destructive" className="w-full" onClick={() => setCategoryToDelete(cat)}><Trash2 className="mr-2 h-4 w-4" /> Delete</Button>
-                                        </div>
-                                    </div>
-                                </Card>
-                            ))}
-                        </div>
+                        <Accordion type="single" collapsible className="w-full">
+                           {categories.map((cat) => (
+                               <AccordionItem key={cat.id} value={cat.id}>
+                                   <AccordionTrigger className="font-semibold hover:no-underline">
+                                       <div className="flex items-center gap-4">
+                                            <Image src={cat.image} alt={cat.name} width={40} height={40} className="rounded-md object-cover h-10 w-10" />
+                                            <span>{cat.name}</span>
+                                       </div>
+                                   </AccordionTrigger>
+                                   <AccordionContent>
+                                       <div className="flex items-center justify-between p-4 bg-secondary/50 rounded-md">
+                                           <div>
+                                               <p className="text-sm text-muted-foreground">Image Preview:</p>
+                                                <Image src={cat.image} alt={cat.name} width={100} height={100} className="rounded-md object-cover mt-2 border" />
+                                           </div>
+                                            <div className="flex flex-col gap-2">
+                                                <Button size="sm" variant="outline" onClick={() => handleOpenForm(cat)}>
+                                                    <Edit className="mr-2 h-4 w-4" /> Edit
+                                                </Button>
+                                                <Button size="sm" variant="destructive" onClick={() => setCategoryToDelete(cat)}>
+                                                    <Trash2 className="mr-2 h-4 w-4" /> Delete
+                                                </Button>
+                                            </div>
+                                       </div>
+                                   </AccordionContent>
+                               </AccordionItem>
+                           ))}
+                        </Accordion>
                     )}
                 </CardContent>
             </Card>
