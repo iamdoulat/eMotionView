@@ -106,6 +106,12 @@ export default async function HomePage() {
                   
                   <Carousel
                     opts={{ loop: true }}
+                    plugins={[
+                        Autoplay({
+                            delay: 5000,
+                            stopOnInteraction: true,
+                        }),
+                    ]}
                     className="w-full relative"
                   >
                     <CarouselContent className="h-[440px]">

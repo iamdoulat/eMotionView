@@ -38,11 +38,6 @@ const nextConfig: NextConfig = {
       },
     ],
   },
-  webpack: (config, { isServer }) => {
-    // Allows importing Embla Carousel plugins
-    config.externals.push('embla-carousel-autoplay');
-    return config;
-  },
 };
 
 export default withPWA(nextConfig);
