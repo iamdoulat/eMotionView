@@ -21,7 +21,7 @@ import { useEffect, useState } from "react";
 import { Switch } from "../ui/switch";
 import { storage } from "@/lib/firebase";
 import { ref, uploadBytes, getDownloadURL, deleteObject } from "firebase/storage";
-import { RichTextEditor } from "./rich-text-editor";
+import { Textarea } from "../ui/textarea";
 
 const productSchema = z.object({
     id: z.string().optional(),
@@ -301,9 +301,9 @@ export function ProductForm({ product, onSave, onCancel, isSaving }: ProductForm
                                 </div>
                                 <div className="space-y-2">
                                     <Label htmlFor="digitalProductNote">Download Note for Customer</Label>
-                                    <RichTextEditor
-                                        value={watch('digitalProductNote') || ''}
-                                        onChange={(value) => setValue('digitalProductNote', value)}
+                                    <Textarea
+                                        id="digitalProductNote"
+                                        {...register("digitalProductNote")}
                                         placeholder="e.g. Your download link will expire in 48 hours."
                                     />
                                     {errors.digitalProductNote && <p className="text-destructive text-sm">{errors.digitalProductNote.message}</p>}
@@ -353,10 +353,11 @@ export function ProductForm({ product, onSave, onCancel, isSaving }: ProductForm
                                 render={({ field }) => (
                                     <FormItem>
                                         <FormControl>
-                                            <RichTextEditor
-                                                value={field.value}
-                                                onChange={field.onChange}
+                                            <Textarea
+                                                id="description"
+                                                rows={8}
                                                 placeholder="Write a detailed description for the product..."
+                                                {...field}
                                             />
                                         </FormControl>
                                         <FormMessage />
