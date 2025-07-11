@@ -9,7 +9,7 @@ import Link from 'next/link';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { collection, query, where, getDocs, limit, doc, getDoc, type DocumentSnapshot } from 'firebase/firestore';
 import { db, docToJSON } from '@/lib/firebase';
-import type { Product, Review } from '@/lib/placeholder-data';
+import type { Product, Review, Category } from '@/lib/placeholder-data';
 import { Reviews } from '@/components/reviews';
 import { ProductDetailsClient } from '@/components/product-details-client';
 
@@ -60,6 +60,10 @@ export default async function ProductDetailPage({ params }: { params: { id: stri
     reviewCount,
   };
 
+  const categoriesSnapshot = await getDocs(collection(db, 'categories'));
+  const allCategories = categoriesSnapshot.docs.map(docToJSON) as Category[];
+  const productCategories = allCategories.filter(c => product.categories.includes(c.name));
+
 
   return (
     <div className="bg-background">
@@ -68,7 +72,7 @@ export default async function ProductDetailPage({ params }: { params: { id: stri
           items={[
             { label: 'Home', href: '/' },
             { label: 'Products', href: '/products' },
-            ...product.categories.map(c => ({ label: c, href: `/products?category=${c}` })),
+            ...productCategories.map(c => ({ label: c.name, href: `/products?category=${c.permalink}` })),
             { label: product.name, href: `/products/${product.permalink}` },
           ]}
         />

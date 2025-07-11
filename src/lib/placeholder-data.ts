@@ -1,4 +1,5 @@
 
+
 export type Product = {
   id: string;
   name: string;
@@ -84,6 +85,7 @@ export type Category = {
   id: string;
   name: string;
   description: string;
+  permalink?: string;
 };
 
 export type Brand = {
@@ -367,13 +369,13 @@ export const customerUsers = allUsers.filter(u => u.role === 'Customer');
 
 
 export const categories: Omit<Category, 'id'>[] = [
-    { name: 'Wearables', description: 'Smartwatches and fitness trackers.' },
-    { name: 'Audio', description: 'Headphones, earbuds, and speakers.' },
-    { name: 'Smart Home', description: 'Connected devices for your home.' },
-    { name: 'Accessories', description: 'Chargers, cables, and other essentials.' },
-    { name: 'Laptops', description: 'Portable computers for work and play.' },
-    { name: 'Smartphones', description: 'The latest mobile phones.' },
-    { name: 'Drones', description: 'Unmanned aerial vehicles for fun and professional use.' },
+    { name: 'Wearables', description: 'Smartwatches and fitness trackers.', permalink: 'wearables' },
+    { name: 'Audio', description: 'Headphones, earbuds, and speakers.', permalink: 'audio' },
+    { name: 'Smart Home', description: 'Connected devices for your home.', permalink: 'smart-home' },
+    { name: 'Accessories', description: 'Chargers, cables, and other essentials.', permalink: 'accessories' },
+    { name: 'Laptops', description: 'Portable computers for work and play.', permalink: 'laptops' },
+    { name: 'Smartphones', description: 'The latest mobile phones.', permalink: 'smartphones' },
+    { name: 'Drones', description: 'Unmanned aerial vehicles for fun and professional use.', permalink: 'drones' },
 ];
 export const brands: Omit<Brand, 'id'>[] = [
     { name: 'KOSPET', logo: 'https://placehold.co/100x40.png' },

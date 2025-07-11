@@ -4,7 +4,7 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { Button } from '@/components/ui/button';
 import { ProductCard } from '@/components/product-card';
-import type { Product } from '@/lib/placeholder-data';
+import type { Product, Category } from '@/lib/placeholder-data';
 import { defaultHeroBanners, defaultHomepageSections } from '@/lib/placeholder-data';
 import { Card, CardContent } from '@/components/ui/card';
 import { CategoryMenu } from '@/components/category-menu';
@@ -56,12 +56,17 @@ export default async function HomePage() {
 
   // Fetch homepage settings from Firestore, with a fallback for public users
   let settings: { [key: string]: any } | null = null;
+  let allCategories: Category[] = [];
   try {
     const settingsRef = doc(db, 'public_content', 'homepage');
+    const categoriesSnapshot = await getDocs(collection(db, 'categories'));
+
     const settingsSnap = await getDoc(settingsRef);
     if (settingsSnap.exists()) {
       settings = settingsSnap.data();
     }
+    allCategories = categoriesSnapshot.docs.map(docToJSON) as Category[];
+
   } catch (error) {
     console.warn("Could not load homepage settings, likely due to permissions. Falling back to default layout.");
   }
@@ -70,9 +75,9 @@ export default async function HomePage() {
   const sections = settings?.sections || defaultHomepageSections;
 
 
-  const getProductsForGrid = (category: string) => {
-    if (!category) return [];
-    return allProducts.filter(p => Array.isArray(p.categories) && p.categories.includes(category)).slice(0, 6);
+  const getProductsForGrid = (categoryName: string) => {
+    if (!categoryName) return [];
+    return allProducts.filter(p => Array.isArray(p.categories) && p.categories.includes(categoryName)).slice(0, 6);
   }
 
   return (
@@ -112,16 +117,19 @@ export default async function HomePage() {
                         </div>
                         <Carousel opts={{ align: "start", dragFree: true }} className="w-full">
                             <CarouselContent className="-ml-4">
-                            {categoryItems.map((category: any) => (
+                            {categoryItems.map((category: any) => {
+                                const categoryData = allCategories.find(c => c.name === category.name);
+                                const permalink = categoryData?.permalink || encodeURIComponent(category.name);
+                                return (
                                 <CarouselItem key={category.id} className="basis-auto pl-4 md:pl-6">
-                                <Link href={`/products?category=${encodeURIComponent(category.name)}`} className="group text-center block w-[130px]">
+                                <Link href={`/products?category=${permalink}`} className="group text-center block w-[130px]">
                                     <div className="w-32 h-32 mx-auto rounded-full bg-secondary/50 flex items-center justify-center overflow-hidden border-2 border-transparent group-hover:border-primary transition-all duration-300 group-hover:shadow-lg">
                                         <Image src={category.image} alt={category.name} width={128} height={128} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-300" data-ai-hint="category icon" />
                                     </div>
                                     <h3 className="mt-4 font-semibold text-sm text-foreground group-hover:text-primary transition-colors truncate">{category.name}</h3>
                                 </Link>
                                 </CarouselItem>
-                            ))}
+                            )})}
                             </CarouselContent>
                         </Carousel>
                     </section>
@@ -130,12 +138,15 @@ export default async function HomePage() {
             case 'product-grid':
                 const products = getProductsForGrid(section.content?.category);
                 if (products.length === 0) return null;
+                const categoryData = allCategories.find(c => c.name === section.content?.category);
+                const permalink = categoryData?.permalink || encodeURIComponent(section.content?.category);
+
                 return (
                     <section key={section.id} className="container mx-auto px-4 py-4">
                         <div className="flex justify-between items-center mb-8 border-b pb-4">
                             <h2 className="font-headline text-2xl font-bold tracking-tight text-foreground">{section.name}</h2>
                             <Button asChild variant="link" className="text-primary">
-                                <Link href={`/products?category=${encodeURIComponent(section.content?.category)}`}>See all</Link>
+                                <Link href={`/products?category=${permalink}`}>See all</Link>
                             </Button>
                         </div>
                         <div className="grid grid-cols-2 gap-x-4 gap-y-8 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 xl:gap-x-6">

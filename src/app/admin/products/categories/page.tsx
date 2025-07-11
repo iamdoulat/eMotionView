@@ -24,6 +24,7 @@ import { db, docToJSON } from "@/lib/firebase";
 const categorySchema = z.object({
   id: z.string().optional(),
   name: z.string().min(1, "Category name is required"),
+  permalink: z.string().optional(),
   description: z.string().min(1, "Description is required"),
 });
 
@@ -38,9 +39,26 @@ export default function CategoriesPage() {
   const [categoryToDelete, setCategoryToDelete] = useState<Category | null>(null);
   const { toast } = useToast();
 
-  const { register, handleSubmit, reset, formState: { errors } } = useForm<CategoryFormData>({
+  const { register, handleSubmit, reset, formState: { errors }, setValue, watch } = useForm<CategoryFormData>({
     resolver: zodResolver(categorySchema),
   });
+
+  const [isPermalinkManuallyEdited, setIsPermalinkManuallyEdited] = useState(false);
+  const categoryName = watch('name');
+
+  useEffect(() => {
+    if (!isPermalinkManuallyEdited && categoryName) {
+      const generatedPermalink = categoryName
+        .toLowerCase()
+        .trim()
+        .replace(/&/g, 'and')
+        .replace(/[^a-z0-9\s-]/g, '')
+        .replace(/\s+/g, '-')
+        .replace(/-+/g, '-');
+      setValue('permalink', generatedPermalink);
+    }
+  }, [categoryName, isPermalinkManuallyEdited, setValue]);
+
 
   useEffect(() => {
     const fetchCategories = async () => {
@@ -64,8 +82,15 @@ export default function CategoriesPage() {
   }, [toast]);
 
   const handleOpenForm = (category?: Category) => {
-    setCategoryToEdit(category || null);
-    reset(category || { name: "", description: "" });
+    if (category) {
+      setCategoryToEdit(category);
+      reset(category);
+      setIsPermalinkManuallyEdited(true);
+    } else {
+      setCategoryToEdit(null);
+      reset({ name: "", permalink: "", description: "" });
+      setIsPermalinkManuallyEdited(false);
+    }
     setIsFormOpen(true);
   };
 
@@ -134,6 +159,7 @@ export default function CategoriesPage() {
             <TableHeader>
               <TableRow>
                 <TableHead>Category Name</TableHead>
+                <TableHead>Permalink</TableHead>
                 <TableHead>Description</TableHead>
                 <TableHead>
                   <span className="sr-only">Actions</span>
@@ -143,13 +169,14 @@ export default function CategoriesPage() {
             <TableBody>
               {isLoading ? (
                   <TableRow>
-                    <TableCell colSpan={3} className="h-24 text-center">
+                    <TableCell colSpan={4} className="h-24 text-center">
                       <Loader2 className="h-6 w-6 animate-spin mx-auto" />
                     </TableCell>
                   </TableRow>
               ) : categories.length > 0 ? categories.map((category) => (
                 <TableRow key={category.id}>
                   <TableCell className="font-medium">{category.name}</TableCell>
+                  <TableCell className="text-muted-foreground">/products/{category.permalink}</TableCell>
                   <TableCell>{category.description}</TableCell>
                   <TableCell className="text-right">
                     <DropdownMenu>
@@ -172,7 +199,7 @@ export default function CategoriesPage() {
                 </TableRow>
               )) : (
                 <TableRow>
-                  <TableCell colSpan={3} className="h-24 text-center">
+                  <TableCell colSpan={4} className="h-24 text-center">
                     No categories found. Start by adding one.
                   </TableCell>
                 </TableRow>
@@ -201,6 +228,19 @@ export default function CategoriesPage() {
                 <Label htmlFor="name">Category Name</Label>
                 <Input id="name" {...register("name")} disabled={isSubmitting}/>
                 {errors.name && <p className="text-destructive text-sm">{errors.name.message}</p>}
+              </div>
+               <div className="space-y-2">
+                <Label htmlFor="permalink">Permalink</Label>
+                <Input
+                    id="permalink"
+                    {...register("permalink")}
+                    onChange={(e) => {
+                        setIsPermalinkManuallyEdited(true);
+                        setValue('permalink', e.target.value);
+                    }}
+                    disabled={isSubmitting}
+                />
+                {errors.permalink && <p className="text-destructive text-sm">{errors.permalink.message}</p>}
               </div>
               <div className="space-y-2">
                 <Label htmlFor="description">Description</Label>
