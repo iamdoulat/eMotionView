@@ -51,12 +51,12 @@ export function HomepageCarousel({ banners }: HomepageCarouselProps) {
                         stopOnInteraction: true,
                     }),
                 ]}
-                className="w-full"
+                className="w-full rounded-lg overflow-hidden"
             >
                 <CarouselContent className="h-[440px]">
                     {banners.map((banner, index) => (
                         <CarouselItem key={banner.id}>
-                            <div className="relative h-full w-full rounded-lg overflow-hidden group">
+                            <div className="relative h-full w-full group">
                                 <Image
                                     src={banner.image}
                                     alt={banner.headline || `Hero Banner ${index + 1}`}
@@ -108,4 +108,3 @@ export function HomepageCarousel({ banners }: HomepageCarouselProps) {
         </div>
     );
 }
-
