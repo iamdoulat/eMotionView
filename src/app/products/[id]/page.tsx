@@ -12,6 +12,7 @@ import { db, docToJSON } from '@/lib/firebase';
 import type { Product, Review, Category, Brand } from '@/lib/placeholder-data';
 import { Reviews } from '@/components/reviews';
 import { ProductDetailsClient } from '@/components/product-details-client';
+import { ScrollArea } from '@/components/ui/scroll-area';
 
 export default async function ProductDetailPage({ params }: { params: { id: string } }) {
   const slug = params.id;
@@ -103,13 +104,15 @@ export default async function ProductDetailPage({ params }: { params: { id: stri
         
         <div className="mt-12">
           <Tabs defaultValue="specification" className="w-full">
-            <TabsList className="border-b-2 border-border rounded-none bg-transparent p-0 h-auto justify-start">
-              <TabsTrigger value="specification" className="data-[state=active]:border-b-2 data-[state=active]:border-primary data-[state=active]:text-foreground data-[state=active]:shadow-none rounded-none bg-transparent text-lg font-semibold py-3 mr-4">Specification</TabsTrigger>
-              <TabsTrigger value="description" className="data-[state=active]:border-b-2 data-[state=active]:border-primary data-[state=active]:text-foreground data-[state=active]:shadow-none rounded-none bg-transparent text-lg font-semibold py-3 mr-4">Description</TabsTrigger>
-              <TabsTrigger value="reviews" id="reviews" className="data-[state=active]:border-b-2 data-[state=active]:border-primary data-[state=active]:text-foreground data-[state=active]:shadow-none rounded-none bg-transparent text-lg font-semibold py-3 mr-4">Reviews</TabsTrigger>
-              <TabsTrigger value="questions" className="data-[state=active]:border-b-2 data-[state=active]:border-primary data-[state=active]:text-foreground data-[state=active]:shadow-none rounded-none bg-transparent text-lg font-semibold py-3 mr-4">Questions</TabsTrigger>
-              <TabsTrigger value="video" className="data-[state=active]:border-b-2 data-[state=active]:border-primary data-[state=active]:text-foreground data-[state=active]:shadow-none rounded-none bg-transparent text-lg font-semibold py-3 mr-4">Video</TabsTrigger>
-            </TabsList>
+            <ScrollArea className="w-full whitespace-nowrap rounded-md border-b-2">
+                <TabsList className="bg-transparent p-0 h-auto justify-start w-max">
+                    <TabsTrigger value="specification" className="data-[state=active]:border-b-2 data-[state=active]:border-primary data-[state=active]:text-foreground data-[state=active]:shadow-none rounded-none bg-transparent text-lg font-semibold py-3 mr-4">Specification</TabsTrigger>
+                    <TabsTrigger value="description" className="data-[state=active]:border-b-2 data-[state=active]:border-primary data-[state=active]:text-foreground data-[state=active]:shadow-none rounded-none bg-transparent text-lg font-semibold py-3 mr-4">Description</TabsTrigger>
+                    <TabsTrigger value="reviews" id="reviews" className="data-[state=active]:border-b-2 data-[state=active]:border-primary data-[state=active]:text-foreground data-[state=active]:shadow-none rounded-none bg-transparent text-lg font-semibold py-3 mr-4">Reviews</TabsTrigger>
+                    <TabsTrigger value="questions" className="data-[state=active]:border-b-2 data-[state=active]:border-primary data-[state=active]:text-foreground data-[state=active]:shadow-none rounded-none bg-transparent text-lg font-semibold py-3 mr-4">Questions</TabsTrigger>
+                    <TabsTrigger value="video" className="data-[state=active]:border-b-2 data-[state=active]:border-primary data-[state=active]:text-foreground data-[state=active]:shadow-none rounded-none bg-transparent text-lg font-semibold py-3 mr-4">Video</TabsTrigger>
+                </TabsList>
+            </ScrollArea>
             <TabsContent value="specification" className="mt-6">
               <Card>
                 <CardHeader>
