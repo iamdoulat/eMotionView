@@ -4,14 +4,17 @@
 import { useForm, useFieldArray, type SubmitHandler } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import type { Product } from "@/lib/placeholder-data";
-import { categories, brands, suppliers, attributes } from "@/lib/placeholder-data";
+import type { Product, Category } from "@/lib/placeholder-data";
+import { brands, suppliers, attributes } from "@/lib/placeholder-data";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Loader2, Trash2, XCircle } from "lucide-react";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Loader2, Trash2, XCircle, Check, ChevronsUpDown } from "lucide-react";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { DialogFooter } from "@/components/ui/dialog";
 import Image from "next/image";
@@ -19,9 +22,12 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Card } from "@/components/ui/card";
 import { useEffect, useState } from "react";
 import { Switch } from "../ui/switch";
-import { storage } from "@/lib/firebase";
+import { storage, db, docToJSON } from "@/lib/firebase";
 import { ref, uploadBytes, getDownloadURL, deleteObject } from "firebase/storage";
 import { Textarea } from "../ui/textarea";
+import { collection, getDocs } from "firebase/firestore";
+import { cn } from "@/lib/utils";
+import { Badge } from "../ui/badge";
 
 const productSchema = z.object({
     id: z.string().optional(),
@@ -30,7 +36,7 @@ const productSchema = z.object({
     description: z.string().min(1, "Description is required"),
     price: z.coerce.number().min(0, "Price must be a positive number"),
     originalPrice: z.coerce.number().optional(),
-    category: z.string().min(1, "Category is required"),
+    categories: z.array(z.string()).min(1, "At least one category is required."),
     brand: z.string().min(1, "Brand is required"),
     sku: z.string().min(1, "SKU is required"),
     manageStock: z.boolean().default(true),
@@ -63,10 +69,22 @@ interface ProductFormProps {
 }
 
 export function ProductForm({ product, onSave, onCancel, isSaving }: ProductFormProps) {
+    const [dbCategories, setDbCategories] = useState<Category[]>([]);
+    
+    useEffect(() => {
+        const fetchCategories = async () => {
+            const categoriesSnapshot = await getDocs(collection(db, 'categories'));
+            const categoryList = categoriesSnapshot.docs.map(doc => docToJSON(doc) as Category);
+            setDbCategories(categoryList);
+        };
+        fetchCategories();
+    }, []);
+
     const form = useForm<ProductFormData>({
         resolver: zodResolver(productSchema),
         defaultValues: product ? {
             ...product,
+            categories: product.categories || [],
             permalink: product.permalink || '',
             productType: product.productType || 'Physical',
             manageStock: product.manageStock ?? (product.productType === 'Physical'),
@@ -83,7 +101,7 @@ export function ProductForm({ product, onSave, onCancel, isSaving }: ProductForm
             description: "",
             price: 0,
             originalPrice: undefined,
-            category: "",
+            categories: [],
             brand: "",
             sku: "",
             manageStock: true,
@@ -221,7 +239,7 @@ export function ProductForm({ product, onSave, onCancel, isSaving }: ProductForm
             description: data.description,
             price: data.price,
             originalPrice: data.originalPrice,
-            category: data.category,
+            categories: data.categories,
             brand: data.brand,
             sku: data.sku,
             manageStock: data.manageStock,
@@ -434,23 +452,67 @@ export function ProductForm({ product, onSave, onCancel, isSaving }: ProductForm
                         </Card>
 
 
-                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                            <FormField
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                             <FormField
                                 control={control}
-                                name="category"
+                                name="categories"
                                 render={({ field }) => (
-                                    <FormItem>
-                                        <FormLabel>Category</FormLabel>
-                                        <Select onValueChange={field.onChange} defaultValue={field.value}>
-                                            <FormControl>
-                                                <SelectTrigger>
-                                                    <SelectValue placeholder="Select a category" />
-                                                </SelectTrigger>
-                                            </FormControl>
-                                            <SelectContent>
-                                                {categories.map(cat => <SelectItem key={cat.name} value={cat.name}>{cat.name}</SelectItem>)}
-                                            </SelectContent>
-                                        </Select>
+                                    <FormItem className="flex flex-col">
+                                        <FormLabel>Categories</FormLabel>
+                                        <Popover>
+                                            <PopoverTrigger asChild>
+                                                <FormControl>
+                                                    <Button
+                                                        variant="outline"
+                                                        role="combobox"
+                                                        className={cn(
+                                                            "w-full justify-between",
+                                                            !field.value?.length && "text-muted-foreground"
+                                                        )}
+                                                    >
+                                                        <span className="truncate">
+                                                            {field.value?.length ? `${field.value.length} selected` : "Select categories"}
+                                                        </span>
+                                                        <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                                                    </Button>
+                                                </FormControl>
+                                            </PopoverTrigger>
+                                            <PopoverContent className="w-[--radix-popover-trigger-width] p-0">
+                                                <Command>
+                                                    <CommandInput placeholder="Search categories..." />
+                                                    <CommandList>
+                                                        <CommandEmpty>No categories found.</CommandEmpty>
+                                                        <CommandGroup>
+                                                            {dbCategories.map((category) => (
+                                                                <CommandItem
+                                                                    key={category.id}
+                                                                    onSelect={() => {
+                                                                        const selected = field.value || [];
+                                                                        const isSelected = selected.includes(category.name);
+                                                                        const newSelection = isSelected
+                                                                            ? selected.filter((name) => name !== category.name)
+                                                                            : [...selected, category.name];
+                                                                        field.onChange(newSelection);
+                                                                    }}
+                                                                >
+                                                                    <Check
+                                                                        className={cn(
+                                                                            "mr-2 h-4 w-4",
+                                                                            (field.value || []).includes(category.name) ? "opacity-100" : "opacity-0"
+                                                                        )}
+                                                                    />
+                                                                    {category.name}
+                                                                </CommandItem>
+                                                            ))}
+                                                        </CommandGroup>
+                                                    </CommandList>
+                                                </Command>
+                                            </PopoverContent>
+                                        </Popover>
+                                        <FormDescription>
+                                            Selected: {field.value?.join(", ") || "None"}
+                                        </FormDescription>
+                                        <FormMessage />
                                     </FormItem>
                                 )}
                             />
@@ -470,29 +532,32 @@ export function ProductForm({ product, onSave, onCancel, isSaving }: ProductForm
                                                 {brands.map(brand => <SelectItem key={brand.name} value={brand.name}>{brand.name}</SelectItem>)}
                                             </SelectContent>
                                         </Select>
-                                    </FormItem>
-                                )}
-                            />
-                            <FormField
-                                control={control}
-                                name="supplier"
-                                render={({ field }) => (
-                                    <FormItem>
-                                        <FormLabel>Supplier</FormLabel>
-                                        <Select onValueChange={field.onChange} defaultValue={field.value}>
-                                            <FormControl>
-                                                <SelectTrigger>
-                                                    <SelectValue placeholder="Select a supplier" />
-                                                </SelectTrigger>
-                                            </FormControl>
-                                            <SelectContent>
-                                                {suppliers.map(sup => <SelectItem key={sup.name} value={sup.name}>{sup.name}</SelectItem>)}
-                                            </SelectContent>
-                                        </Select>
+                                        <FormMessage />
                                     </FormItem>
                                 )}
                             />
                         </div>
+                        
+                         <FormField
+                            control={control}
+                            name="supplier"
+                            render={({ field }) => (
+                                <FormItem>
+                                    <FormLabel>Supplier</FormLabel>
+                                    <Select onValueChange={field.onChange} defaultValue={field.value}>
+                                        <FormControl>
+                                            <SelectTrigger>
+                                                <SelectValue placeholder="Select a supplier" />
+                                            </SelectTrigger>
+                                        </FormControl>
+                                        <SelectContent>
+                                            {suppliers.map(sup => <SelectItem key={sup.name} value={sup.name}>{sup.name}</SelectItem>)}
+                                        </SelectContent>
+                                    </Select>
+                                    <FormMessage />
+                                </FormItem>
+                            )}
+                        />
                          <div className="space-y-2">
                             <Label htmlFor="points">Club Points</Label>
                             <Input id="points" type="number" {...register("points")} placeholder="e.g. 100" />

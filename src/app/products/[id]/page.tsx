@@ -1,4 +1,5 @@
 
+
 import Image from 'next/image';
 import { notFound } from 'next/navigation';
 import { Breadcrumb } from '@/components/breadcrumb';
@@ -67,7 +68,7 @@ export default async function ProductDetailPage({ params }: { params: { id: stri
           items={[
             { label: 'Home', href: '/' },
             { label: 'Products', href: '/products' },
-            { label: product.category, href: `/products?category=${product.category}` },
+            ...product.categories.map(c => ({ label: c, href: `/products?category=${c}` })),
             { label: product.name, href: `/products/${product.permalink}` },
           ]}
         />

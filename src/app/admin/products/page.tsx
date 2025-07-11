@@ -145,9 +145,9 @@ export default function AdminProductsPage() {
                 </TableHead>
                 <TableHead>Name</TableHead>
                 <TableHead>Status</TableHead>
+                <TableHead>Categories</TableHead>
                 <TableHead className="hidden md:table-cell">Price</TableHead>
                 <TableHead className="hidden md:table-cell">Stock</TableHead>
-                <TableHead className="hidden md:table-cell">SKU</TableHead>
                 <TableHead>
                   <span className="sr-only">Actions</span>
                 </TableHead>
@@ -182,9 +182,13 @@ export default function AdminProductsPage() {
                         {isInStock ? "In Stock" : "Out of Stock"}
                       </Badge>
                     </TableCell>
+                    <TableCell>
+                      <div className="flex flex-wrap gap-1">
+                        {product.categories?.map(cat => <Badge key={cat} variant="secondary" className="whitespace-nowrap">{cat}</Badge>)}
+                      </div>
+                    </TableCell>
                     <TableCell className="hidden md:table-cell">${product.price.toFixed(2)}</TableCell>
                     <TableCell className="hidden md:table-cell">{isStockManaged ? product.stock : "N/A"}</TableCell>
-                    <TableCell className="hidden md:table-cell">{product.sku}</TableCell>
                     <TableCell>
                       <DropdownMenu>
                         <DropdownMenuTrigger asChild>

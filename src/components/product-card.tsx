@@ -1,4 +1,5 @@
 
+
 "use client"
 
 import Image from 'next/image';
@@ -98,7 +99,7 @@ export function ProductCard({ product }: ProductCardProps) {
                 width={300}
                 height={300}
                 className="w-full h-full object-contain p-4 group-hover:scale-125 transition-transform duration-300"
-                data-ai-hint={`${product.category} product`}
+                data-ai-hint={`${product.categories.join(' ')} product`}
               />
             </div>
           </DialogTrigger>
@@ -160,7 +161,7 @@ export function ProductCard({ product }: ProductCardProps) {
                     alt={product.name}
                     fill
                     className="w-full h-full object-contain rounded-lg"
-                    data-ai-hint={`${product.category} product`}
+                    data-ai-hint={`${product.categories.join(' ')} product`}
                 />
             </div>
             <div className="flex gap-2 mt-4">
@@ -176,7 +177,7 @@ export function ProductCard({ product }: ProductCardProps) {
                             width={60}
                             height={60}
                             className="w-full h-full object-contain"
-                            data-ai-hint={`${product.category} product`}
+                            data-ai-hint={`${product.categories.join(' ')} product`}
                         />
                     </button>
                 ))}

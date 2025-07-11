@@ -1,4 +1,5 @@
 
+
 import { ProductCard } from '@/components/product-card';
 import type { Product } from '@/lib/placeholder-data';
 import { Input } from '@/components/ui/input';
@@ -18,7 +19,7 @@ export default async function ProductsPage() {
   // Enrich products with review data
   products = await enrichProductsWithReviews(products);
 
-  const categories = [...new Set(products.map(p => p.category))];
+  const categories = [...new Set(products.flatMap(p => p.categories))];
   const brands = [...new Set(products.map(p => p.brand))];
   
   return (

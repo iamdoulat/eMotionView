@@ -7,7 +7,7 @@ export type Product = {
   price: number;
   originalPrice?: number;
   discountPercentage?: number;
-  category: string;
+  categories: string[];
   brand: string;
   rating: number;
   reviewCount: number;
@@ -175,7 +175,7 @@ export const products: Product[] = [
       price: 129,
       originalPrice: 159,
       discountPercentage: 19,
-      category: 'Wearables',
+      categories: ['Wearables'],
       brand: 'KOSPET',
       rating: 4.8,
       reviewCount: 150,
@@ -207,7 +207,7 @@ export const products: Product[] = [
       permalink: 'haylou-solar-plus-rt3-smartwatch',
       description: 'A stylish and affordable smartwatch with a crisp AMOLED display, Bluetooth phone calls, and extensive health monitoring features.',
       price: 55,
-      category: 'Wearables',
+      categories: ['Wearables'],
       brand: 'Haylou',
       rating: 4.6,
       reviewCount: 230,
@@ -239,7 +239,7 @@ export const products: Product[] = [
         permalink: 'soundpeats-air4-wireless-earbuds',
         description: 'Experience superior sound with Qualcomm aptX Lossless audio, adaptive hybrid active noise cancellation, and long battery life.',
         price: 79,
-        category: 'Audio',
+        categories: ['Audio'],
         brand: 'Soundpeats',
         rating: 4.7,
         reviewCount: 95,
@@ -273,7 +273,7 @@ export const products: Product[] = [
       price: 35,
       originalPrice: 45,
       discountPercentage: 22,
-      category: 'Audio',
+      categories: ['Audio'],
       brand: 'QCY',
       rating: 4.5,
       reviewCount: 512,
@@ -396,10 +396,10 @@ export const suppliers: Omit<Supplier, 'id'>[] = [
 ];
 
 export const predefinedProductGrids: Section[] = [
-    { id: 'new-arr', name: "New Arrivals", type: 'product-grid', content: null },
-    { id: 'pop-prod', name: "Popular Products", type: 'product-grid', content: null },
-    { id: 'smart-watches-grid', name: "Smart Watches", type: 'product-grid', content: null },
-    { id: 'headphones-grid', name: "Headphones", type: 'product-grid', content: null },
+    { id: 'new-arr', name: "New Arrivals", type: 'product-grid', content: { category: 'Wearables'} },
+    { id: 'pop-prod', name: "Popular Products", type: 'product-grid', content: { category: 'Audio'} },
+    { id: 'smart-watches-grid', name: "Smart Watches", type: 'product-grid', content: { category: 'Wearables'} },
+    { id: 'headphones-grid', name: "Headphones", type: 'product-grid', content: { category: 'Audio' } },
 ];
 
 export const defaultHomepageSections: Section[] = [
