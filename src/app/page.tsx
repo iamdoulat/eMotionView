@@ -46,12 +46,6 @@ export default async function HomePage() {
   
   allProducts = await enrichProductsWithReviews(allProducts);
   
-  // These product lists are used for the hardcoded 'product-grid' sections
-  const newArrivals = allProducts.slice(0, 6);
-  const popularProducts = [...allProducts].sort((a, b) => (b.reviewCount || 0) - (a.reviewCount || 0)).slice(0, 6);
-  const smartWatches = allProducts.filter(p => p.category === 'Wearables').slice(0, 6);
-  const headphones = allProducts.filter(p => p.category === 'Audio').slice(0, 6);
-
   const mainNavLinks = [
     { href: "#", label: "Campaign" },
     { href: "/products", label: "Trending" },
@@ -76,14 +70,9 @@ export default async function HomePage() {
   const sections = settings?.sections || defaultHomepageSections;
 
 
-  const getProductsForGrid = (sectionName: string) => {
-    switch (sectionName) {
-        case 'New Arrivals': return newArrivals;
-        case 'Popular Products': return popularProducts;
-        case 'Smart Watches': return smartWatches;
-        case 'Headphones': return headphones;
-        default: return [];
-    }
+  const getProductsForGrid = (category: string) => {
+    if (!category) return [];
+    return allProducts.filter(p => p.category === category).slice(0, 6);
   }
 
   return (
@@ -139,14 +128,14 @@ export default async function HomePage() {
                 );
 
             case 'product-grid':
-                const products = getProductsForGrid(section.name);
+                const products = getProductsForGrid(section.content?.category);
                 if (products.length === 0) return null;
                 return (
                     <section key={section.id} className="container mx-auto px-4 py-4">
                         <div className="flex justify-between items-center mb-8 border-b pb-4">
                             <h2 className="font-headline text-2xl font-bold tracking-tight text-foreground">{section.name}</h2>
                             <Button asChild variant="link" className="text-primary">
-                                <Link href="/products">See all</Link>
+                                <Link href={`/products?category=${encodeURIComponent(section.content?.category)}`}>See all</Link>
                             </Button>
                         </div>
                         <div className="grid grid-cols-2 gap-x-4 gap-y-8 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 xl:gap-x-6">

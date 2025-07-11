@@ -23,8 +23,8 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { GripVertical, Loader2, PlusCircle, Edit, Trash2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { db } from '@/lib/firebase';
-import { doc, getDoc, setDoc } from 'firebase/firestore';
-import { defaultHomepageSections, type Section, predefinedProductGrids } from '@/lib/placeholder-data';
+import { collection, doc, getDoc, getDocs, setDoc } from 'firebase/firestore';
+import { defaultHomepageSections, type Section, predefinedProductGrids, type Category } from '@/lib/placeholder-data';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
@@ -47,6 +47,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
 const SETTINGS_DOC_PATH = 'public_content/homepage';
 
@@ -77,34 +78,46 @@ function SortableItem({ id, children }: { id: string, children: React.ReactNode 
 export default function HomepageLayoutPage() {
   const { toast } = useToast();
   const [sections, setSections] = useState<Section[]>([]);
+  const [productCategories, setProductCategories] = useState<Category[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
   
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [sectionToEdit, setSectionToEdit] = useState<Section | null>(null);
   const [editedName, setEditedName] = useState("");
+  const [selectedCategory, setSelectedCategory] = useState("");
 
   const [sectionToDelete, setSectionToDelete] = useState<Section | null>(null);
 
   useEffect(() => {
-    const fetchSections = async () => {
+    const fetchData = async () => {
       setIsLoading(true);
       try {
-        const docRef = doc(db, SETTINGS_DOC_PATH);
-        const docSnap = await getDoc(docRef);
-        if (docSnap.exists() && docSnap.data()?.sections) {
-          setSections(docSnap.data().sections);
+        const sectionsDocRef = doc(db, SETTINGS_DOC_PATH);
+        const categoriesCollectionRef = collection(db, 'categories');
+
+        const [sectionsSnap, categoriesSnap] = await Promise.all([
+            getDoc(sectionsDocRef),
+            getDocs(categoriesCollectionRef)
+        ]);
+        
+        if (sectionsSnap.exists() && sectionsSnap.data()?.sections) {
+          setSections(sectionsSnap.data().sections);
         } else {
           setSections(defaultHomepageSections);
         }
+        
+        const categoryList = categoriesSnap.docs.map(doc => ({ id: doc.id, ...doc.data() } as Category));
+        setProductCategories(categoryList);
+
       } catch (error) {
-        console.error("Failed to fetch homepage sections:", error);
-        toast({ variant: 'destructive', title: 'Error', description: 'Could not load homepage layout.' });
+        console.error("Failed to fetch homepage data:", error);
+        toast({ variant: 'destructive', title: 'Error', description: 'Could not load homepage layout or categories.' });
       } finally {
         setIsLoading(false);
       }
     };
-    fetchSections();
+    fetchData();
   }, [toast]);
   
   const sensors = useSensors(
@@ -156,17 +169,46 @@ export default function HomepageLayoutPage() {
 
   const handleOpenEditDialog = (section: Section) => {
     setSectionToEdit(section);
-    setEditedName(section.name);
+    if (section.type === 'product-grid') {
+        setSelectedCategory(section.content?.category || "");
+        setEditedName("");
+    } else {
+        setEditedName(section.name);
+        setSelectedCategory("");
+    }
     setIsFormOpen(true);
   };
   
   const handleUpdateSection = async () => {
-    if (!sectionToEdit || !editedName.trim()) return;
+    if (!sectionToEdit) return;
+
+    let updatedSectionData: Partial<Section> = {};
+    let successMessage = "";
+
+    if (sectionToEdit.type === 'product-grid') {
+      if (!selectedCategory) {
+        toast({ variant: 'destructive', title: 'Error', description: 'Please select a category.' });
+        return;
+      }
+      const categoryName = productCategories.find(c => c.name === selectedCategory)?.name || "Products";
+      updatedSectionData = {
+          name: `Product Grid: ${categoryName}`,
+          content: { category: selectedCategory }
+      };
+      successMessage = `Product grid updated to show ${categoryName}.`;
+    } else {
+      if (!editedName.trim()) {
+        toast({ variant: 'destructive', title: 'Error', description: 'Section name cannot be empty.' });
+        return;
+      }
+      updatedSectionData = { name: editedName.trim() };
+      successMessage = `Section "${editedName.trim()}" updated.`;
+    }
 
     const updatedSections = sections.map(s => 
-      s.id === sectionToEdit.id ? { ...s, name: editedName.trim() } : s
+      s.id === sectionToEdit.id ? { ...s, ...updatedSectionData } : s
     );
-    await handleSave(updatedSections, `Section "${editedName.trim()}" updated.`);
+    await handleSave(updatedSections, successMessage);
     setIsFormOpen(false);
     setSectionToEdit(null);
   };
@@ -197,14 +239,11 @@ export default function HomepageLayoutPage() {
                       </Button>
                     </DropdownMenuTrigger>
                     <DropdownMenuContent>
-                      {availableProductGrids.map(grid => (
+                      {predefinedProductGrids.map(grid => (
                           <DropdownMenuItem key={grid.id} onClick={() => handleAddNewSection(grid)}>
                               Add "{grid.name}" Grid
                           </DropdownMenuItem>
                       ))}
-                      {availableProductGrids.length === 0 && (
-                          <DropdownMenuItem disabled>All product grids are in use.</DropdownMenuItem>
-                      )}
                     </DropdownMenuContent>
                   </DropdownMenu>
               </div>
@@ -245,16 +284,34 @@ export default function HomepageLayoutPage() {
       <Dialog open={isFormOpen} onOpenChange={setIsFormOpen}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Edit Section Name</DialogTitle>
+            <DialogTitle>Edit Section</DialogTitle>
           </DialogHeader>
           <div className="py-4">
-            <Label htmlFor="section-name">Section Name</Label>
-            <Input
-              id="section-name"
-              value={editedName}
-              onChange={(e) => setEditedName(e.target.value)}
-              className="mt-2"
-            />
+            {sectionToEdit?.type === 'product-grid' ? (
+                <div className="space-y-2">
+                    <Label>Product Category</Label>
+                    <Select value={selectedCategory} onValueChange={setSelectedCategory}>
+                        <SelectTrigger>
+                            <SelectValue placeholder="Select a category" />
+                        </SelectTrigger>
+                        <SelectContent>
+                            {productCategories.map(cat => (
+                                <SelectItem key={cat.id} value={cat.name}>{cat.name}</SelectItem>
+                            ))}
+                        </SelectContent>
+                    </Select>
+                </div>
+            ) : (
+                <div className="space-y-2">
+                    <Label htmlFor="section-name">Section Name</Label>
+                    <Input
+                    id="section-name"
+                    value={editedName}
+                    onChange={(e) => setEditedName(e.target.value)}
+                    className="mt-2"
+                    />
+                </div>
+            )}
           </div>
           <DialogFooter>
             <Button variant="ghost" onClick={() => setIsFormOpen(false)}>Cancel</Button>
