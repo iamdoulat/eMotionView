@@ -53,20 +53,21 @@ export function HomepageCarousel({ banners }: HomepageCarouselProps) {
                 ]}
                 className="w-full rounded-lg overflow-hidden"
             >
-                <CarouselContent className="h-[250px] md:h-[440px]">
+                <CarouselContent>
                     {banners.map((banner, index) => (
                         <CarouselItem key={banner.id}>
-                            <div className="relative h-full w-full group bg-gray-900">
+                            <div className="relative w-full group">
                                 <Image
                                     src={banner.image}
                                     alt={banner.headline || `Hero Banner ${index + 1}`}
-                                    fill
-                                    className="object-contain md:object-cover"
+                                    width={900}
+                                    height={440}
+                                    className="w-full h-auto object-cover"
                                     data-ai-hint="gadget festival sale"
                                     priority={banner.id === banners[0].id}
                                 />
                                 { (banner.headline || banner.subheadline || banner.buttonText) &&
-                                <div className="absolute inset-0 p-8 md:p-16 flex flex-col justify-center items-start bg-black/20 md:bg-transparent">
+                                <div className="absolute inset-0 p-8 md:p-16 flex flex-col justify-center items-start bg-black/20">
                                     {banner.headline && (
                                         <h1 className="font-headline text-3xl font-bold tracking-tight text-white sm:text-5xl max-w-md">
                                             {banner.headline}
