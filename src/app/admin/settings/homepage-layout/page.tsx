@@ -24,10 +24,10 @@ import { GripVertical, Loader2, PlusCircle, Edit, Trash2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { db } from '@/lib/firebase';
 import { collection, doc, getDoc, getDocs, setDoc } from 'firebase/firestore';
-import { defaultHomepageSections, type Section, predefinedProductGrids, type Category } from '@/lib/placeholder-data';
+import { defaultHomepageSections, type Section, predefinedProductGrids, type Category, type PromoBanner, type SingleBanner } from '@/lib/placeholder-data';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSub, DropdownMenuSubTrigger, DropdownMenuSubContent, DropdownMenuPortal } from '@/components/ui/dropdown-menu';
 import {
   Dialog,
   DialogContent,
@@ -50,6 +50,13 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
 const SETTINGS_DOC_PATH = 'public_content/homepage';
+
+const predefinedSections: Section[] = [
+    { id: 'featured-categories-tpl', name: "Featured Categories Carousel", type: 'featured-categories', content: defaultHomepageSections.find(s => s.type === 'featured-categories')?.content || [] },
+    { id: 'promo-banner-pair-tpl', name: "Promo Banner Pair (800x400)", type: 'promo-banner-pair', content: defaultHomepageSections.find(s => s.type === 'promo-banner-pair')?.content || [] },
+    { id: 'single-banner-large-tpl', name: "Single Banner Large (1200x150)", type: 'single-banner-large', content: defaultHomepageSections.find(s => s.type === 'single-banner-large')?.content || {} },
+];
+
 
 function SortableItem({ id, children }: { id: string, children: React.ReactNode }) {
   const {
@@ -154,18 +161,21 @@ export default function HomepageLayoutPage() {
     }
   };
 
-  const handleAddNewSection = (section: Section) => {
-    const newSection = {
+  const handleAddNewSection = (section: Section, category?: string) => {
+    let newSection = {
         ...section,
-        id: `${section.id}-${Date.now()}` // Ensure unique ID
+        id: `${section.type}-${Date.now()}` // Ensure unique ID
     };
+
+    if (section.type === 'product-grid' && category) {
+      newSection.name = `${category} Products`;
+      newSection.content = { category: category };
+    }
+
     const newSections = [...sections, newSection];
     handleSave(newSections, `Added new section: ${newSection.name}.`);
   };
 
-  const availableProductGrids = predefinedProductGrids.filter(
-    (grid) => !sections.some((s) => s.id === grid.id)
-  );
 
   const handleOpenEditDialog = (section: Section) => {
     setSectionToEdit(section);
@@ -237,12 +247,24 @@ export default function HomepageLayoutPage() {
                         Add Section
                       </Button>
                     </DropdownMenuTrigger>
-                    <DropdownMenuContent>
-                      {predefinedProductGrids.map(grid => (
-                          <DropdownMenuItem key={grid.id} onClick={() => handleAddNewSection(grid)}>
-                              Add "{grid.name}" Grid
-                          </DropdownMenuItem>
-                      ))}
+                    <DropdownMenuContent align="end">
+                        <DropdownMenuSub>
+                           <DropdownMenuSubTrigger>Product Grid</DropdownMenuSubTrigger>
+                           <DropdownMenuPortal>
+                               <DropdownMenuSubContent>
+                                   {productCategories.map(cat => (
+                                       <DropdownMenuItem key={cat.id} onClick={() => handleAddNewSection(predefinedProductGrids[0], cat.name)}>
+                                           Add "{cat.name}" Grid
+                                       </DropdownMenuItem>
+                                   ))}
+                               </DropdownMenuSubContent>
+                           </DropdownMenuPortal>
+                        </DropdownMenuSub>
+                        {predefinedSections.map(section => (
+                            <DropdownMenuItem key={section.id} onClick={() => handleAddNewSection(section)}>
+                                {section.name}
+                            </DropdownMenuItem>
+                        ))}
                     </DropdownMenuContent>
                   </DropdownMenu>
               </div>
@@ -253,7 +275,7 @@ export default function HomepageLayoutPage() {
               <div className="space-y-4">
                   {[...Array(5)].map((_, i) => <Skeleton key={i} className="h-20 w-full" />)}
               </div>
-          ) : (
+          ) : sections.length > 0 ? (
               <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
                 <SortableContext items={sections.map(s => s.id)} strategy={verticalListSortingStrategy}>
                   <div className="space-y-4">
@@ -276,6 +298,8 @@ export default function HomepageLayoutPage() {
                   </div>
                 </SortableContext>
               </DndContext>
+          ) : (
+             <div className="text-center py-12 text-muted-foreground">No sections found. Add one to get started.</div>
           )}
         </CardContent>
       </Card>
@@ -313,7 +337,10 @@ export default function HomepageLayoutPage() {
           </div>
           <DialogFooter>
             <Button variant="ghost" onClick={() => setIsFormOpen(false)}>Cancel</Button>
-            <Button onClick={handleUpdateSection}>Save Changes</Button>
+            <Button onClick={handleUpdateSection} disabled={isSaving}>
+              {isSaving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+              Save Changes
+            </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
