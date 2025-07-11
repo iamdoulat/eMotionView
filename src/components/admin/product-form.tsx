@@ -12,7 +12,7 @@ import { Button } from "@/components/ui/button";
 import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Loader2, Trash2, XCircle } from "lucide-react";
+import { Loader2, Trash2, XCircle, Check, ChevronsUpDown } from "lucide-react";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { DialogFooter } from "@/components/ui/dialog";
 import Image from "next/image";
@@ -24,6 +24,9 @@ import { storage, db, docToJSON } from "@/lib/firebase";
 import { ref, uploadBytes, getDownloadURL, deleteObject } from "firebase/storage";
 import { Textarea } from "../ui/textarea";
 import { collection, getDocs } from "firebase/firestore";
+import { Popover, PopoverContent, PopoverTrigger } from "../ui/popover";
+import { cn } from "@/lib/utils";
+import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "../ui/command";
 
 const productSchema = z.object({
     id: z.string().optional(),
@@ -32,7 +35,7 @@ const productSchema = z.object({
     description: z.string().min(1, "Description is required"),
     price: z.coerce.number().min(0, "Price must be a positive number"),
     originalPrice: z.coerce.number().optional(),
-    categories: z.array(z.string()).optional(),
+    categories: z.array(z.string()).min(1, "At least one category is required."),
     brand: z.string().min(1, "Brand is required"),
     sku: z.string().min(1, "SKU is required"),
     manageStock: z.boolean().default(true),
@@ -456,8 +459,7 @@ export function ProductForm({ product, onSave, onCancel, isSaving }: ProductForm
 
 
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                             
-                             <FormField
+                           <FormField
                                 control={control}
                                 name="brand"
                                 render={({ field }) => (
@@ -475,6 +477,71 @@ export function ProductForm({ product, onSave, onCancel, isSaving }: ProductForm
                                         </Select>
                                         <FormMessage />
                                     </FormItem>
+                                )}
+                            />
+                            <FormField
+                                control={control}
+                                name="categories"
+                                render={({ field }) => (
+                                <FormItem className="flex flex-col">
+                                    <FormLabel>Categories</FormLabel>
+                                    <Popover>
+                                    <PopoverTrigger asChild>
+                                        <FormControl>
+                                        <Button
+                                            variant="outline"
+                                            role="combobox"
+                                            className={cn(
+                                            "w-full justify-between",
+                                            !field.value?.length && "text-muted-foreground"
+                                            )}
+                                        >
+                                            <span className="truncate">
+                                            {field.value?.length
+                                                ? `${field.value.length} selected`
+                                                : "Select categories"}
+                                            </span>
+                                            <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                                        </Button>
+                                        </FormControl>
+                                    </PopoverTrigger>
+                                    <PopoverContent className="w-[--radix-popover-trigger-width] p-0">
+                                        <Command>
+                                        <CommandInput placeholder="Search categories..." />
+                                        <CommandList>
+                                            <CommandEmpty>No categories found.</CommandEmpty>
+                                            <CommandGroup>
+                                            {dbCategories.map((category) => (
+                                                <CommandItem
+                                                value={category.name}
+                                                key={category.id}
+                                                onSelect={(currentValue) => {
+                                                    const selected = field.value || [];
+                                                    const isSelected = selected.includes(category.name);
+                                                    const newSelection = isSelected
+                                                    ? selected.filter((name) => name !== category.name)
+                                                    : [...selected, category.name];
+                                                    field.onChange(newSelection);
+                                                }}
+                                                >
+                                                <Check
+                                                    className={cn(
+                                                    "mr-2 h-4 w-4",
+                                                    (field.value || []).includes(category.name)
+                                                        ? "opacity-100"
+                                                        : "opacity-0"
+                                                    )}
+                                                />
+                                                {category.name}
+                                                </CommandItem>
+                                            ))}
+                                            </CommandGroup>
+                                        </CommandList>
+                                        </Command>
+                                    </PopoverContent>
+                                    </Popover>
+                                    <FormMessage />
+                                </FormItem>
                                 )}
                             />
                         </div>
