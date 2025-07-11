@@ -141,7 +141,7 @@ export function ProductCard({ product }: ProductCardProps) {
                   </div>
                   <span className="text-xs text-muted-foreground">({product.reviewCount || 0})</span>
                 </div>
-                <Button size="icon" variant="ghost" className="w-8 h-8 text-muted-foreground hover:text-primary rounded-full hover:bg-primary/10" onClick={handleQuickAddToCart} disabled={!canPurchase}>
+                <Button size="icon" variant="ghost" className="w-8 h-8 text-blue-600 hover:text-primary rounded-full hover:bg-primary/10" onClick={handleQuickAddToCart} disabled={!canPurchase}>
                     <ShoppingCart className="h-5 w-5" />
                 </Button>
               </div>
