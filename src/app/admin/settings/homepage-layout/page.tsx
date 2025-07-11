@@ -2,6 +2,7 @@
 "use client";
 
 import { useState, useEffect } from 'react';
+import Image from 'next/image';
 import {
   DndContext,
   closestCenter,
@@ -22,8 +23,9 @@ import { CSS } from '@dnd-kit/utilities';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { GripVertical, Loader2, PlusCircle, Edit, Trash2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
-import { db } from '@/lib/firebase';
+import { db, storage } from '@/lib/firebase';
 import { collection, doc, getDoc, getDocs, setDoc } from 'firebase/firestore';
+import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { defaultHomepageSections, type Section, predefinedProductGrids, type Category, type PromoBanner, type SingleBanner } from '@/lib/placeholder-data';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -91,7 +93,11 @@ export default function HomepageLayoutPage() {
   
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [sectionToEdit, setSectionToEdit] = useState<Section | null>(null);
+  
+  // State for the edit dialog
   const [editedName, setEditedName] = useState("");
+  const [editedLink, setEditedLink] = useState("");
+  const [newImageFile, setNewImageFile] = useState<File | null>(null);
   const [selectedCategory, setSelectedCategory] = useState("");
 
   const [sectionToDelete, setSectionToDelete] = useState<Section | null>(null);
@@ -180,46 +186,60 @@ export default function HomepageLayoutPage() {
   const handleOpenEditDialog = (section: Section) => {
     setSectionToEdit(section);
     setEditedName(section.name);
+    
     if (section.type === 'product-grid') {
         setSelectedCategory(section.content?.category || "");
-    } else {
-        setSelectedCategory("");
+    } else if (section.type === 'single-banner-large') {
+        setEditedLink(section.content?.link || "");
     }
+
     setIsFormOpen(true);
   };
   
   const handleUpdateSection = async () => {
     if (!sectionToEdit) return;
+    setIsSaving(true);
 
-    let updatedSectionData: Partial<Section> = {};
-    let successMessage = "";
-    
-    if (!editedName.trim()) {
-        toast({ variant: 'destructive', title: 'Error', description: 'Section name cannot be empty.' });
-        return;
+    let updatedContent = sectionToEdit.content;
+
+    // Handle image upload if a new file is present
+    if (newImageFile && sectionToEdit.type === 'single-banner-large') {
+        try {
+            const storageRef = ref(storage, `homepage/banners/${Date.now()}-${newImageFile.name}`);
+            const uploadResult = await uploadBytes(storageRef, newImageFile);
+            const imageUrl = await getDownloadURL(uploadResult.ref);
+            updatedContent = { ...updatedContent, image: imageUrl };
+        } catch (error) {
+            console.error("Error uploading image:", error);
+            toast({ variant: 'destructive', title: 'Image Upload Failed', description: 'Could not upload the new image.' });
+            setIsSaving(false);
+            return;
+        }
     }
 
+    // Prepare updated data based on section type
+    let updatedSectionData: Partial<Section> = { name: editedName.trim() };
     if (sectionToEdit.type === 'product-grid') {
-      if (!selectedCategory) {
-        toast({ variant: 'destructive', title: 'Error', description: 'Please select a category.' });
-        return;
-      }
-      updatedSectionData = {
-          name: editedName.trim(),
-          content: { category: selectedCategory }
-      };
-      successMessage = `Section "${editedName.trim()}" updated.`;
-    } else {
-      updatedSectionData = { name: editedName.trim() };
-      successMessage = `Section "${editedName.trim()}" updated.`;
+        if (!selectedCategory) {
+            toast({ variant: 'destructive', title: 'Error', description: 'Please select a category.' });
+            setIsSaving(false);
+            return;
+        }
+        updatedSectionData.content = { category: selectedCategory };
+    } else if (sectionToEdit.type === 'single-banner-large') {
+        updatedSectionData.content = { ...updatedContent, link: editedLink };
     }
 
     const updatedSections = sections.map(s => 
-      s.id === sectionToEdit.id ? { ...s, ...updatedSectionData } : s
+        s.id === sectionToEdit.id ? { ...s, ...updatedSectionData } : s
     );
-    await handleSave(updatedSections, successMessage);
+
+    await handleSave(updatedSections, `Section "${editedName.trim()}" updated.`);
+    
+    // Reset form state and close dialog
     setIsFormOpen(false);
     setSectionToEdit(null);
+    setNewImageFile(null);
   };
   
   const handleDeleteSection = async () => {
@@ -332,6 +352,40 @@ export default function HomepageLayoutPage() {
                             ))}
                         </SelectContent>
                     </Select>
+                </div>
+            )}
+             {sectionToEdit?.type === 'single-banner-large' && (
+                <div className="space-y-4">
+                    <div className="space-y-2">
+                        <Label htmlFor="banner-link">Banner Link</Label>
+                        <Input
+                            id="banner-link"
+                            value={editedLink}
+                            onChange={(e) => setEditedLink(e.target.value)}
+                            placeholder="e.g., /products/some-product"
+                        />
+                    </div>
+                     <div className="space-y-2">
+                        <Label htmlFor="banner-image">New Banner Image (Optional)</Label>
+                        <Input
+                            id="banner-image"
+                            type="file"
+                            accept="image/*"
+                            onChange={(e) => setNewImageFile(e.target.files?.[0] || null)}
+                        />
+                    </div>
+                    {sectionToEdit.content.image && (
+                         <div>
+                            <Label>Current Image</Label>
+                            <Image 
+                                src={sectionToEdit.content.image} 
+                                alt="Current banner image" 
+                                width={120} 
+                                height={15} 
+                                className="mt-2 rounded-md border object-cover" 
+                            />
+                        </div>
+                    )}
                 </div>
             )}
           </div>
