@@ -486,7 +486,7 @@ export function ProductForm({ product, onSave, onCancel, isSaving }: ProductForm
                                                             {dbCategories.map((category) => (
                                                                 <CommandItem
                                                                     key={category.id}
-                                                                    onSelect={() => {
+                                                                    onSelect={(currentValue) => {
                                                                         const selected = field.value || [];
                                                                         const isSelected = selected.includes(category.name);
                                                                         const newSelection = isSelected
