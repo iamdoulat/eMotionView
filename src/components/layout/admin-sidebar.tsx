@@ -28,6 +28,7 @@ import {
   LayoutTemplate,
   Image,
   PictureInPicture,
+  GalleryVertical,
 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from "../ui/card";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
@@ -60,6 +61,7 @@ const mainNavItems = [
 
 const settingsNavItems = [
     { href: "/admin/settings/general", label: "General Settings", icon: SlidersHorizontal },
+    { href: "/admin/settings/homepage-layout", label: "Homepage Layout", icon: GalleryVertical },
     { href: "/admin/settings/homepage-hero", label: "Homepage Hero", icon: Image },
     { href: "/admin/settings/homepage", label: "Featured Categories", icon: LayoutTemplate },
     { href: "/admin/settings/promo-banners", label: "Promo Banners", icon: PictureInPicture },
