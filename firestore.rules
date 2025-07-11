@@ -1,42 +1,65 @@
+
 rules_version = '2';
 
 service cloud.firestore {
   match /databases/{database}/documents {
-  
-    // Publicly readable collections
+    
+    // Helper function to check for admin role
+    function isAdmin() {
+      return get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role in ['Admin', 'Manager'];
+    }
+
+    // Products can be read by anyone, but only written by admins.
     match /products/{productId} {
       allow read: if true;
-      allow write: if request.auth != null && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role in ['Admin', 'Manager'];
+      allow write: if isAdmin();
     }
-
-    match /public_content/{docId} {
-      allow read: if true;
-      allow write: if request.auth != null && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role in ['Admin', 'Manager'];
-    }
-
-    // Reviews can be read by anyone if they are approved.
-    // Only authenticated users can create reviews.
-    // Admins/Managers can moderate (update/delete) all reviews.
+    
+    // Reviews can be read if approved. Can be created by any authenticated user.
+    // Can be updated/deleted by admins or the user who wrote it.
     match /reviews/{reviewId} {
-      allow read: if resource.data.status == 'approved' || (request.auth != null && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role in ['Admin', 'Manager']);
-      allow create: if request.auth != null;
-      allow update, delete: if request.auth != null && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role in ['Admin', 'Manager'];
+      allow read: if resource.data.status == 'approved' || request.auth.uid == resource.data.userId || isAdmin();
+      allow create: if request.auth.uid != null;
+      allow update, delete: if request.auth.uid == resource.data.userId || isAdmin();
     }
 
-    // Users (staff) can only be read and managed by other Admins/Managers.
-    match /users/{userId} {
-      allow read, write: if request.auth != null && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role in ['Admin', 'Manager'];
+    // Public content is readable by all, but only writable by admins.
+    match /public_content/{docId} {
+        allow read: if true;
+        allow write: if isAdmin();
     }
 
-    // A customer can read/write their own data.
-    // Admins/Managers can read/write any customer data.
+    // Categories are readable by all, writable by admins.
+    match /categories/{catId} {
+        allow read: if true;
+        allow write: if isAdmin();
+    }
+
+    // Brands, Attributes, Suppliers are readable by all, writable by admins.
+    match /(brands|attributes|suppliers)/{docId} {
+        allow read: if true;
+        allow write: if isAdmin();
+    }
+
+    // Customers can manage their own data. Admins can manage all customer data.
     match /customers/{userId} {
-      allow read, write: if request.auth.uid == userId || (get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role in ['Admin', 'Manager']);
+      allow read, update: if request.auth.uid == userId;
+      allow write: if isAdmin(); // Admin can create/overwrite
     }
 
-    // Wishlists are private to the user who owns them.
+    // Users (staff) can only be managed by Admins.
+    match /users/{userId} {
+      allow read, write: if isAdmin();
+    }
+    
+    // Wishlists are private to each user.
     match /wishlists/{userId} {
       allow read, write: if request.auth.uid == userId;
+    }
+
+    // Fallback rule
+    match /{document=**} {
+      allow read, write: if false;
     }
   }
 }
