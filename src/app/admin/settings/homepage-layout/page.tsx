@@ -1,4 +1,5 @@
 
+
 "use client";
 
 import { useState, useEffect } from 'react';
@@ -50,6 +51,7 @@ import {
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Separator } from '@/components/ui/separator';
 
 const SETTINGS_DOC_PATH = 'public_content/homepage';
 
@@ -99,6 +101,8 @@ export default function HomepageLayoutPage() {
   const [editedLink, setEditedLink] = useState("");
   const [newImageFile, setNewImageFile] = useState<File | null>(null);
   const [selectedCategory, setSelectedCategory] = useState("");
+
+  const [promoBannerData, setPromoBannerData] = useState<{ link: string, file: File | null }[]>([]);
 
   const [sectionToDelete, setSectionToDelete] = useState<Section | null>(null);
 
@@ -191,6 +195,9 @@ export default function HomepageLayoutPage() {
         setSelectedCategory(section.content?.category || "");
     } else if (section.type === 'single-banner-large') {
         setEditedLink(section.content?.link || "");
+    } else if (section.type === 'promo-banner-pair') {
+        const banners = section.content as PromoBanner[];
+        setPromoBannerData(banners.map(b => ({ link: b.link || "", file: null })));
     }
 
     setIsFormOpen(true);
@@ -202,44 +209,59 @@ export default function HomepageLayoutPage() {
 
     let updatedContent = sectionToEdit.content;
 
-    // Handle image upload if a new file is present
-    if (newImageFile && sectionToEdit.type === 'single-banner-large') {
-        try {
+    try {
+        if (sectionToEdit.type === 'single-banner-large' && newImageFile) {
             const storageRef = ref(storage, `homepage/banners/${Date.now()}-${newImageFile.name}`);
             const uploadResult = await uploadBytes(storageRef, newImageFile);
             const imageUrl = await getDownloadURL(uploadResult.ref);
             updatedContent = { ...updatedContent, image: imageUrl };
-        } catch (error) {
-            console.error("Error uploading image:", error);
-            toast({ variant: 'destructive', title: 'Image Upload Failed', description: 'Could not upload the new image.' });
-            setIsSaving(false);
-            return;
+        } else if (sectionToEdit.type === 'promo-banner-pair') {
+            const existingBanners = sectionToEdit.content as PromoBanner[];
+            const updatedBanners = await Promise.all(
+                promoBannerData.map(async (banner, index) => {
+                    const existingBanner = existingBanners[index];
+                    let imageUrl = existingBanner?.image || '';
+                    if (banner.file) {
+                        const storageRef = ref(storage, `homepage/banners/${Date.now()}-${banner.file.name}`);
+                        const uploadResult = await uploadBytes(storageRef, banner.file);
+                        imageUrl = await getDownloadURL(uploadResult.ref);
+                    }
+                    return { ...(existingBanner || {}), id: existingBanner?.id || `promo-${index}`, link: banner.link, image: imageUrl };
+                })
+            );
+            updatedContent = updatedBanners;
         }
-    }
 
-    // Prepare updated data based on section type
-    let updatedSectionData: Partial<Section> = { name: editedName.trim() };
-    if (sectionToEdit.type === 'product-grid') {
-        if (!selectedCategory) {
-            toast({ variant: 'destructive', title: 'Error', description: 'Please select a category.' });
-            setIsSaving(false);
-            return;
+        let updatedSectionData: Partial<Section> = { name: editedName.trim() };
+        if (sectionToEdit.type === 'product-grid') {
+            if (!selectedCategory) {
+                toast({ variant: 'destructive', title: 'Error', description: 'Please select a category.' });
+                setIsSaving(false);
+                return;
+            }
+            updatedSectionData.content = { category: selectedCategory };
+        } else if (sectionToEdit.type === 'single-banner-large') {
+            updatedSectionData.content = { ...updatedContent, link: editedLink };
+        } else if (sectionToEdit.type === 'promo-banner-pair') {
+            updatedSectionData.content = updatedContent;
         }
-        updatedSectionData.content = { category: selectedCategory };
-    } else if (sectionToEdit.type === 'single-banner-large') {
-        updatedSectionData.content = { ...updatedContent, link: editedLink };
+
+        const updatedSections = sections.map(s => 
+            s.id === sectionToEdit.id ? { ...s, ...updatedSectionData } : s
+        );
+
+        await handleSave(updatedSections, `Section "${editedName.trim()}" updated.`);
+        
+        setIsFormOpen(false);
+        setSectionToEdit(null);
+        setNewImageFile(null);
+        setPromoBannerData([]);
+    } catch (error) {
+        console.error("Error updating section:", error);
+        toast({ variant: 'destructive', title: 'Update Failed', description: 'Could not update the section.' });
+    } finally {
+        setIsSaving(false);
     }
-
-    const updatedSections = sections.map(s => 
-        s.id === sectionToEdit.id ? { ...s, ...updatedSectionData } : s
-    );
-
-    await handleSave(updatedSections, `Section "${editedName.trim()}" updated.`);
-    
-    // Reset form state and close dialog
-    setIsFormOpen(false);
-    setSectionToEdit(null);
-    setNewImageFile(null);
   };
   
   const handleDeleteSection = async () => {
@@ -247,6 +269,10 @@ export default function HomepageLayoutPage() {
     const updatedSections = sections.filter(s => s.id !== sectionToDelete.id);
     await handleSave(updatedSections, `Section "${sectionToDelete.name}" deleted.`);
     setSectionToDelete(null);
+  };
+  
+  const handlePromoBannerFileChange = (index: number, file: File | null) => {
+      setPromoBannerData(prev => prev.map((item, i) => i === index ? { ...item, file } : item));
   };
 
   return (
@@ -325,11 +351,11 @@ export default function HomepageLayoutPage() {
       </Card>
 
       <Dialog open={isFormOpen} onOpenChange={setIsFormOpen}>
-        <DialogContent>
+        <DialogContent className="sm:max-w-2xl">
           <DialogHeader>
             <DialogTitle>Edit Section</DialogTitle>
           </DialogHeader>
-          <div className="py-4 space-y-4">
+          <div className="py-4 space-y-4 max-h-[70vh] overflow-y-auto pr-2">
               <div className="space-y-2">
                     <Label htmlFor="section-name">Section Name</Label>
                     <Input
@@ -354,7 +380,7 @@ export default function HomepageLayoutPage() {
                     </Select>
                 </div>
             )}
-             {sectionToEdit?.type === 'single-banner-large' && (
+            {sectionToEdit?.type === 'single-banner-large' && (
                 <div className="space-y-4">
                     <div className="space-y-2">
                         <Label htmlFor="banner-link">Banner Link</Label>
@@ -386,6 +412,47 @@ export default function HomepageLayoutPage() {
                             />
                         </div>
                     )}
+                </div>
+            )}
+            {sectionToEdit?.type === 'promo-banner-pair' && (
+                <div className="space-y-6">
+                    {(sectionToEdit.content as PromoBanner[]).map((banner, index) => (
+                        <div key={banner.id || index} className="space-y-4 p-4 border rounded-md">
+                            <h4 className="font-semibold">Banner {index + 1}</h4>
+                            <div className="space-y-2">
+                                <Label htmlFor={`promo-link-${index}`}>Banner Link</Label>
+                                <Input
+                                    id={`promo-link-${index}`}
+                                    value={promoBannerData[index]?.link || ''}
+                                    onChange={(e) => {
+                                        const newPromoData = [...promoBannerData];
+                                        newPromoData[index].link = e.target.value;
+                                        setPromoBannerData(newPromoData);
+                                    }}
+                                    placeholder="e.g., /products/category"
+                                />
+                            </div>
+                             <div className="space-y-2">
+                                <Label htmlFor={`promo-image-${index}`}>New Image (Optional)</Label>
+                                <Input
+                                    id={`promo-image-${index}`}
+                                    type="file"
+                                    accept="image/*"
+                                    onChange={(e) => handlePromoBannerFileChange(index, e.target.files?.[0] || null)}
+                                />
+                            </div>
+                             <div>
+                                <Label>Current Image</Label>
+                                <Image 
+                                    src={banner.image} 
+                                    alt={`Current banner ${index + 1}`} 
+                                    width={200} 
+                                    height={100} 
+                                    className="mt-2 rounded-md border object-cover" 
+                                />
+                            </div>
+                        </div>
+                    ))}
                 </div>
             )}
           </div>
