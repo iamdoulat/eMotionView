@@ -53,28 +53,27 @@ export function HomepageCarousel({ banners }: HomepageCarouselProps) {
                 ]}
                 className="w-full rounded-lg overflow-hidden"
             >
-                <CarouselContent className="h-[440px]">
+                <CarouselContent className="h-[250px] md:h-[440px]">
                     {banners.map((banner, index) => (
                         <CarouselItem key={banner.id}>
-                            <div className="relative h-full w-full group">
+                            <div className="relative h-full w-full group bg-gray-900">
                                 <Image
                                     src={banner.image}
                                     alt={banner.headline || `Hero Banner ${index + 1}`}
                                     fill
-                                    style={{ objectFit: 'cover' }}
-                                    className=""
+                                    className="object-contain md:object-cover"
                                     data-ai-hint="gadget festival sale"
                                     priority={banner.id === banners[0].id}
                                 />
                                 { (banner.headline || banner.subheadline || banner.buttonText) &&
-                                <div className="absolute inset-0 p-8 md:p-16 flex flex-col justify-center items-start">
+                                <div className="absolute inset-0 p-8 md:p-16 flex flex-col justify-center items-start bg-black/20 md:bg-transparent">
                                     {banner.headline && (
-                                        <h1 className="font-headline text-4xl font-bold tracking-tight text-white sm:text-6xl max-w-md">
+                                        <h1 className="font-headline text-3xl font-bold tracking-tight text-white sm:text-5xl max-w-md">
                                             {banner.headline}
                                         </h1>
                                     )}
                                     {banner.subheadline && (
-                                        <p className="mt-4 text-xl leading-8 text-neutral-200 max-w-md">
+                                        <p className="mt-4 text-lg leading-8 text-neutral-200 max-w-md hidden sm:block">
                                             {banner.subheadline}
                                         </p>
                                     )}
