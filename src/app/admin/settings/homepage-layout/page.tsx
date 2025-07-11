@@ -112,7 +112,7 @@ export default function HomepageLayoutPage() {
 
       } catch (error) {
         console.error("Failed to fetch homepage data:", error);
-        toast({ variant: 'destructive', title: 'Error', description: 'Could not load homepage layout or categories.' });
+        toast({ variant: 'destructive', title: 'Error', description: 'Could not load homepage layout or categories. Check Firestore rules.' });
       } finally {
         setIsLoading(false);
       }
