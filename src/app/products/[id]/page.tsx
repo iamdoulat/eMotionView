@@ -62,7 +62,7 @@ export default async function ProductDetailPage({ params }: { params: { id: stri
 
   const categoriesSnapshot = await getDocs(collection(db, 'categories'));
   const allCategories = categoriesSnapshot.docs.map(docToJSON) as Category[];
-  const productCategories = allCategories.filter(c => product.categories.includes(c.name));
+  const productCategories = allCategories.filter(c => (product.categories || []).includes(c.name));
 
 
   return (
@@ -72,7 +72,7 @@ export default async function ProductDetailPage({ params }: { params: { id: stri
           items={[
             { label: 'Home', href: '/' },
             { label: 'Products', href: '/products' },
-            ...productCategories.map(c => ({ label: c.name, href: `/products?category=${c.permalink}` })),
+            ...productCategories.map(c => ({ label: c.name, href: `/category/${c.permalink}` })),
             { label: product.name, href: `/products/${product.permalink}` },
           ]}
         />

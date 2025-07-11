@@ -119,10 +119,11 @@ export default async function HomePage() {
                             <CarouselContent className="-ml-4">
                             {categoryItems.map((category: any) => {
                                 const categoryData = allCategories.find(c => c.name === category.name);
-                                const permalink = categoryData?.permalink || encodeURIComponent(category.name);
+                                const permalink = categoryData?.permalink;
+                                if (!permalink) return null;
                                 return (
                                 <CarouselItem key={category.id} className="basis-auto pl-4 md:pl-6">
-                                <Link href={`/products?category=${permalink}`} className="group text-center block w-[130px]">
+                                <Link href={`/category/${permalink}`} className="group text-center block w-[130px]">
                                     <div className="w-32 h-32 mx-auto rounded-full bg-secondary/50 flex items-center justify-center overflow-hidden border-2 border-transparent group-hover:border-primary transition-all duration-300 group-hover:shadow-lg">
                                         <Image src={category.image} alt={category.name} width={128} height={128} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-300" data-ai-hint="category icon" />
                                     </div>
@@ -139,14 +140,15 @@ export default async function HomePage() {
                 const products = getProductsForGrid(section.content?.category);
                 if (products.length === 0) return null;
                 const categoryData = allCategories.find(c => c.name === section.content?.category);
-                const permalink = categoryData?.permalink || encodeURIComponent(section.content?.category);
+                const permalink = categoryData?.permalink;
+                if (!permalink) return null;
 
                 return (
                     <section key={section.id} className="container mx-auto px-4 py-4">
                         <div className="flex justify-between items-center mb-8 border-b pb-4">
                             <h2 className="font-headline text-2xl font-bold tracking-tight text-foreground">{section.name}</h2>
                             <Button asChild variant="link" className="text-primary">
-                                <Link href={`/products?category=${permalink}`}>See all</Link>
+                                <Link href={`/category/${permalink}`}>See all</Link>
                             </Button>
                         </div>
                         <div className="grid grid-cols-2 gap-x-4 gap-y-8 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 xl:gap-x-6">

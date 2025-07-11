@@ -2,22 +2,20 @@ import Link from "next/link";
 import { Card } from "@/components/ui/card";
 import { ChevronRight, LayoutGrid } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { collection, getDocs, limit, query } from "firebase/firestore";
+import { db, docToJSON } from "@/lib/firebase";
+import type { Category } from "@/lib/placeholder-data";
 
-const categoryLinks = [
-    { name: 'Smart Watches', href: '/products?category=Wearables' },
-    { name: 'Smart Phones', href: '/products?category=Smartphones' },
-    { name: 'Headphones', href: '/products?category=Audio' },
-    { name: 'Smart TV & Accessories', href: '/products?category=Smart+Home' },
-    { name: 'Computer & Accessories', href: '/products?category=Laptops' },
-    { name: 'Wireless Speakers', href: '/products?category=Audio' },
-    { name: 'Security Cameras', href: '/products?category=Smart+Home' },
-    { name: 'Smart Home Appliances', href: '/products?category=Smart+Home' },
-    { name: 'Charger & Cables', href: '/products?category=Accessories' },
-    { name: 'Powerbanks', href: '/products?category=Accessories' },
-    { name: 'Network Components', href: '/products?category=Accessories' },
-];
 
-export function CategoryMenu() {
+export async function CategoryMenu() {
+    let categories: Category[] = [];
+    try {
+        const categoriesSnapshot = await getDocs(query(collection(db, 'categories'), limit(11)));
+        categories = categoriesSnapshot.docs.map(docToJSON) as Category[];
+    } catch (error) {
+        console.warn("Could not load categories for menu.", error);
+    }
+    
     return (
         <Card className="h-full">
             <div className="px-3 pt-2 pb-3 border-b">
@@ -28,13 +26,13 @@ export function CategoryMenu() {
             </div>
             <nav className="p-2">
                 <ul className="space-y-1">
-                    {categoryLinks.map((link) => (
-                        <li key={link.name}>
+                    {categories.map((cat) => (
+                        <li key={cat.id}>
                             <Link 
-                                href={link.href} 
+                                href={`/category/${cat.permalink}`} 
                                 className="flex items-center justify-between p-2 text-sm font-medium text-foreground rounded-md transition-colors hover:bg-secondary group"
                             >
-                                <span>{link.name}</span>
+                                <span>{cat.name}</span>
                                 <ChevronRight className="h-4 w-4 text-muted-foreground opacity-0 transition-all group-hover:opacity-100 group-hover:translate-x-1" />
                             </Link>
                         </li>
