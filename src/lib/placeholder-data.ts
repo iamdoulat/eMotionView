@@ -409,8 +409,8 @@ export const defaultHomepageSections: Section[] = [
         { id: 'promo2', image: 'https://placehold.co/800x400.png', link: '#' },
     ] },
     { id: 'pop-prod', name: "Popular Products", type: 'product-grid', content: null },
-    { id: 'smart-watch', name: "Smart Watches", type: 'single-banner-large', content: { image: 'https://placehold.co/1200x250.png', link: '/products?category=Wearables' } },
-    { id: 'headphones', name: "Headphones", type: 'single-banner-large', content: { image: 'https://placehold.co/1200x250.png', link: '/products?category=Audio' } },
+    { id: 'smart-watch', name: "Smart Watches", type: 'single-banner-large', content: { image: 'https://placehold.co/1200x150.png', link: '/products?category=Wearables' } },
+    { id: 'headphones', name: "Headphones", type: 'single-banner-large', content: { image: 'https://placehold.co/1200x150.png', link: '/products?category=Audio' } },
 ];
 
 export const defaultHeroBanners: HeroBanner[] = [
@@ -457,3 +457,4 @@ export const defaultFooterSettings: FooterSettings = {
         email: "motionview22@gmail.com.bd",
     },
 };
+

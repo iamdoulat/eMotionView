@@ -14,14 +14,14 @@ import { enrichProductsWithReviews } from '@/lib/product-utils';
 import { cn } from '@/lib/utils';
 import { HomepageCarousel } from '@/components/homepage-carousel';
 
-const BannerImage = ({ banner, className }: { banner: { image: string, link?: string, name?: string }, className?: string }) => {
+const BannerImage = ({ banner, className, width = 800, height = 400 }: { banner: { image: string, link?: string, name?: string }, className?: string, width?: number, height?: number }) => {
     const bannerContent = (
         <Image
-            src={banner.image || 'https://placehold.co/800x400.png'}
+            src={banner.image || `https://placehold.co/${width}x${height}.png`}
             alt={banner.name || 'Promotional Banner'}
-            width={800}
-            height={400}
-            className="w-full h-auto object-cover transition-transform duration-300 group-hover:scale-105"
+            width={width}
+            height={height}
+            className="w-full h-auto object-cover"
             data-ai-hint="promotional banner"
         />
     );
@@ -176,7 +176,7 @@ export default async function HomePage() {
             case 'one-column-banner':
                 return (
                      <section key={section.id} className="container mx-auto px-4 py-4">
-                        <BannerImage banner={Array.isArray(section.content) ? section.content[0] : section.content} />
+                        <BannerImage banner={Array.isArray(section.content) ? section.content[0] : section.content} width={1200} height={150} />
                     </section>
                 );
              case 'two-column-banner':
@@ -206,3 +206,4 @@ export default async function HomePage() {
     
 
     
+
