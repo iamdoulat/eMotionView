@@ -1,5 +1,4 @@
 
-
 import Link from 'next/link';
 import Image from 'next/image';
 import { Button } from '@/components/ui/button';
@@ -118,7 +117,8 @@ export default async function HomePage() {
                 return (
                     <section key={section.id} className="container mx-auto px-4 py-8">
                         <div className="text-center mb-6">
-                            <h2 className="font-headline text-3xl font-bold tracking-tight text-foreground">{section.name}</h2>
+                            <h2 className="font-headline text-3xl font-bold tracking-tight text-foreground">Explore Popular Categories</h2>
+                             <p className="text-muted-foreground mt-2">Find your preferred item in the highlighted product selection.</p>
                         </div>
                         <Carousel opts={{ align: "start", dragFree: true }} className="w-full">
                             <CarouselContent className="-ml-4">
