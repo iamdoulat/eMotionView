@@ -169,11 +169,10 @@ export default function HomepageLayoutPage() {
 
   const handleOpenEditDialog = (section: Section) => {
     setSectionToEdit(section);
+    setEditedName(section.name);
     if (section.type === 'product-grid') {
         setSelectedCategory(section.content?.category || "");
-        setEditedName("");
     } else {
-        setEditedName(section.name);
         setSelectedCategory("");
     }
     setIsFormOpen(true);
@@ -184,23 +183,23 @@ export default function HomepageLayoutPage() {
 
     let updatedSectionData: Partial<Section> = {};
     let successMessage = "";
+    
+    if (!editedName.trim()) {
+        toast({ variant: 'destructive', title: 'Error', description: 'Section name cannot be empty.' });
+        return;
+    }
 
     if (sectionToEdit.type === 'product-grid') {
       if (!selectedCategory) {
         toast({ variant: 'destructive', title: 'Error', description: 'Please select a category.' });
         return;
       }
-      const categoryName = productCategories.find(c => c.name === selectedCategory)?.name || "Products";
       updatedSectionData = {
-          name: `Product Grid: ${categoryName}`,
+          name: editedName.trim(),
           content: { category: selectedCategory }
       };
-      successMessage = `Product grid updated to show ${categoryName}.`;
+      successMessage = `Section "${editedName.trim()}" updated.`;
     } else {
-      if (!editedName.trim()) {
-        toast({ variant: 'destructive', title: 'Error', description: 'Section name cannot be empty.' });
-        return;
-      }
       updatedSectionData = { name: editedName.trim() };
       successMessage = `Section "${editedName.trim()}" updated.`;
     }
@@ -286,8 +285,17 @@ export default function HomepageLayoutPage() {
           <DialogHeader>
             <DialogTitle>Edit Section</DialogTitle>
           </DialogHeader>
-          <div className="py-4">
-            {sectionToEdit?.type === 'product-grid' ? (
+          <div className="py-4 space-y-4">
+              <div className="space-y-2">
+                    <Label htmlFor="section-name">Section Name</Label>
+                    <Input
+                        id="section-name"
+                        value={editedName}
+                        onChange={(e) => setEditedName(e.target.value)}
+                        className="mt-2"
+                    />
+                </div>
+            {sectionToEdit?.type === 'product-grid' && (
                 <div className="space-y-2">
                     <Label>Product Category</Label>
                     <Select value={selectedCategory} onValueChange={setSelectedCategory}>
@@ -300,16 +308,6 @@ export default function HomepageLayoutPage() {
                             ))}
                         </SelectContent>
                     </Select>
-                </div>
-            ) : (
-                <div className="space-y-2">
-                    <Label htmlFor="section-name">Section Name</Label>
-                    <Input
-                    id="section-name"
-                    value={editedName}
-                    onChange={(e) => setEditedName(e.target.value)}
-                    className="mt-2"
-                    />
                 </div>
             )}
           </div>
