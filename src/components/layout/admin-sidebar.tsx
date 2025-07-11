@@ -27,7 +27,6 @@ import {
   SlidersHorizontal,
   LayoutTemplate,
   Image,
-  PictureInPicture,
   GalleryVertical,
   Footprints,
 } from 'lucide-react';
@@ -65,7 +64,6 @@ const settingsNavItems = [
     { href: "/admin/settings/homepage-layout", label: "Homepage Layout", icon: GalleryVertical },
     { href: "/admin/settings/homepage-hero", label: "Homepage Hero", icon: Image },
     { href: "/admin/settings/homepage", label: "Featured Categories", icon: LayoutTemplate },
-    { href: "/admin/settings/promo-banners", label: "Promo Banners", icon: PictureInPicture },
     { href: "/admin/settings/footer", label: "Footer Settings", icon: Footprints },
 ];
 
