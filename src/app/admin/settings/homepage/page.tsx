@@ -1,12 +1,15 @@
 
 "use client";
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useForm, type SubmitHandler } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import Image from 'next/image';
 import { useHomepageSettings } from '@/hooks/use-homepage-settings';
+import { collection, getDocs } from 'firebase/firestore';
+import { db, docToJSON } from '@/lib/firebase';
+import type { Category as ProductCategoryType } from '@/lib/placeholder-data';
 
 import {
   Card,
@@ -35,9 +38,17 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Loader2, PlusCircle, Edit, Trash2 } from "lucide-react";
 import { Skeleton } from '@/components/ui/skeleton';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 
 const categorySchema = z.object({
   id: z.string().optional(),
@@ -57,9 +68,18 @@ export default function HomepageSettingsPage() {
         deleteCategory
     } = useHomepageSettings();
     
+    const [allProductCategories, setAllProductCategories] = useState<ProductCategoryType[]>([]);
     const [isFormOpen, setIsFormOpen] = useState(false);
     const [editingCategory, setEditingCategory] = useState<any | null>(null);
     const [categoryToDelete, setCategoryToDelete] = useState<any | null>(null);
+
+    useEffect(() => {
+        const fetchAllCategories = async () => {
+            const categoriesSnapshot = await getDocs(collection(db, 'categories'));
+            setAllProductCategories(categoriesSnapshot.docs.map(docToJSON) as ProductCategoryType[]);
+        };
+        fetchAllCategories();
+    }, []);
 
     const form = useForm<CategoryFormData>({
         resolver: zodResolver(categorySchema)
@@ -150,31 +170,59 @@ export default function HomepageSettingsPage() {
                     <DialogHeader>
                         <DialogTitle>{editingCategory ? "Edit Category" : "Add New Category"}</DialogTitle>
                     </DialogHeader>
-                    <form onSubmit={form.handleSubmit(onSubmit)}>
-                        <div className="space-y-4 py-4">
-                            <div className="space-y-2">
-                                <Label htmlFor="name">Category Name</Label>
-                                <Input id="name" {...form.register("name")} />
-                                {form.formState.errors.name && <p className="text-destructive text-sm">{form.formState.errors.name.message}</p>}
+                    <Form {...form}>
+                        <form onSubmit={form.handleSubmit(onSubmit)}>
+                            <div className="space-y-4 py-4">
+                               <FormField
+                                  control={form.control}
+                                  name="name"
+                                  render={({ field }) => (
+                                    <FormItem>
+                                      <FormLabel>Category Name</FormLabel>
+                                      <Select onValueChange={field.onChange} defaultValue={field.value}>
+                                        <FormControl>
+                                          <SelectTrigger>
+                                            <SelectValue placeholder="Select a category" />
+                                          </SelectTrigger>
+                                        </FormControl>
+                                        <SelectContent>
+                                          {allProductCategories.map(cat => (
+                                            <SelectItem key={cat.id} value={cat.name}>{cat.name}</SelectItem>
+                                          ))}
+                                        </SelectContent>
+                                      </Select>
+                                      <FormMessage />
+                                    </FormItem>
+                                  )}
+                                />
+                                <FormField
+                                    control={form.control}
+                                    name="image"
+                                    render={({ field }) => (
+                                        <FormItem>
+                                            <FormLabel>Image</FormLabel>
+                                            <FormControl>
+                                                <Input id="image" type="file" accept="image/*" onChange={(e) => field.onChange(e.target.files)} />
+                                            </FormControl>
+                                            {editingCategory?.image && !form.watch('image')?.[0] && (
+                                                <div className="text-sm text-muted-foreground mt-2">
+                                                    Current image: <Image src={editingCategory.image} alt="current" width={40} height={40} className="inline-block h-10 w-10 object-cover rounded-md" />
+                                                </div>
+                                            )}
+                                            <FormMessage />
+                                        </FormItem>
+                                    )}
+                                />
                             </div>
-                            <div className="space-y-2">
-                                <Label htmlFor="image">Image</Label>
-                                <Input id="image" type="file" accept="image/*" {...form.register('image')} />
-                                {editingCategory?.image && !form.watch('image') && (
-                                    <div className="text-sm text-muted-foreground mt-2">
-                                        Current image: <Image src={editingCategory.image} alt="current" width={40} height={40} className="inline-block h-10 w-10 object-cover rounded-md" />
-                                    </div>
-                                )}
-                            </div>
-                        </div>
-                        <DialogFooter>
-                            <Button type="button" variant="ghost" onClick={() => setIsFormOpen(false)} disabled={isSubmitting}>Cancel</Button>
-                            <Button type="submit" disabled={isSubmitting}>
-                                {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                                Save Changes
-                            </Button>
-                        </DialogFooter>
-                    </form>
+                            <DialogFooter>
+                                <Button type="button" variant="ghost" onClick={() => setIsFormOpen(false)} disabled={isSubmitting}>Cancel</Button>
+                                <Button type="submit" disabled={isSubmitting}>
+                                    {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                                    Save Changes
+                                </Button>
+                            </DialogFooter>
+                        </form>
+                    </Form>
                 </DialogContent>
             </Dialog>
 
