@@ -246,10 +246,10 @@ export function ProductDetailsClient({ product, brand }: { product: Product, bra
         </div>
         
         <div className="mt-auto pt-6 flex flex-col sm:flex-row gap-4">
-          <Button size="lg" className="flex-1 bg-green-600 hover:bg-green-700 text-primary-foreground" disabled={!canPurchase} onClick={handleAddToCart}>
+          <Button size="lg" className="flex-1 bg-green-600 hover:bg-green-700 text-primary-foreground h-14 sm:h-11" disabled={!canPurchase} onClick={handleAddToCart}>
             Add To Cart
           </Button>
-          <Button size="lg" className="flex-1" disabled={!canPurchase} onClick={handleBuyNow}>
+          <Button size="lg" className="flex-1 h-14 sm:h-11" disabled={!canPurchase} onClick={handleBuyNow}>
             Buy Now
           </Button>
         </div>
