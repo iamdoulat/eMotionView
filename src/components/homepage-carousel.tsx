@@ -66,6 +66,7 @@ export function HomepageCarousel({ banners }: HomepageCarouselProps) {
                                     data-ai-hint="gadget festival sale"
                                     priority={banner.id === banners[0].id}
                                 />
+                                { (banner.headline || banner.subheadline || banner.buttonText) &&
                                 <div className="absolute inset-0 bg-gradient-to-r from-black/60 to-transparent p-8 md:p-16 flex flex-col justify-center items-start">
                                     {banner.headline && (
                                         <h1 className="font-headline text-4xl font-bold tracking-tight text-white sm:text-6xl max-w-md">
@@ -85,6 +86,7 @@ export function HomepageCarousel({ banners }: HomepageCarouselProps) {
                                         </div>
                                     )}
                                 </div>
+                                }
                             </div>
                         </CarouselItem>
                     ))}
