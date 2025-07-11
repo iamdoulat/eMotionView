@@ -62,12 +62,12 @@ export function HomepageCarousel({ banners }: HomepageCarouselProps) {
                                     alt={banner.headline || `Hero Banner ${index + 1}`}
                                     fill
                                     style={{ objectFit: 'contain' }}
-                                    className="transition-transform duration-300 group-hover:scale-105"
+                                    className=""
                                     data-ai-hint="gadget festival sale"
                                     priority={banner.id === banners[0].id}
                                 />
                                 { (banner.headline || banner.subheadline || banner.buttonText) &&
-                                <div className="absolute inset-0 bg-gradient-to-r from-black/60 to-transparent p-8 md:p-16 flex flex-col justify-center items-start">
+                                <div className="absolute inset-0 p-8 md:p-16 flex flex-col justify-center items-start">
                                     {banner.headline && (
                                         <h1 className="font-headline text-4xl font-bold tracking-tight text-white sm:text-6xl max-w-md">
                                             {banner.headline}
@@ -108,3 +108,4 @@ export function HomepageCarousel({ banners }: HomepageCarouselProps) {
         </div>
     );
 }
+
