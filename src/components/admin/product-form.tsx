@@ -4,8 +4,8 @@
 import { useForm, useFieldArray, type SubmitHandler } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import type { Product, Category } from "@/lib/placeholder-data";
-import { brands, suppliers, attributes } from "@/lib/placeholder-data";
+import type { Product, Category, Brand } from "@/lib/placeholder-data";
+import { suppliers, attributes } from "@/lib/placeholder-data";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
@@ -70,14 +70,19 @@ interface ProductFormProps {
 
 export function ProductForm({ product, onSave, onCancel, isSaving }: ProductFormProps) {
     const [dbCategories, setDbCategories] = useState<Category[]>([]);
+    const [dbBrands, setDbBrands] = useState<Brand[]>([]);
     
     useEffect(() => {
-        const fetchCategories = async () => {
+        const fetchData = async () => {
             const categoriesSnapshot = await getDocs(collection(db, 'categories'));
             const categoryList = categoriesSnapshot.docs.map(doc => docToJSON(doc) as Category);
             setDbCategories(categoryList);
+
+            const brandsSnapshot = await getDocs(collection(db, 'brands'));
+            const brandList = brandsSnapshot.docs.map(doc => docToJSON(doc) as Brand);
+            setDbBrands(brandList);
         };
-        fetchCategories();
+        fetchData();
     }, []);
 
     const form = useForm<ProductFormData>({
@@ -487,10 +492,7 @@ export function ProductForm({ product, onSave, onCancel, isSaving }: ProductForm
                                                                 <CommandItem
                                                                     key={category.id}
                                                                     value={category.name}
-                                                                    onSelect={(e) => {
-                                                                         e.preventDefault();
-                                                                    }}
-                                                                    onClick={() => {
+                                                                    onSelect={(currentValue) => {
                                                                         const selected = field.value || [];
                                                                         const isSelected = selected.includes(category.name);
                                                                         const newSelection = isSelected
@@ -514,7 +516,7 @@ export function ProductForm({ product, onSave, onCancel, isSaving }: ProductForm
                                             </PopoverContent>
                                         </Popover>
                                         <FormDescription>
-                                            Selected: {(field.value || []).join(', ')}
+                                            Selected: {(field.value || []).length > 0 ? <Badge variant="secondary">{(field.value || []).join(', ')}</Badge> : 'None'}
                                         </FormDescription>
                                         <FormMessage />
                                     </FormItem>
@@ -533,7 +535,7 @@ export function ProductForm({ product, onSave, onCancel, isSaving }: ProductForm
                                                 </SelectTrigger>
                                             </FormControl>
                                             <SelectContent>
-                                                {brands.map(brand => <SelectItem key={brand.name} value={brand.name}>{brand.name}</SelectItem>)}
+                                                {dbBrands.map(brand => <SelectItem key={brand.id} value={brand.name}>{brand.name}</SelectItem>)}
                                             </SelectContent>
                                         </Select>
                                         <FormMessage />
