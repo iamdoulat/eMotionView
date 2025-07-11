@@ -486,7 +486,11 @@ export function ProductForm({ product, onSave, onCancel, isSaving }: ProductForm
                                                             {dbCategories.map((category) => (
                                                                 <CommandItem
                                                                     key={category.id}
-                                                                    onSelect={(currentValue) => {
+                                                                    value={category.name}
+                                                                    onSelect={(e) => {
+                                                                         e.preventDefault();
+                                                                    }}
+                                                                    onClick={() => {
                                                                         const selected = field.value || [];
                                                                         const isSelected = selected.includes(category.name);
                                                                         const newSelection = isSelected
@@ -510,7 +514,7 @@ export function ProductForm({ product, onSave, onCancel, isSaving }: ProductForm
                                             </PopoverContent>
                                         </Popover>
                                         <FormDescription>
-                                            Selected: {field.value?.join(", ") || "None"}
+                                            Selected: {(field.value || []).join(', ')}
                                         </FormDescription>
                                         <FormMessage />
                                     </FormItem>
