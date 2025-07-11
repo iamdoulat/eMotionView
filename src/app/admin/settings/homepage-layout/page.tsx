@@ -20,13 +20,14 @@ import {
 } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { GripVertical, Loader2 } from 'lucide-react';
+import { GripVertical, Loader2, PlusCircle } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { db } from '@/lib/firebase';
 import { doc, getDoc, setDoc } from 'firebase/firestore';
-import { defaultHomepageSections, type Section } from '@/lib/placeholder-data';
+import { defaultHomepageSections, type Section, predefinedProductGrids } from '@/lib/placeholder-data';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 
 const SETTINGS_DOC_PATH = 'public_content/homepage';
 
@@ -88,28 +89,12 @@ export default function HomepageLayoutPage() {
     })
   );
 
-  const handleDragEnd = (event: DragEndEvent) => {
-    const { active, over } = event;
-
-    if (over && active.id !== over.id) {
-      setSections((items) => {
-        const oldIndex = items.findIndex((item) => item.id === active.id);
-        const newIndex = items.findIndex((item) => item.id === over.id);
-        const newOrder = arrayMove(items, oldIndex, newIndex);
-        
-        // Immediately trigger save after reordering
-        handleSave(newOrder);
-
-        return newOrder;
-      });
-    }
-  };
-
   const handleSave = async (newOrder: Section[]) => {
       setIsSaving(true);
       try {
         const docRef = doc(db, SETTINGS_DOC_PATH);
         await setDoc(docRef, { sections: newOrder }, { merge: true });
+        setSections(newOrder); // Update local state after successful save
         toast({ title: 'Layout Saved', description: 'Your homepage layout has been updated.' });
       } catch (error) {
         console.error("Error saving layout:", error);
@@ -119,6 +104,32 @@ export default function HomepageLayoutPage() {
       }
   }
 
+  const handleDragEnd = (event: DragEndEvent) => {
+    const { active, over } = event;
+
+    if (over && active.id !== over.id) {
+      const oldIndex = sections.findIndex((item) => item.id === active.id);
+      const newIndex = sections.findIndex((item) => item.id === over.id);
+      const newOrder = arrayMove(sections, oldIndex, newIndex);
+      
+      handleSave(newOrder);
+    }
+  };
+
+  const handleAddNewSection = (section: Section) => {
+    const newSection = {
+        ...section,
+        id: `${section.id}-${Date.now()}` // Ensure unique ID
+    };
+    const newSections = [...sections, newSection];
+    handleSave(newSections);
+  };
+
+  const availableProductGrids = predefinedProductGrids.filter(
+    (grid) => !sections.some((s) => s.id === grid.id)
+  );
+
+
   return (
     <Card>
       <CardHeader>
@@ -127,7 +138,27 @@ export default function HomepageLayoutPage() {
                 <CardTitle>Homepage Layout</CardTitle>
                 <CardDescription>Drag and drop to reorder the sections on your homepage.</CardDescription>
             </div>
-            {isSaving && <div className="flex items-center gap-2 text-sm text-muted-foreground"><Loader2 className="h-4 w-4 animate-spin"/> Saving...</div>}
+            <div className='flex items-center gap-2'>
+              {isSaving && <div className="flex items-center gap-2 text-sm text-muted-foreground"><Loader2 className="h-4 w-4 animate-spin"/> Saving...</div>}
+               <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button variant="outline">
+                      <PlusCircle className="mr-2 h-4 w-4" />
+                      Add Section
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent>
+                     {availableProductGrids.map(grid => (
+                        <DropdownMenuItem key={grid.id} onClick={() => handleAddNewSection(grid)}>
+                            Add "{grid.name}" Grid
+                        </DropdownMenuItem>
+                    ))}
+                    {availableProductGrids.length === 0 && (
+                        <DropdownMenuItem disabled>All product grids are in use.</DropdownMenuItem>
+                    )}
+                  </DropdownMenuContent>
+                </DropdownMenu>
+            </div>
         </div>
       </CardHeader>
       <CardContent>

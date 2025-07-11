@@ -395,6 +395,13 @@ export const suppliers: Omit<Supplier, 'id'>[] = [
     { name: 'Tech Wholesalers Inc.', contactPerson: 'Sam Smith', email: 'sam@techwholesalers.com' },
 ];
 
+export const predefinedProductGrids: Section[] = [
+    { id: 'new-arr', name: "New Arrivals", type: 'product-grid', content: null },
+    { id: 'pop-prod', name: "Popular Products", type: 'product-grid', content: null },
+    { id: 'smart-watches-grid', name: "Smart Watches", type: 'product-grid', content: null },
+    { id: 'headphones-grid', name: "Headphones", type: 'product-grid', content: null },
+];
+
 export const defaultHomepageSections: Section[] = [
     { id: 'feat-cat', name: "Featured Categories", type: 'featured-categories', content: [
         { id: 'fc1', name: 'Smart Watches', image: 'https://placehold.co/128x128.png' },
@@ -403,14 +410,14 @@ export const defaultHomepageSections: Section[] = [
         { id: 'fc4', name: 'Charger & Cables', image: 'https://placehold.co/128x128.png' },
         { id: 'fc5', name: 'Powerbanks', image: 'https://placehold.co/128x128.png' },
     ]},
-    { id: 'new-arr', name: "New Arrivals", type: 'product-grid', content: null },
+    predefinedProductGrids[0], // New Arrivals
     { id: 'promo-ban', name: "Promotional Banners", type: 'promo-banner-pair', content: [
         { id: 'promo1', image: 'https://placehold.co/800x400.png', link: '#' },
         { id: 'promo2', image: 'https://placehold.co/800x400.png', link: '#' },
     ] },
-    { id: 'pop-prod', name: "Popular Products", type: 'product-grid', content: null },
-    { id: 'smart-watch', name: "Smart Watches", type: 'single-banner-large', content: { image: 'https://placehold.co/1200x150.png', link: '/products?category=Wearables' } },
-    { id: 'headphones', name: "Headphones", type: 'single-banner-large', content: { image: 'https://placehold.co/1200x150.png', link: '/products?category=Audio' } },
+    predefinedProductGrids[1], // Popular Products
+    { id: 'smart-watch-banner', name: "Smart Watches", type: 'single-banner-large', content: { image: 'https://placehold.co/1200x150.png', link: '/products?category=Wearables' } },
+    { id: 'headphones-banner', name: "Headphones", type: 'single-banner-large', content: { image: 'https://placehold.co/1200x150.png', link: '/products?category=Audio' } },
 ];
 
 export const defaultHeroBanners: HeroBanner[] = [
