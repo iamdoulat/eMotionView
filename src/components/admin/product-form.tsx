@@ -5,7 +5,7 @@ import { useForm, useFieldArray, type SubmitHandler } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import type { Product, Category, Brand, Supplier } from "@/lib/placeholder-data";
-import { attributes } from "@/lib/placeholder-data";
+import { attributes as initialAttributes } from "@/lib/placeholder-data";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
@@ -601,7 +601,7 @@ export function ProductForm({ product, onSave, onCancel, isSaving }: ProductForm
                             <div className="space-y-4">
                                 {attributeFields.map((field, index) => {
                                     const attributeName = watch(`productAttributes.${index}.name`);
-                                    const availableValues = attributes.find(a => a.name === attributeName)?.values || [];
+                                    const availableValues = initialAttributes.find(a => a.name === attributeName)?.values || [];
                                     const selectedValues = watch(`productAttributes.${index}.values`) || [];
                                     
                                     return (
@@ -627,7 +627,7 @@ export function ProductForm({ product, onSave, onCancel, isSaving }: ProductForm
                                                                         </SelectTrigger>
                                                                     </FormControl>
                                                                     <SelectContent>
-                                                                        {attributes.map(attr => (
+                                                                        {initialAttributes.map(attr => (
                                                                             <SelectItem key={attr.id} value={attr.name}>{attr.name}</SelectItem>
                                                                         ))}
                                                                     </SelectContent>
