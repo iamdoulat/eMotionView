@@ -116,15 +116,15 @@ export default async function HomePage() {
                              <p className="text-muted-foreground mt-2">Find your preferred item in the highlighted product selection.</p>
                         </div>
                         <Carousel opts={{ align: "start", dragFree: true }} className="w-full">
-                            <CarouselContent className="-ml-4">
+                            <CarouselContent className="-ml-2 md:-ml-4">
                             {categoryItems.map((category: any) => {
                                 const categoryData = allCategories.find(c => c.name === category.name);
                                 const permalink = categoryData?.permalink;
                                 if (!permalink) return null;
                                 return (
-                                <CarouselItem key={category.id} className="basis-auto pl-4 md:pl-6">
-                                <Link href={`/category/${permalink}`} className="group text-center block w-[130px]">
-                                    <div className="w-32 h-32 mx-auto rounded-full bg-secondary/50 flex items-center justify-center overflow-hidden border-2 border-transparent group-hover:border-primary transition-all duration-300 group-hover:shadow-lg">
+                                <CarouselItem key={category.id} className="basis-1/3 sm:basis-1/4 md:basis-1/6 lg:basis-auto pl-2 md:pl-4">
+                                <Link href={`/category/${permalink}`} className="group text-center block w-full md:w-[130px]">
+                                    <div className="w-24 h-24 md:w-32 md:h-32 mx-auto rounded-full bg-secondary/50 flex items-center justify-center overflow-hidden border-2 border-transparent group-hover:border-primary transition-all duration-300 group-hover:shadow-lg">
                                         <Image src={category.image} alt={category.name} width={128} height={128} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-300" data-ai-hint="category icon" />
                                     </div>
                                     <h3 className="mt-4 font-semibold text-sm text-foreground group-hover:text-primary transition-colors truncate">{category.name}</h3>
