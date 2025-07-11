@@ -72,7 +72,7 @@ export default async function HomePage() {
 
   const getProductsForGrid = (category: string) => {
     if (!category) return [];
-    return allProducts.filter(p => p.categories.includes(category)).slice(0, 6);
+    return allProducts.filter(p => Array.isArray(p.categories) && p.categories.includes(category)).slice(0, 6);
   }
 
   return (
