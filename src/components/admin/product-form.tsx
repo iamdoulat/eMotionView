@@ -478,7 +478,9 @@ export function ProductForm({ product, onSave, onCancel, isSaving }: ProductForm
                                                         )}
                                                     >
                                                         <span className="truncate">
-                                                            {field.value && field.value.length > 0 ? `${field.value.length} selected` : "Select categories"}
+                                                            {field.value && field.value.length > 0
+                                                                ? `${field.value.length} selected`
+                                                                : "Select categories"}
                                                         </span>
                                                         <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
                                                     </Button>
@@ -494,7 +496,8 @@ export function ProductForm({ product, onSave, onCancel, isSaving }: ProductForm
                                                                 <CommandItem
                                                                     key={category.id}
                                                                     value={category.name}
-                                                                    onSelect={(currentValue) => {
+                                                                    onSelect={(e) => {
+                                                                        e.preventDefault();
                                                                         const selected = field.value || [];
                                                                         const isSelected = selected.includes(category.name);
                                                                         const newSelection = isSelected
