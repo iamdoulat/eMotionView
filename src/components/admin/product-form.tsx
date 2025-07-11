@@ -26,7 +26,7 @@ import { Textarea } from "../ui/textarea";
 import { collection, getDocs } from "firebase/firestore";
 import { Popover, PopoverContent, PopoverTrigger } from "../ui/popover";
 import { cn } from "@/lib/utils";
-import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "../ui/command";
+import { Command, CommandEmpty, CommandGroup, CommandInput, CommandList } from "../ui/command";
 
 const productSchema = z.object({
     id: z.string().optional(),
@@ -479,7 +479,7 @@ export function ProductForm({ product, onSave, onCancel, isSaving }: ProductForm
                                     </FormItem>
                                 )}
                             />
-                            <FormField
+                           <FormField
                                 control={control}
                                 name="categories"
                                 render={({ field }) => (
@@ -497,7 +497,7 @@ export function ProductForm({ product, onSave, onCancel, isSaving }: ProductForm
                                             )}
                                         >
                                             <span className="truncate">
-                                            {field.value?.length
+                                            {field.value?.length > 0
                                                 ? `${field.value.length} selected`
                                                 : "Select categories"}
                                             </span>
@@ -512,28 +512,25 @@ export function ProductForm({ product, onSave, onCancel, isSaving }: ProductForm
                                             <CommandEmpty>No categories found.</CommandEmpty>
                                             <CommandGroup>
                                             {dbCategories.map((category) => (
-                                                <CommandItem
-                                                value={category.name}
-                                                key={category.id}
-                                                onSelect={(currentValue) => {
-                                                    const selected = field.value || [];
-                                                    const isSelected = selected.includes(category.name);
-                                                    const newSelection = isSelected
-                                                    ? selected.filter((name) => name !== category.name)
-                                                    : [...selected, category.name];
-                                                    field.onChange(newSelection);
-                                                }}
+                                                <div
+                                                    key={category.id}
+                                                    className="relative flex cursor-default select-none items-center rounded-sm px-2 py-1.5 text-sm outline-none hover:bg-accent"
+                                                    onClick={() => {
+                                                        const selected = field.value || [];
+                                                        const isSelected = selected.includes(category.name);
+                                                        field.onChange(
+                                                            isSelected
+                                                            ? selected.filter((name) => name !== category.name)
+                                                            : [...selected, category.name]
+                                                        );
+                                                    }}
                                                 >
-                                                <Check
-                                                    className={cn(
-                                                    "mr-2 h-4 w-4",
-                                                    (field.value || []).includes(category.name)
-                                                        ? "opacity-100"
-                                                        : "opacity-0"
-                                                    )}
-                                                />
-                                                {category.name}
-                                                </CommandItem>
+                                                    <Checkbox
+                                                        checked={(field.value || []).includes(category.name)}
+                                                        className="mr-2"
+                                                    />
+                                                    <span>{category.name}</span>
+                                                </div>
                                             ))}
                                             </CommandGroup>
                                         </CommandList>
