@@ -112,7 +112,7 @@ export default function PromoBannersPage() {
         try {
             const docRef = doc(db, SETTINGS_DOC_PATH);
             const docSnap = await getDoc(docRef);
-            let existingSections = docSnap.exists() ? docSnap.data().sections : defaultHomepageSections;
+            let existingSections = docSnap.exists() && docSnap.data()?.sections ? docSnap.data().sections : defaultHomepageSections;
 
             let promoSectionExists = existingSections.some((s: Section) => s.type === PROMO_SECTION_TYPE);
             
