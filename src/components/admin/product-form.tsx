@@ -492,29 +492,31 @@ export function ProductForm({ product, onSave, onCancel, isSaving }: ProductForm
                                                     <CommandList>
                                                         <CommandEmpty>No categories found.</CommandEmpty>
                                                         <CommandGroup>
-                                                            {dbCategories.map((category) => (
-                                                                <CommandItem
-                                                                    key={category.id}
-                                                                    value={category.name}
-                                                                    onSelect={(e) => {
-                                                                        e.preventDefault();
-                                                                        const selected = field.value || [];
-                                                                        const isSelected = selected.includes(category.name);
-                                                                        const newSelection = isSelected
-                                                                            ? selected.filter((name) => name !== category.name)
-                                                                            : [...selected, category.name];
-                                                                        field.onChange(newSelection);
-                                                                    }}
-                                                                >
-                                                                    <Check
-                                                                        className={cn(
-                                                                            "mr-2 h-4 w-4",
-                                                                            (field.value || []).includes(category.name) ? "opacity-100" : "opacity-0"
-                                                                        )}
-                                                                    />
-                                                                    {category.name}
-                                                                </CommandItem>
-                                                            ))}
+                                                            {dbCategories.map((category) => {
+                                                                const isSelected = (field.value || []).includes(category.name);
+                                                                return (
+                                                                    <CommandItem
+                                                                        key={category.id}
+                                                                        value={category.name}
+                                                                        onSelect={(currentValue) => {
+                                                                            const selected = field.value || [];
+                                                                            const isCurrentlySelected = selected.includes(category.name);
+                                                                            const newSelection = isCurrentlySelected
+                                                                                ? selected.filter((name) => name !== category.name)
+                                                                                : [...selected, category.name];
+                                                                            field.onChange(newSelection);
+                                                                        }}
+                                                                    >
+                                                                        <Check
+                                                                            className={cn(
+                                                                                "mr-2 h-4 w-4",
+                                                                                isSelected ? "opacity-100" : "opacity-0"
+                                                                            )}
+                                                                        />
+                                                                        {category.name}
+                                                                    </CommandItem>
+                                                                );
+                                                            })}
                                                         </CommandGroup>
                                                     </CommandList>
                                                 </Command>
@@ -626,7 +628,7 @@ export function ProductForm({ product, onSave, onCancel, isSaving }: ProductForm
                                                                     </FormControl>
                                                                     <SelectContent>
                                                                         {attributes.map(attr => (
-                                                                            <SelectItem key={attr.name} value={attr.name}>{attr.name}</SelectItem>
+                                                                            <SelectItem key={attr.id} value={attr.name}>{attr.name}</SelectItem>
                                                                         ))}
                                                                     </SelectContent>
                                                                 </Select>
