@@ -19,7 +19,7 @@ export default async function ProductsPage() {
   // Enrich products with review data
   products = await enrichProductsWithReviews(products);
 
-  const categories = [...new Set(products.flatMap(p => p.categories))];
+  const categories = [...new Set(products.flatMap(p => p.categories || []))];
   const brands = [...new Set(products.map(p => p.brand))];
   
   return (
@@ -38,8 +38,8 @@ export default async function ProductsPage() {
               <AccordionItem value="category">
                 <AccordionTrigger className="font-semibold">Category</AccordionTrigger>
                 <AccordionContent className="space-y-2 pt-2">
-                  {categories.map(category => (
-                    <div key={category} className="flex items-center space-x-2">
+                  {categories.map((category, index) => (
+                    <div key={`${category}-${index}`} className="flex items-center space-x-2">
                       <Checkbox id={`cat-${category}`} />
                       <Label htmlFor={`cat-${category}`} className="font-normal">{category}</Label>
                     </div>
@@ -49,8 +49,8 @@ export default async function ProductsPage() {
               <AccordionItem value="brand">
                 <AccordionTrigger className="font-semibold">Brand</AccordionTrigger>
                 <AccordionContent className="space-y-2 pt-2">
-                  {brands.map(brand => (
-                    <div key={brand} className="flex items-center space-x-2">
+                  {brands.map((brand, index) => (
+                    <div key={`${brand}-${index}`} className="flex items-center space-x-2">
                       <Checkbox id={`brand-${brand}`} />
                       <Label htmlFor={`brand-${brand}`} className="font-normal">{brand}</Label>
                     </div>
@@ -71,7 +71,7 @@ export default async function ProductsPage() {
                 <AccordionTrigger className="font-semibold">Rating</AccordionTrigger>
                 <AccordionContent className="space-y-2 pt-2">
                   {[5, 4, 3, 2, 1].map(rating => (
-                    <div key={rating} className="flex items-center space-x-2">
+                    <div key={`rating-${rating}`} className="flex items-center space-x-2">
                       <Checkbox id={`rating-${rating}`} />
                       <Label htmlFor={`rating-${rating}`} className="font-normal">{rating} Stars & Up</Label>
                     </div>
