@@ -386,10 +386,10 @@ export const brands: Omit<Brand, 'id'>[] = [
     { name: 'QCY', logo: 'https://placehold.co/100x40.png', permalink: 'qcy' },
     { name: 'Xiaomi', logo: 'https://placehold.co/100x40.png', permalink: 'xiaomi' },
 ];
-export const attributes: Omit<Attribute, 'id'>[] = [
-    { name: 'Color', values: ['Black', 'White', 'Silver', 'Blue', 'Red'] },
-    { name: 'Size', values: ['S', 'M', 'L', 'XL'] },
-    { name: 'Storage', values: ['64GB', '128GB', '256GB', '512GB'] },
+export const attributes: Attribute[] = [
+    { id: 'attr-color', name: 'Color', values: ['Black', 'White', 'Silver', 'Blue', 'Red'] },
+    { id: 'attr-size', name: 'Size', values: ['S', 'M', 'L', 'XL'] },
+    { id: 'attr-storage', name: 'Storage', values: ['64GB', '128GB', '256GB', '512GB'] },
 ];
 export const suppliers: Omit<Supplier, 'id'>[] = [
     { name: 'KOSPET Direct', contactPerson: 'John Kospet', email: 'sales@kospet.com', permalink: 'kospet-direct' },
