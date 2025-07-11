@@ -61,7 +61,7 @@ export function HomepageCarousel({ banners }: HomepageCarouselProps) {
                                     src={banner.image}
                                     alt={banner.headline || `Hero Banner ${index + 1}`}
                                     fill
-                                    style={{ objectFit: 'contain' }}
+                                    style={{ objectFit: 'cover' }}
                                     className=""
                                     data-ai-hint="gadget festival sale"
                                     priority={banner.id === banners[0].id}
