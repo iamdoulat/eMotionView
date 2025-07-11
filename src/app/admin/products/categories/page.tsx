@@ -176,7 +176,7 @@ export default function CategoriesPage() {
               ) : categories.length > 0 ? categories.map((category) => (
                 <TableRow key={category.id}>
                   <TableCell className="font-medium">{category.name}</TableCell>
-                  <TableCell className="text-muted-foreground">/products/{category.permalink}</TableCell>
+                  <TableCell className="text-muted-foreground">/category/{category.permalink}</TableCell>
                   <TableCell>{category.description}</TableCell>
                   <TableCell className="text-right">
                     <DropdownMenu>
