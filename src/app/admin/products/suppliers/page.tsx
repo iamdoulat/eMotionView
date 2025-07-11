@@ -1,11 +1,11 @@
 
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useForm, type SubmitHandler } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { suppliers as initialSuppliers, type Supplier } from "@/lib/placeholder-data";
+import type { Supplier } from "@/lib/placeholder-data";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
@@ -14,30 +14,75 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, Di
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { MoreHorizontal, PlusCircle, Edit, Trash2 } from "lucide-react";
+import { MoreHorizontal, PlusCircle, Edit, Trash2, Loader2 } from "lucide-react";
+import { useToast } from "@/hooks/use-toast";
+import { collection, getDocs, addDoc, doc, setDoc, deleteDoc } from "firebase/firestore";
+import { db, docToJSON } from "@/lib/firebase";
 
 const supplierSchema = z.object({
   id: z.string().optional(),
   name: z.string().min(1, "Supplier name is required"),
   contactPerson: z.string().min(1, "Contact person is required"),
   email: z.string().email("Invalid email address"),
+  permalink: z.string().optional(),
 });
 
 type SupplierFormData = z.infer<typeof supplierSchema>;
 
 export default function SuppliersPage() {
-  const [suppliers, setSuppliers] = useState<Supplier[]>(initialSuppliers);
+  const [suppliers, setSuppliers] = useState<Supplier[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [supplierToEdit, setSupplierToEdit] = useState<Supplier | null>(null);
   const [supplierToDelete, setSupplierToDelete] = useState<Supplier | null>(null);
+  const { toast } = useToast();
 
-  const { register, handleSubmit, reset, formState: { errors } } = useForm<SupplierFormData>({
+  const { register, handleSubmit, reset, formState: { errors }, setValue, watch } = useForm<SupplierFormData>({
     resolver: zodResolver(supplierSchema),
   });
 
+  const [isPermalinkManuallyEdited, setIsPermalinkManuallyEdited] = useState(false);
+  const supplierName = watch('name');
+
+  useEffect(() => {
+    if (!isPermalinkManuallyEdited && supplierName) {
+      const generatedPermalink = supplierName
+        .toLowerCase()
+        .trim()
+        .replace(/&/g, 'and')
+        .replace(/[^a-z0-9\s-]/g, '')
+        .replace(/\s+/g, '-')
+        .replace(/-+/g, '-');
+      setValue('permalink', generatedPermalink);
+    }
+  }, [supplierName, isPermalinkManuallyEdited, setValue]);
+  
+  useEffect(() => {
+    const fetchSuppliers = async () => {
+        setIsLoading(true);
+        try {
+            const suppliersSnapshot = await getDocs(collection(db, 'suppliers'));
+            setSuppliers(suppliersSnapshot.docs.map(docToJSON) as Supplier[]);
+        } catch (error) {
+            console.error("Failed to fetch suppliers:", error);
+            toast({ variant: 'destructive', title: 'Error', description: 'Could not load supplier data.' });
+        } finally {
+            setIsLoading(false);
+        }
+    };
+    fetchSuppliers();
+  }, [toast]);
+
   const handleOpenForm = (supplier?: Supplier) => {
     setSupplierToEdit(supplier || null);
-    reset(supplier || { name: "", contactPerson: "", email: "" });
+    if (supplier) {
+        reset(supplier);
+        setIsPermalinkManuallyEdited(true);
+    } else {
+        reset({ name: "", contactPerson: "", email: "", permalink: "" });
+        setIsPermalinkManuallyEdited(false);
+    }
     setIsFormOpen(true);
   };
 
@@ -46,20 +91,40 @@ export default function SuppliersPage() {
     setIsFormOpen(false);
   };
 
-  const handleSaveSupplier: SubmitHandler<SupplierFormData> = (data) => {
-    if (supplierToEdit) {
-      setSuppliers(suppliers.map(s => s.id === supplierToEdit.id ? { ...s, ...data } : s));
-    } else {
-      const newSupplier: Supplier = { ...data, id: `sup-${Date.now()}` };
-      setSuppliers([...suppliers, newSupplier]);
+  const handleSaveSupplier: SubmitHandler<SupplierFormData> = async (data) => {
+    setIsSubmitting(true);
+    try {
+        if (supplierToEdit) {
+            const docRef = doc(db, 'suppliers', supplierToEdit.id);
+            await setDoc(docRef, data, { merge: true });
+            setSuppliers(suppliers.map(s => s.id === supplierToEdit.id ? { ...s, ...data } : s));
+            toast({ title: "Success", description: "Supplier updated successfully." });
+        } else {
+            const docRef = await addDoc(collection(db, 'suppliers'), data);
+            setSuppliers([...suppliers, { ...data, id: docRef.id }]);
+            toast({ title: "Success", description: "New supplier created." });
+        }
+        handleCloseForm();
+    } catch (error) {
+        console.error("Error saving supplier:", error);
+        toast({ variant: 'destructive', title: "Error", description: "Could not save the supplier." });
+    } finally {
+        setIsSubmitting(false);
     }
-    handleCloseForm();
   };
 
-  const handleDeleteSupplier = () => {
+  const handleDeleteSupplier = async () => {
     if (!supplierToDelete) return;
-    setSuppliers(suppliers.filter(s => s.id !== supplierToDelete.id));
-    setSupplierToDelete(null);
+    try {
+        await deleteDoc(doc(db, 'suppliers', supplierToDelete.id));
+        setSuppliers(suppliers.filter(s => s.id !== supplierToDelete.id));
+        toast({ title: "Success", description: "Supplier deleted." });
+    } catch (error) {
+        console.error("Error deleting supplier:", error);
+        toast({ variant: 'destructive', title: "Error", description: "Could not delete supplier." });
+    } finally {
+        setSupplierToDelete(null);
+    }
   };
 
   return (
@@ -84,17 +149,21 @@ export default function SuppliersPage() {
                 <TableHead>Supplier Name</TableHead>
                 <TableHead>Contact Person</TableHead>
                 <TableHead>Email</TableHead>
+                <TableHead>Permalink</TableHead>
                 <TableHead>
                   <span className="sr-only">Actions</span>
                 </TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
-              {suppliers.map((supplier) => (
+              {isLoading ? (
+                  <TableRow><TableCell colSpan={5} className="h-24 text-center"><Loader2 className="h-6 w-6 animate-spin mx-auto" /></TableCell></TableRow>
+              ) : suppliers.map((supplier) => (
                 <TableRow key={supplier.id}>
                   <TableCell className="font-medium">{supplier.name}</TableCell>
                   <TableCell>{supplier.contactPerson}</TableCell>
                   <TableCell>{supplier.email}</TableCell>
+                  <TableCell className="text-muted-foreground">/supplier/{supplier.permalink}</TableCell>
                   <TableCell className="text-right">
                     <DropdownMenu>
                       <DropdownMenuTrigger asChild>
@@ -137,23 +206,31 @@ export default function SuppliersPage() {
             <div className="space-y-4 py-4">
               <div className="space-y-2">
                 <Label htmlFor="name">Supplier Name</Label>
-                <Input id="name" {...register("name")} />
+                <Input id="name" {...register("name")} disabled={isSubmitting} />
                 {errors.name && <p className="text-destructive text-sm">{errors.name.message}</p>}
               </div>
               <div className="space-y-2">
+                <Label htmlFor="permalink">Permalink</Label>
+                <Input id="permalink" {...register("permalink")} onChange={(e) => { setIsPermalinkManuallyEdited(true); setValue('permalink', e.target.value); }} disabled={isSubmitting} />
+                {errors.permalink && <p className="text-destructive text-sm">{errors.permalink.message}</p>}
+              </div>
+              <div className="space-y-2">
                 <Label htmlFor="contactPerson">Contact Person</Label>
-                <Input id="contactPerson" {...register("contactPerson")} />
+                <Input id="contactPerson" {...register("contactPerson")} disabled={isSubmitting} />
                 {errors.contactPerson && <p className="text-destructive text-sm">{errors.contactPerson.message}</p>}
               </div>
               <div className="space-y-2">
                 <Label htmlFor="email">Email</Label>
-                <Input id="email" type="email" {...register("email")} />
+                <Input id="email" type="email" {...register("email")} disabled={isSubmitting} />
                 {errors.email && <p className="text-destructive text-sm">{errors.email.message}</p>}
               </div>
             </div>
             <DialogFooter>
-              <Button type="button" variant="ghost" onClick={handleCloseForm}>Cancel</Button>
-              <Button type="submit">Save Supplier</Button>
+              <Button type="button" variant="ghost" onClick={handleCloseForm} disabled={isSubmitting}>Cancel</Button>
+              <Button type="submit" disabled={isSubmitting}>
+                {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                Save Supplier
+              </Button>
             </DialogFooter>
           </form>
         </DialogContent>

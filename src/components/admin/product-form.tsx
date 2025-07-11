@@ -4,8 +4,8 @@
 import { useForm, useFieldArray, type SubmitHandler } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import type { Product, Category, Brand } from "@/lib/placeholder-data";
-import { suppliers, attributes } from "@/lib/placeholder-data";
+import type { Product, Category, Brand, Supplier } from "@/lib/placeholder-data";
+import { attributes } from "@/lib/placeholder-data";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
@@ -71,16 +71,18 @@ interface ProductFormProps {
 export function ProductForm({ product, onSave, onCancel, isSaving }: ProductFormProps) {
     const [dbCategories, setDbCategories] = useState<Category[]>([]);
     const [dbBrands, setDbBrands] = useState<Brand[]>([]);
+    const [dbSuppliers, setDbSuppliers] = useState<Supplier[]>([]);
     
     useEffect(() => {
         const fetchData = async () => {
             const categoriesSnapshot = await getDocs(collection(db, 'categories'));
-            const categoryList = categoriesSnapshot.docs.map(doc => docToJSON(doc) as Category);
-            setDbCategories(categoryList);
+            setDbCategories(categoriesSnapshot.docs.map(doc => docToJSON(doc) as Category));
 
             const brandsSnapshot = await getDocs(collection(db, 'brands'));
-            const brandList = brandsSnapshot.docs.map(doc => docToJSON(doc) as Brand);
-            setDbBrands(brandList);
+            setDbBrands(brandsSnapshot.docs.map(doc => docToJSON(doc) as Brand));
+            
+            const suppliersSnapshot = await getDocs(collection(db, 'suppliers'));
+            setDbSuppliers(suppliersSnapshot.docs.map(doc => docToJSON(doc) as Supplier));
         };
         fetchData();
     }, []);
@@ -557,7 +559,7 @@ export function ProductForm({ product, onSave, onCancel, isSaving }: ProductForm
                                             </SelectTrigger>
                                         </FormControl>
                                         <SelectContent>
-                                            {suppliers.map(sup => <SelectItem key={sup.name} value={sup.name}>{sup.name}</SelectItem>)}
+                                            {dbSuppliers.map(sup => <SelectItem key={sup.id} value={sup.name}>{sup.name}</SelectItem>)}
                                         </SelectContent>
                                     </Select>
                                     <FormMessage />

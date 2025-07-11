@@ -92,7 +92,7 @@ export type Brand = {
   id: string;
   name: string;
   logo: string;
-  permalink?: string;
+  permalink: string;
 };
 
 export type Attribute = {
@@ -106,6 +106,7 @@ export type Supplier = {
   name: string;
   contactPerson: string;
   email: string;
+  permalink: string;
 };
 
 // Types for Homepage Settings
@@ -391,11 +392,11 @@ export const attributes: Omit<Attribute, 'id'>[] = [
     { name: 'Storage', values: ['64GB', '128GB', '256GB', '512GB'] },
 ];
 export const suppliers: Omit<Supplier, 'id'>[] = [
-    { name: 'KOSPET Direct', contactPerson: 'John Kospet', email: 'sales@kospet.com' },
-    { name: 'Haylou Official', contactPerson: 'Jane Haylou', email: 'distro@haylou.com' },
-    { name: 'Soundpeats Global', contactPerson: 'Peter Sound', email: 'global@soundpeats.com' },
-    { name: 'QCY Direct', contactPerson: 'Mary QCY', email: 'contact@qcy.com' },
-    { name: 'Tech Wholesalers Inc.', contactPerson: 'Sam Smith', email: 'sam@techwholesalers.com' },
+    { name: 'KOSPET Direct', contactPerson: 'John Kospet', email: 'sales@kospet.com', permalink: 'kospet-direct' },
+    { name: 'Haylou Official', contactPerson: 'Jane Haylou', email: 'distro@haylou.com', permalink: 'haylou-official' },
+    { name: 'Soundpeats Global', contactPerson: 'Peter Sound', email: 'global@soundpeats.com', permalink: 'soundpeats-global' },
+    { name: 'QCY Direct', contactPerson: 'Mary QCY', email: 'contact@qcy.com', permalink: 'qcy-direct' },
+    { name: 'Tech Wholesalers Inc.', contactPerson: 'Sam Smith', email: 'sam@techwholesalers.com', permalink: 'tech-wholesalers-inc' },
 ];
 
 export const predefinedProductGrids: Section[] = [
@@ -467,4 +468,3 @@ export const defaultFooterSettings: FooterSettings = {
         email: "motionview22@gmail.com.bd",
     },
 };
-
