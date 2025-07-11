@@ -457,4 +457,3 @@ export const defaultFooterSettings: FooterSettings = {
         email: "motionview22@gmail.com.bd",
     },
 };
-
