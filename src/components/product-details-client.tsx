@@ -4,7 +4,7 @@
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
-import type { Product } from '@/lib/placeholder-data';
+import type { Product, Brand } from '@/lib/placeholder-data';
 import { useCart } from '@/hooks/use-cart';
 import { useWishlist } from '@/hooks/use-wishlist';
 import { useToast } from '@/hooks/use-toast';
@@ -16,7 +16,7 @@ import { Input } from '@/components/ui/input';
 import { cn } from '@/lib/utils';
 import Link from 'next/link';
 
-export function ProductDetailsClient({ product }: { product: Product }) {
+export function ProductDetailsClient({ product, brand }: { product: Product, brand?: Brand }) {
   const { toast } = useToast();
   const { addToCart } = useCart();
   const { addToWishlist, removeFromWishlist, isInWishlist } = useWishlist();
@@ -107,6 +107,14 @@ export function ProductDetailsClient({ product }: { product: Product }) {
       {/* Product Info */}
       <div className="flex flex-col">
         <h1 className="font-headline text-2xl font-bold text-foreground">{product.name}</h1>
+        
+         <div className="text-sm text-muted-foreground mt-2">
+            Brand: {brand && brand.permalink ? (
+                <Link href={`/brand/${brand.permalink}`} className="text-primary hover:underline font-medium">{product.brand}</Link>
+            ) : (
+                <span className="font-medium text-foreground">{product.brand}</span>
+            )}
+        </div>
         
         <ul className="mt-4 space-y-2 text-sm text-foreground">
           {product.features.map((feature, index) => (

@@ -85,13 +85,14 @@ export type Category = {
   id: string;
   name: string;
   description: string;
-  permalink?: string;
+  permalink: string;
 };
 
 export type Brand = {
   id: string;
   name: string;
   logo: string;
+  permalink?: string;
 };
 
 export type Attribute = {
@@ -378,11 +379,11 @@ export const categories: Omit<Category, 'id'>[] = [
     { name: 'Drones', description: 'Unmanned aerial vehicles for fun and professional use.', permalink: 'drones' },
 ];
 export const brands: Omit<Brand, 'id'>[] = [
-    { name: 'KOSPET', logo: 'https://placehold.co/100x40.png' },
-    { name: 'Haylou', logo: 'https://placehold.co/100x40.png' },
-    { name: 'Soundpeats', logo: 'https://placehold.co/100x40.png' },
-    { name: 'QCY', logo: 'https://placehold.co/100x40.png' },
-    { name: 'Xiaomi', logo: 'https://placehold.co/100x40.png' },
+    { name: 'KOSPET', logo: 'https://placehold.co/100x40.png', permalink: 'kospet' },
+    { name: 'Haylou', logo: 'https://placehold.co/100x40.png', permalink: 'haylou' },
+    { name: 'Soundpeats', logo: 'https://placehold.co/100x40.png', permalink: 'soundpeats' },
+    { name: 'QCY', logo: 'https://placehold.co/100x40.png', permalink: 'qcy' },
+    { name: 'Xiaomi', logo: 'https://placehold.co/100x40.png', permalink: 'xiaomi' },
 ];
 export const attributes: Omit<Attribute, 'id'>[] = [
     { name: 'Color', values: ['Black', 'White', 'Silver', 'Blue', 'Red'] },
@@ -466,3 +467,4 @@ export const defaultFooterSettings: FooterSettings = {
         email: "motionview22@gmail.com.bd",
     },
 };
+

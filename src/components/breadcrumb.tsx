@@ -1,3 +1,4 @@
+
 "use client";
 
 import Link from 'next/link';
@@ -6,7 +7,7 @@ import { cn } from '@/lib/utils';
 
 type BreadcrumbItem = {
   label: string;
-  href: string;
+  href?: string;
 };
 
 type BreadcrumbProps = {
@@ -19,9 +20,9 @@ export function Breadcrumb({ items, className }: BreadcrumbProps) {
     <nav aria-label="Breadcrumb" className={cn("text-sm text-muted-foreground", className)}>
       <ol className="flex items-center gap-2 flex-wrap">
         {items.map((item, index) => (
-          <li key={item.href} className="flex items-center gap-2">
+          <li key={item.label + index} className="flex items-center gap-2">
             {index > 0 && <ChevronRight className="h-4 w-4" />}
-            {index < items.length - 1 ? (
+            {item.href && index < items.length - 1 ? (
               <Link href={item.href} className="hover:text-primary transition-colors">
                 {item.label}
               </Link>

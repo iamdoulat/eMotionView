@@ -9,7 +9,7 @@ import Link from 'next/link';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { collection, query, where, getDocs, limit, doc, getDoc, type DocumentSnapshot } from 'firebase/firestore';
 import { db, docToJSON } from '@/lib/firebase';
-import type { Product, Review, Category } from '@/lib/placeholder-data';
+import type { Product, Review, Category, Brand } from '@/lib/placeholder-data';
 import { Reviews } from '@/components/reviews';
 import { ProductDetailsClient } from '@/components/product-details-client';
 
@@ -63,6 +63,10 @@ export default async function ProductDetailPage({ params }: { params: { id: stri
   const categoriesSnapshot = await getDocs(collection(db, 'categories'));
   const allCategories = categoriesSnapshot.docs.map(docToJSON) as Category[];
   const productCategories = allCategories.filter(c => (product.categories || []).includes(c.name));
+  
+  const brandsSnapshot = await getDocs(collection(db, 'brands'));
+  const allBrands = brandsSnapshot.docs.map(docToJSON) as Brand[];
+  const productBrand = allBrands.find(b => b.name === product.brand);
 
 
   return (
@@ -72,14 +76,14 @@ export default async function ProductDetailPage({ params }: { params: { id: stri
           items={[
             { label: 'Home', href: '/' },
             { label: 'Products', href: '/products' },
-            ...productCategories.map(c => ({ label: c.name, href: `/category/${c.permalink}` })),
+            ...(productBrand ? [{ label: productBrand.name, href: `/brand/${productBrand.permalink}` }] : []),
             { label: product.name, href: `/products/${product.permalink}` },
           ]}
         />
         
         <div className="mt-6 grid grid-cols-1 lg:grid-cols-12 gap-8">
           <div className="lg:col-span-9">
-            <ProductDetailsClient product={productWithCalculatedRating} />
+            <ProductDetailsClient product={productWithCalculatedRating} brand={productBrand}/>
           </div>
           
           {/* Right Ad */}
