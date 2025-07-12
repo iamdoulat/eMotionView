@@ -136,8 +136,8 @@ export default function CategoryPage({ params }: { params: { slug: string } }) {
 
         <main className="md:col-span-3">
           {isLoading ? (
-            <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
-              {Array.from({ length: 9 }).map((_, i) => (
+            <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+              {Array.from({ length: 12 }).map((_, i) => (
                 <div key={i} className="space-y-2">
                   <Skeleton className="h-56 w-full" />
                   <Skeleton className="h-4 w-3/4" />
