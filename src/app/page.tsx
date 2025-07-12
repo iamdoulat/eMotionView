@@ -76,6 +76,13 @@ export default async function HomePage() {
 
 
   const getProductsForGrid = (categoryName: string) => {
+    if (categoryName === 'newest') {
+        // Sort all products by createdAt date and return the newest 6
+        return allProducts
+            .filter(p => p.createdAt) // Ensure product has a creation date
+            .sort((a, b) => new Date(b.createdAt!).getTime() - new Date(a.createdAt!).getTime())
+            .slice(0, 6);
+    }
     if (!categoryName) return [];
     return allProducts.filter(p => Array.isArray(p.categories) && p.categories.includes(categoryName)).slice(0, 6);
   }
@@ -139,8 +146,12 @@ export default async function HomePage() {
             case 'product-grid':
                 const products = getProductsForGrid(section.content?.category);
                 if (products.length === 0) return null;
-                const categoryData = allCategories.find(c => c.name === section.content?.category);
-                const permalink = categoryData?.permalink;
+                
+                // For "New Arrivals", the link should go to the general products page
+                const isNewArrivals = section.content?.category === 'newest';
+                const categoryData = isNewArrivals ? null : allCategories.find(c => c.name === section.content?.category);
+                const permalink = isNewArrivals ? '/products' : (categoryData ? `/category/${categoryData.permalink}` : null);
+
                 if (!permalink) return null;
 
                 return (
@@ -148,7 +159,7 @@ export default async function HomePage() {
                         <div className="flex justify-between items-center mb-8 border-b pb-4">
                             <h2 className="font-headline text-2xl font-bold tracking-tight text-foreground">{section.name}</h2>
                             <Button asChild variant="link" className="text-primary">
-                                <Link href={`/category/${permalink}`}>See all</Link>
+                                <Link href={permalink}>See all</Link>
                             </Button>
                         </div>
                         <div className="grid grid-cols-2 gap-x-4 gap-y-8 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 xl:gap-x-6">

@@ -1,4 +1,5 @@
 
+
 "use client";
 
 import { useForm, useFieldArray, type SubmitHandler } from "react-hook-form";
@@ -56,6 +57,7 @@ const productSchema = z.object({
     productType: z.enum(['Physical', 'Digital']).default('Physical'),
     downloadUrl: z.string().url({ message: "Please enter a valid URL." }).optional().or(z.literal('')),
     digitalProductNote: z.string().optional(),
+    createdAt: z.string().optional(),
 });
 
 type ProductFormData = z.infer<typeof productSchema>;
@@ -265,6 +267,7 @@ export function ProductForm({ product, onSave, onCancel, isSaving }: ProductForm
                 : undefined,
             rating: product?.rating || 0,
             reviewCount: product?.reviewCount || 0,
+            createdAt: product?.createdAt || new Date().toISOString(),
         };
 
         // Clean the object: remove any top-level keys with an 'undefined' value before saving.

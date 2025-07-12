@@ -25,6 +25,7 @@ export type Product = {
   downloadUrl?: string;
   digitalProductNote?: string;
   productAttributes?: { name: string; values: string[] }[];
+  createdAt?: string; // Added timestamp field
 };
 
 export type Review = {
@@ -204,6 +205,7 @@ export const products: Product[] = [
       warranty: '1 Year Brand Warranty',
       points: 130,
       productType: 'Physical',
+      createdAt: '2023-10-01T12:00:00Z',
     },
     {
       id: 'haylou-solar-plus-rt3-smartwatch',
@@ -236,6 +238,7 @@ export const products: Product[] = [
       warranty: '1 Year Brand Warranty',
       points: 55,
       productType: 'Physical',
+      createdAt: '2023-10-02T12:00:00Z',
     },
     {
         id: 'soundpeats-air4-wireless-earbuds',
@@ -267,7 +270,8 @@ export const products: Product[] = [
         supplier: 'Soundpeats Global',
         warranty: '6 Months Warranty',
         points: 80,
-        productType: 'Physical'
+        productType: 'Physical',
+        createdAt: '2023-10-03T12:00:00Z',
     },
      {
       id: 'qcy-t13-anc-true-wireless-earbuds',
@@ -301,7 +305,8 @@ export const products: Product[] = [
       supplier: 'QCY Direct',
       warranty: '6 Months Warranty',
       points: 35,
-      productType: 'Physical'
+      productType: 'Physical',
+      createdAt: '2023-10-04T12:00:00Z',
     },
 ];
 export const reviews: Omit<Review, 'id' | 'productId'>[] = [];
@@ -400,7 +405,7 @@ export const suppliers: Omit<Supplier, 'id'>[] = [
 ];
 
 export const predefinedProductGrids: Section[] = [
-    { id: 'new-arr', name: "New Arrivals", type: 'product-grid', content: { category: 'Wearables'} },
+    { id: 'new-arr', name: "New Arrivals", type: 'product-grid', content: { category: 'newest'} }, // Changed category
     { id: 'pop-prod', name: "Popular Products", type: 'product-grid', content: { category: 'Audio'} },
     { id: 'smart-watches-grid', name: "Smart Watches", type: 'product-grid', content: { category: 'Wearables'} },
     { id: 'headphones-grid', name: "Headphones", type: 'product-grid', content: { category: 'Audio' } },
