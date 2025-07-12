@@ -15,6 +15,8 @@ import { enrichProductsWithReviews } from '@/lib/product-utils';
 import { cn } from '@/lib/utils';
 import { HomepageCarousel } from '@/components/homepage-carousel';
 
+export const dynamic = 'force-dynamic';
+
 const BannerImage = ({ banner, className, width = 800, height = 400 }: { banner: { image: string, link?: string, name?: string }, className?: string, width?: number, height?: number }) => {
     const bannerContent = (
         <Image
