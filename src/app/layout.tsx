@@ -6,6 +6,7 @@ import { cn } from '@/lib/utils';
 import { Header } from '@/components/layout/header';
 import { Footer } from '@/components/layout/footer';
 import { Toaster } from "@/components/ui/toaster";
+import { MobileNavbar } from '@/components/layout/mobile-navbar';
 
 const poppins = Poppins({
   subsets: ['latin'],
@@ -31,12 +32,13 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" className={cn("h-full", poppins.variable)} suppressHydrationWarning>
-      <body className={cn("font-body antialiased min-h-screen flex flex-col")} suppressHydrationWarning>
+      <body className="font-body antialiased min-h-screen flex flex-col" suppressHydrationWarning>
         <Header />
-        <main className="flex-1">
+        <main className="flex-1 pb-16 md:pb-0">
           {children}
         </main>
         <Footer />
+        <MobileNavbar />
         <Toaster />
       </body>
     </html>
