@@ -1,5 +1,8 @@
 
 
+"use client";
+
+import { useState, useEffect } from 'react';
 import { ProductCard } from '@/components/product-card';
 import type { Product } from '@/lib/placeholder-data';
 import { Input } from '@/components/ui/input';
@@ -11,17 +14,36 @@ import { Button } from '@/components/ui/button';
 import { collection, getDocs } from 'firebase/firestore';
 import { db, docToJSON } from '@/lib/firebase';
 import { enrichProductsWithReviews } from '@/lib/product-utils';
+import { Skeleton } from '@/components/ui/skeleton';
+import { ChevronLeft, ChevronRight } from 'lucide-react';
 
-export default async function ProductsPage() {
-  const productsSnapshot = await getDocs(collection(db, 'products'));
-  let products = productsSnapshot.docs.map(docToJSON) as Product[];
-  
-  // Enrich products with review data
-  products = await enrichProductsWithReviews(products);
+const PRODUCTS_PER_PAGE = 12;
 
-  const categories = [...new Set(products.flatMap(p => p.categories || []))];
-  const brands = [...new Set(products.map(p => p.brand))];
-  
+export default function ProductsPage() {
+  const [allProducts, setAllProducts] = useState<Product[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [currentPage, setCurrentPage] = useState(1);
+
+  useEffect(() => {
+    const fetchProducts = async () => {
+      setIsLoading(true);
+      const productsSnapshot = await getDocs(collection(db, 'products'));
+      let products = productsSnapshot.docs.map(docToJSON) as Product[];
+      products = await enrichProductsWithReviews(products);
+      setAllProducts(products);
+      setIsLoading(false);
+    };
+    fetchProducts();
+  }, []);
+
+  const categories = [...new Set(allProducts.flatMap(p => p.categories || []))];
+  const brands = [...new Set(allProducts.map(p => p.brand))];
+
+  const totalPages = Math.ceil(allProducts.length / PRODUCTS_PER_PAGE);
+  const startIndex = (currentPage - 1) * PRODUCTS_PER_PAGE;
+  const endIndex = startIndex + PRODUCTS_PER_PAGE;
+  const currentProducts = allProducts.slice(startIndex, endIndex);
+
   return (
     <div className="container mx-auto px-4 py-8">
       <header className="mb-8">
@@ -84,11 +106,48 @@ export default async function ProductsPage() {
         </aside>
 
         <main className="md:col-span-3">
-          <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
-            {products.map((product) => (
-              <ProductCard key={product.id} product={product} />
-            ))}
-          </div>
+          {isLoading ? (
+            <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
+              {Array.from({ length: 12 }).map((_, i) => (
+                <div key={i} className="space-y-2">
+                  <Skeleton className="h-56 w-full" />
+                  <Skeleton className="h-4 w-3/4" />
+                  <Skeleton className="h-6 w-1/2" />
+                </div>
+              ))}
+            </div>
+          ) : (
+            <>
+              <div className="grid grid-cols-2 gap-x-4 gap-y-6 sm:grid-cols-2 lg:grid-cols-3">
+                {currentProducts.map((product) => (
+                  <ProductCard key={product.id} product={product} />
+                ))}
+              </div>
+              {totalPages > 1 && (
+                <div className="mt-8 flex justify-center items-center gap-4">
+                  <Button 
+                    variant="outline" 
+                    onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+                    disabled={currentPage === 1}
+                  >
+                    <ChevronLeft className="mr-2 h-4 w-4" />
+                    Previous
+                  </Button>
+                  <span className="text-sm font-medium">
+                    Page {currentPage} of {totalPages}
+                  </span>
+                  <Button 
+                    variant="outline" 
+                    onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+                    disabled={currentPage === totalPages}
+                  >
+                    Next
+                    <ChevronRight className="ml-2 h-4 w-4" />
+                  </Button>
+                </div>
+              )}
+            </>
+          )}
         </main>
       </div>
     </div>
