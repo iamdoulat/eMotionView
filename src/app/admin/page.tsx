@@ -10,10 +10,13 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card"
-import { DollarSign, Users, CreditCard, Activity, Database } from "lucide-react"
+import { DollarSign, Users, CreditCard, Activity } from "lucide-react"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Skeleton } from "@/components/ui/skeleton"
 import { SeedButton } from "@/components/admin/seed-button"
+import { collection, getDocs, query, where, orderBy, limit } from "firebase/firestore"
+import { db, docToJSON } from "@/lib/firebase"
+import type { Order, User } from "@/lib/placeholder-data"
 
 const initialData = [
   { name: "Jan", total: 0 },
@@ -30,31 +33,58 @@ const initialData = [
   { name: "Dec", total: 0 },
 ]
 
+interface DashboardStats {
+  totalRevenue: number;
+  totalCustomers: number;
+  totalSales: number;
+  chartData: { name: string; total: number }[];
+  recentSales: Order[];
+}
+
 export default function AdminDashboardPage() {
-  const [chartData, setChartData] = useState(initialData);
+  const [stats, setStats] = useState<DashboardStats | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const timer = setTimeout(() => {
-        const data = [
-        { name: "Jan", total: Math.floor(Math.random() * 5000) + 1000 },
-        { name: "Feb", total: Math.floor(Math.random() * 5000) + 1000 },
-        { name: "Mar", total: Math.floor(Math.random() * 5000) + 1000 },
-        { name: "Apr", total: Math.floor(Math.random() * 5000) + 1000 },
-        { name: "May", total: Math.floor(Math.random() * 5000) + 1000 },
-        { name: "Jun", total: Math.floor(Math.random() * 5000) + 1000 },
-        { name: "Jul", total: Math.floor(Math.random() * 5000) + 1000 },
-        { name: "Aug", total: Math.floor(Math.random() * 5000) + 1000 },
-        { name: "Sep", total: Math.floor(Math.random() * 5000) + 1000 },
-        { name: "Oct", total: Math.floor(Math.random() * 5000) + 1000 },
-        { name: "Nov", total: Math.floor(Math.random() * 5000) + 1000 },
-        { name: "Dec", total: Math.floor(Math.random() * 5000) + 1000 },
-        ]
-        setChartData(data)
+    const fetchDashboardData = async () => {
+      try {
+        const ordersSnapshot = await getDocs(collection(db, 'orders'));
+        const allOrders = ordersSnapshot.docs.map(doc => docToJSON(doc) as Order);
+        
+        const customersSnapshot = await getDocs(collection(db, 'customers'));
+        const totalCustomers = customersSnapshot.size;
+
+        const deliveredOrders = allOrders.filter(o => o.status === 'Delivered');
+
+        const totalRevenue = deliveredOrders.reduce((sum, order) => sum + order.total, 0);
+        const totalSales = deliveredOrders.length;
+        
+        const monthlyRevenue = [...initialData];
+        deliveredOrders.forEach(order => {
+          const month = new Date(order.date).getMonth();
+          monthlyRevenue[month].total += order.total;
+        });
+
+        const recentSalesQuery = query(collection(db, 'orders'), orderBy('date', 'desc'), limit(5));
+        const recentSalesSnapshot = await getDocs(recentSalesQuery);
+        const recentSales = recentSalesSnapshot.docs.map(doc => docToJSON(doc) as Order);
+
+        setStats({
+            totalRevenue,
+            totalCustomers,
+            totalSales,
+            chartData: monthlyRevenue,
+            recentSales
+        });
+
+      } catch (error) {
+        console.error("Failed to fetch dashboard data:", error);
+      } finally {
         setLoading(false);
-    }, 1500)
+      }
+    }
     
-    return () => clearTimeout(timer);
+    fetchDashboardData();
   }, [])
 
   return (
@@ -79,9 +109,9 @@ export default function AdminDashboardPage() {
                 </div>
             ) : (
                 <>
-                    <div className="text-2xl font-bold">$45,231.89</div>
+                    <div className="text-2xl font-bold">${stats?.totalRevenue.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</div>
                     <p className="text-xs text-muted-foreground">
-                      +20.1% from last month
+                      Based on completed orders
                     </p>
                 </>
             )}
@@ -102,9 +132,9 @@ export default function AdminDashboardPage() {
                 </div>
             ) : (
                 <>
-                    <div className="text-2xl font-bold">+2350</div>
+                    <div className="text-2xl font-bold">+{stats?.totalCustomers.toLocaleString()}</div>
                     <p className="text-xs text-muted-foreground">
-                      +180.1% from last month
+                      Total registered customers
                     </p>
                 </>
             )}
@@ -123,9 +153,9 @@ export default function AdminDashboardPage() {
                 </div>
             ) : (
                 <>
-                    <div className="text-2xl font-bold">+12,234</div>
+                    <div className="text-2xl font-bold">+{stats?.totalSales.toLocaleString()}</div>
                     <p className="text-xs text-muted-foreground">
-                      +19% from last month
+                      Total completed orders
                     </p>
                 </>
             )}
@@ -161,7 +191,7 @@ export default function AdminDashboardPage() {
           <CardContent className="pl-2">
             {loading ? <Skeleton className="w-full h-[350px]" /> : (
                 <ResponsiveContainer width="100%" height={350}>
-                <BarChart data={chartData}>
+                <BarChart data={stats?.chartData}>
                     <XAxis
                     dataKey="name"
                     stroke="#888888"
@@ -186,7 +216,7 @@ export default function AdminDashboardPage() {
           <CardHeader>
             <CardTitle>Recent Sales</CardTitle>
             <CardDescription>
-              You made 265 sales this month.
+              Your 5 most recent sales.
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -204,67 +234,23 @@ export default function AdminDashboardPage() {
                     ))}
                 </div>
             ) : (
-                <div className="space-y-8">
-              <div className="flex items-center">
-                <Avatar className="h-9 w-9">
-                  <AvatarImage src="https://placehold.co/40x40.png" alt="Avatar" data-ai-hint="person face" />
-                  <AvatarFallback>OM</AvatarFallback>
-                </Avatar>
-                <div className="ml-4 space-y-1">
-                  <p className="text-sm font-medium leading-none">Olivia Martin</p>
-                  <p className="text-sm text-muted-foreground">
-                    olivia.martin@email.com
-                  </p>
-                </div>
-                <div className="ml-auto font-medium">+$1,999.00</div>
+              <div className="space-y-8">
+                {stats?.recentSales.map(order => (
+                  <div key={order.id} className="flex items-center">
+                    <Avatar className="h-9 w-9">
+                      <AvatarImage src={order.customerAvatar} alt={order.customerName} data-ai-hint="person face" />
+                      <AvatarFallback>{order.customerName.charAt(0)}</AvatarFallback>
+                    </Avatar>
+                    <div className="ml-4 space-y-1">
+                      <p className="text-sm font-medium leading-none">{order.customerName}</p>
+                      <p className="text-sm text-muted-foreground">
+                        Order #{order.orderNumber}
+                      </p>
+                    </div>
+                    <div className="ml-auto font-medium">${order.total.toFixed(2)}</div>
+                  </div>
+                ))}
               </div>
-              <div className="flex items-center">
-                <Avatar className="flex h-9 w-9 items-center justify-center space-y-0 border">
-                   <AvatarImage src="https://placehold.co/40x40.png" alt="Avatar" data-ai-hint="person face" />
-                  <AvatarFallback>JL</AvatarFallback>
-                </Avatar>
-                <div className="ml-4 space-y-1">
-                  <p className="text-sm font-medium leading-none">Jackson Lee</p>
-                  <p className="text-sm text-muted-foreground">jackson.lee@email.com</p>
-                </div>
-                <div className="ml-auto font-medium">+$39.00</div>
-              </div>
-              <div className="flex items-center">
-                <Avatar className="h-9 w-9">
-                   <AvatarImage src="https://placehold.co/40x40.png" alt="Avatar" data-ai-hint="person face" />
-                  <AvatarFallback>IN</AvatarFallback>
-                </Avatar>
-                <div className="ml-4 space-y-1">
-                  <p className="text-sm font-medium leading-none">Isabella Nguyen</p>
-                  <p className="text-sm text-muted-foreground">
-                    isabella.nguyen@email.com
-                  </p>
-                </div>
-                <div className="ml-auto font-medium">+$299.00</div>
-              </div>
-              <div className="flex items-center">
-                <Avatar className="h-9 w-9">
-                   <AvatarImage src="https://placehold.co/40x40.png" alt="Avatar" data-ai-hint="person face" />
-                  <AvatarFallback>WK</AvatarFallback>
-                </Avatar>
-                <div className="ml-4 space-y-1">
-                  <p className="text-sm font-medium leading-none">William Kim</p>
-                  <p className="text-sm text-muted-foreground">will@email.com</p>
-                </div>
-                <div className="ml-auto font-medium">+$99.00</div>
-              </div>
-              <div className="flex items-center">
-                <Avatar className="h-9 w-9">
-                  <AvatarImage src="https://placehold.co/40x40.png" alt="Avatar" data-ai-hint="person face" />
-                  <AvatarFallback>SD</AvatarFallback>
-                </Avatar>
-                <div className="ml-4 space-y-1">
-                  <p className="text-sm font-medium leading-none">Sofia Davis</p>
-                  <p className="text-sm text-muted-foreground">sofia.davis@email.com</p>
-                </div>
-                <div className="ml-auto font-medium">+$39.00</div>
-              </div>
-            </div>
             )}
           </CardContent>
         </Card>
