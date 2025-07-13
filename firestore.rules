@@ -1,55 +1,85 @@
-
 rules_version = '2';
 
 service cloud.firestore {
   match /databases/{database}/documents {
-
-    // Helper function to check if a user is an admin or manager
+    
+    // Helper function to check if the user is an admin or manager
     function isAdmin() {
-      return request.auth != null && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role in ['Admin', 'Manager'];
+      return exists(/databases/$(database)/documents/users/$(request.auth.uid)) &&
+             (get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role in ['Admin', 'Manager']);
+    }
+    
+    // Helper function to check if the user is authenticated
+    function isSignedIn() {
+      return request.auth != null;
     }
 
-    // Products can be read by anyone, written by admins
+    // Products, Categories, Brands, Reviews are public readable
     match /products/{productId} {
       allow read: if true;
       allow write: if isAdmin();
     }
-
-    // Reviews can be created by any logged-in user.
-    // Approved reviews can be read by anyone.
-    // Admins can manage all reviews.
+    match /categories/{categoryId} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+    match /brands/{brandId} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+     match /suppliers/{supplierId} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+    match /attributes/{attributeId} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
     match /reviews/{reviewId} {
+      // Allow anyone to read approved reviews
       allow read: if resource.data.status == 'approved';
-      allow create: if request.auth != null;
+      // Allow authenticated users to create reviews (status must be pending)
+      allow create: if isSignedIn() && request.resource.data.status == 'pending';
+      // Allow admins to update (approve/reject/reply) or delete any review
       allow update, delete: if isAdmin();
     }
-
-    // Public content (homepage layout, etc.) can be read by anyone, written by admins.
-    match /public_content/{document=**} {
+    
+    // Public content like homepage layout is readable by anyone
+    match /public_content/{docId} {
         allow read: if true;
         allow write: if isAdmin();
     }
-    
-    // Categories, brands, suppliers, etc. can be read by anyone, written by admins.
-    match /categories/{docId} { allow read: if true; allow write: if isAdmin(); }
-    match /brands/{docId} { allow read: if true; allow write: if isAdmin(); }
-    match /attributes/{docId} { allow read: if true; allow write: if isAdmin(); }
-    match /suppliers/{docId} { allow read: if true; allow write: if isAdmin(); }
 
-    // Customers can manage their own data, Admins can manage any customer
+    // Customers collection
     match /customers/{userId} {
-      allow create: if request.auth != null;
-      allow read, update, delete: if (request.auth != null && request.auth.uid == userId) || isAdmin();
+      // Admins can read/write any customer document
+      // A user can read/write their own document
+      allow read, write: if isAdmin() || request.auth.uid == userId;
     }
-
-    // Admins can manage all staff users
+    
+    // Staff users collection is only accessible by Admins
     match /users/{userId} {
       allow read, write: if isAdmin();
     }
+    
+    // Orders collection
+    match /orders/{orderId} {
+      // Admins can read/write any order
+      // A user can read their own orders
+      allow read: if isAdmin() || request.auth.uid == resource.data.userId;
+      allow write: if isAdmin();
+      // Customers cannot create orders directly via Firestore, it's done via a backend function (simulated in this case)
+    }
 
-    // Wishlists are private to the user
+    // Wishlists collection
     match /wishlists/{userId} {
-      allow read, write: if request.auth != null && request.auth.uid == userId;
+      // A user can only access their own wishlist
+      allow read, write: if isSignedIn() && request.auth.uid == userId;
+    }
+
+    // By default, deny all other reads and writes
+    match /{document=**} {
+      allow read, write: if false;
     }
   }
 }
