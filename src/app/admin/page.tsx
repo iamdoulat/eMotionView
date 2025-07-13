@@ -54,13 +54,13 @@ export default function AdminDashboardPage() {
         const customersSnapshot = await getDocs(collection(db, 'customers'));
         const totalCustomers = customersSnapshot.size;
 
-        const deliveredOrders = allOrders.filter(o => o.status === 'Delivered');
+        const nonCancelledOrders = allOrders.filter(o => o.status !== 'Cancelled');
 
-        const totalRevenue = deliveredOrders.reduce((sum, order) => sum + order.total, 0);
-        const totalSales = deliveredOrders.length;
+        const totalRevenue = nonCancelledOrders.reduce((sum, order) => sum + order.total, 0);
+        const totalSales = nonCancelledOrders.length;
         
         const monthlyRevenue = [...initialData];
-        deliveredOrders.forEach(order => {
+        nonCancelledOrders.forEach(order => {
           const month = new Date(order.date).getMonth();
           monthlyRevenue[month].total += order.total;
         });
@@ -111,7 +111,7 @@ export default function AdminDashboardPage() {
                 <>
                     <div className="text-2xl font-bold">${stats?.totalRevenue.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</div>
                     <p className="text-xs text-muted-foreground">
-                      Based on completed orders
+                      Based on all non-cancelled orders
                     </p>
                 </>
             )}
@@ -155,7 +155,7 @@ export default function AdminDashboardPage() {
                 <>
                     <div className="text-2xl font-bold">+{stats?.totalSales.toLocaleString()}</div>
                     <p className="text-xs text-muted-foreground">
-                      Total completed orders
+                      Total non-cancelled orders
                     </p>
                 </>
             )}
