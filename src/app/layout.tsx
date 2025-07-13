@@ -7,7 +7,7 @@ import { Header } from '@/components/layout/header';
 import { Footer } from '@/components/layout/footer';
 import { Toaster } from "@/components/ui/toaster";
 import { MobileNavbar } from '@/components/layout/mobile-navbar';
-import { useVisitorTracker } from '@/hooks/use-visitor-tracker';
+import { VisitorTracker } from '@/components/visitor-tracker';
 
 const inter = Inter({
   subsets: ['latin'],
@@ -29,13 +29,6 @@ export const metadata: Metadata = {
 export const viewport: Viewport = {
   themeColor: "#4B0082",
 };
-
-function VisitorTracker({ children }: { children: React.ReactNode }) {
-  "use client";
-  useVisitorTracker();
-  return <>{children}</>;
-}
-
 
 export default async function RootLayout({
   children,
