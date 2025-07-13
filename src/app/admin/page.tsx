@@ -10,11 +10,11 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card"
-import { DollarSign, Users, CreditCard, Activity } from "lucide-react"
+import { DollarSign, Users, CreditCard, Activity, Eye } from "lucide-react"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Skeleton } from "@/components/ui/skeleton"
 import { SeedButton } from "@/components/admin/seed-button"
-import { collection, getDocs, query, where, orderBy, limit } from "firebase/firestore"
+import { collection, getDocs, query, where, orderBy, limit, doc, getDoc } from "firebase/firestore"
 import { db, docToJSON } from "@/lib/firebase"
 import type { Order, User } from "@/lib/placeholder-data"
 
@@ -37,6 +37,7 @@ interface DashboardStats {
   totalRevenue: number;
   totalCustomers: number;
   totalSales: number;
+  dailyVisitors: number;
   chartData: { name: string; total: number }[];
   recentSales: Order[];
 }
@@ -48,14 +49,33 @@ export default function AdminDashboardPage() {
   useEffect(() => {
     const fetchDashboardData = async () => {
       try {
-        const ordersSnapshot = await getDocs(collection(db, 'orders'));
-        const allOrders = ordersSnapshot.docs.map(doc => docToJSON(doc) as Order);
+        // Fetch orders, customers, and recent sales in parallel
+        const ordersSnapshotPromise = getDocs(collection(db, 'orders'));
+        const customersSnapshotPromise = getDocs(collection(db, 'customers'));
+        const recentSalesQuery = query(collection(db, 'orders'), orderBy('date', 'desc'), limit(5));
+        const recentSalesSnapshotPromise = getDocs(recentSalesQuery);
+
+        // Fetch today's visitor count
+        const today = new Date().toISOString().split('T')[0];
+        const visitorDocRef = doc(db, 'analytics', `daily_visits_${today}`);
+        const visitorDocPromise = getDoc(visitorDocRef);
+
+        const [
+            ordersSnapshot, 
+            customersSnapshot, 
+            recentSalesSnapshot, 
+            visitorDoc
+        ] = await Promise.all([
+            ordersSnapshotPromise, 
+            customersSnapshotPromise, 
+            recentSalesSnapshotPromise, 
+            visitorDocPromise
+        ]);
+
+        const allOrders = ordersSnapshot.docs.map(docToJSON) as Order[];
         
-        const customersSnapshot = await getDocs(collection(db, 'customers'));
         const totalCustomers = customersSnapshot.size;
-
         const nonCancelledOrders = allOrders.filter(o => o.status !== 'Cancelled');
-
         const totalRevenue = nonCancelledOrders.reduce((sum, order) => sum + order.total, 0);
         const totalSales = nonCancelledOrders.length;
         
@@ -65,14 +85,15 @@ export default function AdminDashboardPage() {
           monthlyRevenue[month].total += order.total;
         });
 
-        const recentSalesQuery = query(collection(db, 'orders'), orderBy('date', 'desc'), limit(5));
-        const recentSalesSnapshot = await getDocs(recentSalesQuery);
-        const recentSales = recentSalesSnapshot.docs.map(doc => docToJSON(doc) as Order);
+        const recentSales = recentSalesSnapshot.docs.map(doc => docToJSON as unknown as Order);
+        
+        const dailyVisitors = visitorDoc.exists() ? visitorDoc.data().count : 0;
 
         setStats({
             totalRevenue,
             totalCustomers,
             totalSales,
+            dailyVisitors,
             chartData: monthlyRevenue,
             recentSales
         });
@@ -163,8 +184,8 @@ export default function AdminDashboardPage() {
         </Card>
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Active Now</CardTitle>
-            <Activity className="h-4 w-4 text-muted-foreground" />
+            <CardTitle className="text-sm font-medium">Daily Visitors</CardTitle>
+            <Eye className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
             {loading ? (
@@ -174,9 +195,9 @@ export default function AdminDashboardPage() {
                 </div>
             ) : (
                 <>
-                    <div className="text-2xl font-bold">+573</div>
+                    <div className="text-2xl font-bold">+{stats?.dailyVisitors.toLocaleString()}</div>
                     <p className="text-xs text-muted-foreground">
-                      +201 since last hour
+                      Unique visitors today
                     </p>
                 </>
             )}

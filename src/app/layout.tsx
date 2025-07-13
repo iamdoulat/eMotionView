@@ -1,4 +1,6 @@
 
+"use client";
+
 import type {Metadata, Viewport} from 'next';
 import { Poppins } from 'next/font/google';
 import './globals.css';
@@ -7,6 +9,7 @@ import { Header } from '@/components/layout/header';
 import { Footer } from '@/components/layout/footer';
 import { Toaster } from "@/components/ui/toaster";
 import { MobileNavbar } from '@/components/layout/mobile-navbar';
+import { useVisitorTracker } from '@/hooks/use-visitor-tracker';
 
 const poppins = Poppins({
   subsets: ['latin'],
@@ -14,16 +17,33 @@ const poppins = Poppins({
   weight: ['400', '500', '600', '700'],
 });
 
-
-export const metadata: Metadata = {
+const metadata: Metadata = {
   title: 'eMotionView',
   description: 'AI-Powered Product Recommendations',
   manifest: '/manifest.json',
 };
 
-export const viewport: Viewport = {
+const viewport: Viewport = {
   themeColor: "#4B0082",
 };
+
+
+function AppLayout({ children }: { children: React.ReactNode }) {
+  useVisitorTracker();
+
+  return (
+     <>
+        <Header />
+        <main className="flex-1 pb-16 md:pb-0">
+          {children}
+        </main>
+        <Footer />
+        <MobileNavbar />
+        <Toaster />
+     </>
+  );
+}
+
 
 export default function RootLayout({
   children,
@@ -32,14 +52,13 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" className={cn("h-full", poppins.variable)} suppressHydrationWarning>
+      <head>
+        <title>{String(metadata.title)}</title>
+        <meta name="description" content={String(metadata.description)} />
+        {metadata.manifest && <link rel="manifest" href={metadata.manifest} />}
+      </head>
       <body className="font-body antialiased min-h-screen flex flex-col" suppressHydrationWarning>
-        <Header />
-        <main className="flex-1 pb-16 md:pb-0">
-          {children}
-        </main>
-        <Footer />
-        <MobileNavbar />
-        <Toaster />
+        <AppLayout>{children}</AppLayout>
       </body>
     </html>
   );
