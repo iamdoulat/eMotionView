@@ -4,38 +4,21 @@ service firebase.storage {
   match /b/{bucket}/o {
 
     function isAdmin() {
+      // Use exists() to prevent errors on non-existent documents.
       return request.auth != null && 
-             (get(/databases/(default)/documents/users/$(request.auth.uid)).data.role == 'Admin' ||
-              get(/databases/(default)/documents/users/$(request.auth.uid)).data.role == 'Manager');
-    }
-    
-    // Product images are publicly readable, but only admins can write
-    match /products/{allPaths=**} {
-      allow read: if true;
-      allow write: if isAdmin();
+             exists(/databases/$(database)/documents/users/$(request.auth.uid)) &&
+             (get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'Admin' ||
+              get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'Manager');
     }
 
-    // User avatars can be read by anyone, but can only be written by the owner or an admin
-    match /avatars/{userId}/{allPaths=**} {
-      allow read: if true;
-      allow write: if request.auth.uid == userId || isAdmin();
-    }
-
-    // Homepage assets can be read by anyone, but only admins can write
-    match /homepage/{allPaths=**} {
+    // Allow public read access to common asset folders.
+    // Allow writes only by admins.
+    match /{folder}/{allPaths=**}
+      where folder in ['products', 'homepage', 'footer', 'avatars'] {
         allow read: if true;
         allow write: if isAdmin();
     }
     
-    // Footer assets can be read by anyone, but only admins can write
-    match /footer/{allPaths=**} {
-        allow read: if true;
-        allow write: if isAdmin();
-    }
-    
-    // By default, deny read/write to all other paths
-    match /{allPaths=**} {
-      allow read, write: if false;
-    }
+    // All other paths are private by default (no rules means no access).
   }
 }
