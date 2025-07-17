@@ -4,21 +4,18 @@ service firebase.storage {
   match /b/{bucket}/o {
 
     function isAdmin() {
-      // Use exists() to prevent errors on non-existent documents.
-      return request.auth != null && 
-             exists(/databases/$(database)/documents/users/$(request.auth.uid)) &&
-             (get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'Admin' ||
-              get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'Manager');
+      // Check if the user is an Admin or Manager in the 'users' collection
+      return request.auth != null &&
+             get(/databases/(default)/documents/users/$(request.auth.uid)).data.role in ['Admin', 'Manager'];
     }
 
-    // Allow public read access to common asset folders.
-    // Allow writes only by admins.
-    match /{folder}/{allPaths=**}
-      where folder in ['products', 'homepage', 'footer', 'avatars'] {
-        allow read: if true;
-        allow write: if isAdmin();
+    // Default rule for all files in the bucket
+    match /{allPaths=**} {
+      // Allow anyone to read any file. This is common for public assets like product images.
+      allow read: if true;
+
+      // Only allow authenticated admins or managers to write (create, update, delete) files.
+      allow write: if isAdmin();
     }
-    
-    // All other paths are private by default (no rules means no access).
   }
 }
