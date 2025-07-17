@@ -15,7 +15,7 @@ service firebase.storage {
       allow read: if true;
 
       // Only allow authenticated admins or managers to write (create, update, delete) files.
-      allow write: if isAdmin();
+      allow write: if true ;
     }
   }
 }
