@@ -29,6 +29,7 @@ import {
   Image,
   GalleryVertical,
   Footprints,
+  FileText,
 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from "../ui/card";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
@@ -61,6 +62,7 @@ const mainNavItems = [
 
 const settingsNavItems = [
     { href: "/admin/settings/general", label: "General Settings", icon: SlidersHorizontal },
+    { href: "/admin/settings/pages", label: "Pages", icon: FileText },
     { href: "/admin/settings/homepage-layout", label: "Homepage Layout", icon: GalleryVertical },
     { href: "/admin/settings/homepage-hero", label: "Homepage Hero", icon: Image },
     { href: "/admin/settings/homepage", label: "Featured Categories", icon: LayoutTemplate },
@@ -156,7 +158,7 @@ export function AdminSidebar() {
                         <Button
                           key={item.href}
                           asChild
-                          variant={pathname === item.href ? "secondary" : "ghost"}
+                          variant={pathname.startsWith(item.href) ? "secondary" : "ghost"}
                           className="justify-start w-full"
                           size="sm"
                         >
