@@ -3,36 +3,20 @@ rules_version = '2';
 
 service firebase.storage {
   match /b/{bucket}/o {
-
-    function isAdmin() {
-      return request.auth != null && 
-             (firestore.get(/databases/(default)/documents/users/$(request.auth.uid)).data.role == 'Admin' ||
-              firestore.get(/databases/(default)/documents/users/$(request.auth.uid)).data.role == 'Manager');
-    }
-    
-    // Product images are publicly readable, but only admins can write
-    match /products/{allPaths=**} {
-      allow read: if true;
-      allow write: if isAdmin();
+    // Function to check if a user is an Admin or Manager
+    function isStaff() {
+      // Get the user's document from the 'users' collection in Firestore
+      let userDoc = get(/databases/$(database)/documents/users/$(request.auth.uid));
+      // Check if the user's role is Admin or Manager
+      return request.auth != null && userDoc.data.role in ['Admin', 'Manager'];
     }
 
-    // User avatars can be read by anyone, but can only be written by the owner or an admin
-    match /avatars/{userId}/{allPaths=**} {
-      allow read: if true;
-      allow write: if request.auth.uid == userId || isAdmin();
-    }
-
-    // Homepage assets can be read by anyone, but only admins can write
-    match /homepage/{allPaths=**} {
-        allow read: if true;
-        allow write: if isAdmin();
-    }
-    
-    // By default, only admins can write to any other path
-    // and nothing is publicly readable unless specified above.
+    // Match all files in the bucket
     match /{allPaths=**} {
-        allow read: if false;
-        allow write: if isAdmin();
+      // Allow anyone to read files (public access)
+      allow read;
+      // Allow write (upload, update, delete) only if the user is staff
+      allow write: if isStaff();
     }
   }
 }
