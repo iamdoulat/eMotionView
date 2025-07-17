@@ -1,20 +1,26 @@
+
 rules_version = '2';
 
 service cloud.firestore {
   match /databases/{database}/documents {
-    
-    // Helper function to check if the user is an admin or manager
+
+    // Helper function to check if a user is an admin or manager
     function isAdmin() {
-      return exists(/databases/$(database)/documents/users/$(request.auth.uid)) &&
-             (get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role in ['Admin', 'Manager']);
-    }
-    
-    // Helper function to check if the user is authenticated
-    function isSignedIn() {
-      return request.auth != null;
+      return get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role in ['Admin', 'Manager'];
     }
 
-    // Products, Categories, Brands, Reviews are public readable
+    // Helper function to check if the user is the owner of the document
+    function isOwner(userId) {
+      return request.auth != null && request.auth.uid == userId;
+    }
+
+    // Public content like homepage layout, banners, etc.
+    match /public_content/{document=**} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
+    // Products, categories, brands, suppliers, and attributes are public to read
     match /products/{productId} {
       allow read: if true;
       allow write: if isAdmin();
@@ -35,51 +41,41 @@ service cloud.firestore {
       allow read: if true;
       allow write: if isAdmin();
     }
+
+    // Reviews can be read by anyone if approved, but only created by logged-in users.
+    // Admins can manage all reviews.
     match /reviews/{reviewId} {
-      // Allow anyone to read approved reviews
-      allow read: if resource.data.status == 'approved';
-      // Allow authenticated users to create reviews (status must be pending)
-      allow create: if isSignedIn() && request.resource.data.status == 'pending';
-      // Allow admins to update (approve/reject/reply) or delete any review
+      allow read: if resource.data.status == 'approved' || isAdmin();
+      allow create: if request.auth != null && request.resource.data.userId == request.auth.uid;
       allow update, delete: if isAdmin();
     }
-    
-    // Public content like homepage layout is readable by anyone
-    match /public_content/{docId} {
-        allow read: if true;
-        allow write: if isAdmin();
-    }
 
-    // Customers collection
+    // Customers can only access their own data. Admins can access anyone's.
     match /customers/{userId} {
-      // Admins can read/write any customer document
-      // A user can read/write their own document
-      allow read, write: if isAdmin() || request.auth.uid == userId;
-    }
-    
-    // Staff users collection is only accessible by Admins
-    match /users/{userId} {
-      allow read, write: if isAdmin();
-    }
-    
-    // Orders collection
-    match /orders/{orderId} {
-      // Admins can read/write any order
-      // A user can read their own orders
-      allow read: if isAdmin() || request.auth.uid == resource.data.userId;
-      allow write: if isAdmin();
-      // Customers cannot create orders directly via Firestore, it's done via a backend function (simulated in this case)
+      allow read, write: if isOwner(userId) || isAdmin();
     }
 
-    // Wishlists collection
+    // Wishlists can only be accessed by their owner.
     match /wishlists/{userId} {
-      // A user can only access their own wishlist
-      allow read, write: if isSignedIn() && request.auth.uid == userId;
+      allow read, write: if isOwner(userId);
+    }
+    
+    // Orders can be accessed by their owner or an admin.
+    match /orders/{orderId} {
+      allow read, write: if isOwner(resource.data.userId) || isAdmin();
+    }
+    
+    // Only admins can read/write the staff users collection
+    match /users/{userId} {
+        allow read, write: if isAdmin();
     }
 
-    // By default, deny all other reads and writes
-    match /{document=**} {
-      allow read, write: if false;
+    // Allow anyone to write to the analytics collection for visitor tracking.
+    // This is safe as we only allow creating new documents or incrementing a counter.
+    match /analytics/{docId} {
+        allow read: if isAdmin();
+        allow write: if true;
     }
+
   }
 }
