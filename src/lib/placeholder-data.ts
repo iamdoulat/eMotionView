@@ -177,6 +177,12 @@ export interface FooterSettings {
     phone: string;
     email: string;
   };
+  memberships: {
+    id: string;
+    name: string;
+    link: string;
+    image: string;
+  }[];
 }
 
 
@@ -490,4 +496,8 @@ export const defaultFooterSettings: FooterSettings = {
         phone: "09677460460",
         email: "motionview22@gmail.com.bd",
     },
+    memberships: [
+        { id: "basis", name: "BASIS Member", image: "https://placehold.co/100x40.png", link: "#" },
+        { id: "ecab", name: "e-Cab Member", image: "https://placehold.co/100x40.png", link: "#" },
+    ],
 };

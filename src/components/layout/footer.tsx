@@ -120,8 +120,11 @@ export async function Footer() {
               </ul>
               <h4 className="font-headline font-semibold text-lg text-white pt-4">Member of:</h4>
               <div className="flex gap-4">
-                <Image src="https://placehold.co/100x40.png" alt="BASIS Member" width={100} height={40} data-ai-hint="membership badge" />
-                <Image src="https://placehold.co/100x40.png" alt="e-Cab Member" width={100} height={40} data-ai-hint="membership badge" />
+                {footerSettings.memberships?.map(member => (
+                    <Link key={member.id} href={member.link} target="_blank" rel="noopener noreferrer">
+                        <Image src={member.image} alt={member.name} width={100} height={40} data-ai-hint="membership badge" />
+                    </Link>
+                ))}
               </div>
             </div>
 

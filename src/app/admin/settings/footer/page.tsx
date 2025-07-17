@@ -32,6 +32,13 @@ const linkSchema = z.object({
   href: z.string().min(1, 'Link is required'),
 });
 
+const membershipSchema = z.object({
+    id: z.string(),
+    name: z.string().min(1, 'Name is required'),
+    link: z.string().url().or(z.literal('')),
+    image: z.union([z.instanceof(FileList).optional(), z.string().optional()]),
+});
+
 const footerSettingsSchema = z.object({
   logo: z.union([z.instanceof(FileList).optional(), z.string().optional()]),
   description: z.string().min(1, 'Description is required'),
@@ -56,6 +63,7 @@ const footerSettingsSchema = z.object({
     phone: z.string().min(1, 'Phone is required'),
     email: z.string().email('Valid email is required'),
   }),
+  memberships: z.array(membershipSchema),
 });
 
 type FooterSettingsFormData = z.infer<typeof footerSettingsSchema>;
@@ -71,16 +79,22 @@ export default function FooterSettingsPage() {
     defaultValues: defaultFooterSettings,
   });
   
-  const { register, control, handleSubmit, reset, watch, formState: { isSubmitting, isLoading } } = form;
+  const { register, control, handleSubmit, reset, watch, formState: { isSubmitting, isLoading, errors } } = form;
 
-  const { fields, append, remove } = useFieldArray({
+  const { fields: companyLinkFields, append: appendCompanyLink, remove: removeCompanyLink } = useFieldArray({
     control,
     name: "companyLinks",
+  });
+  
+  const { fields: membershipFields, append: appendMembership, remove: removeMembership } = useFieldArray({
+    control,
+    name: "memberships",
   });
   
   const logoPreview = watch('logo');
   const appStoreImagePreview = watch('appStore.image');
   const googlePlayImagePreview = watch('googlePlay.image');
+  const membershipImagesPreview = watch('memberships');
 
   useEffect(() => {
     const fetchFooterSettings = async () => {
@@ -88,7 +102,7 @@ export default function FooterSettingsPage() {
         const docRef = doc(db, SETTINGS_DOC_PATH);
         const docSnap = await getDoc(docRef);
         if (docSnap.exists() && docSnap.data()?.footer) {
-          const settings = docSnap.data().footer;
+          const settings = { ...defaultFooterSettings, ...docSnap.data().footer };
           reset(settings);
           setCurrentSettings(settings);
         } else {
@@ -111,27 +125,41 @@ export default function FooterSettingsPage() {
   
   const onSubmit: SubmitHandler<FooterSettingsFormData> = async (data) => {
     try {
-      const finalData = { ...currentSettings, ...data };
-
+      const finalData = JSON.parse(JSON.stringify(data)); // Deep copy to avoid mutation issues
+      
       // Handle logo upload
       if (data.logo instanceof FileList && data.logo.length > 0) {
         finalData.logo = await uploadImage(data.logo[0], 'logo');
+      } else {
+        finalData.logo = currentSettings.logo;
       }
 
       // Handle App Store image upload
       if (data.appStore.image instanceof FileList && data.appStore.image.length > 0) {
         finalData.appStore.image = await uploadImage(data.appStore.image[0], 'app-store');
+      } else {
+        finalData.appStore.image = currentSettings.appStore.image;
       }
-
+      
       // Handle Google Play image upload
       if (data.googlePlay.image instanceof FileList && data.googlePlay.image.length > 0) {
         finalData.googlePlay.image = await uploadImage(data.googlePlay.image[0], 'google-play');
+      } else {
+        finalData.googlePlay.image = currentSettings.googlePlay.image;
       }
+
+      // Handle Membership logos upload
+      finalData.memberships = await Promise.all(data.memberships.map(async (membership, index) => {
+          if (membership.image instanceof FileList && membership.image.length > 0) {
+              return { ...membership, image: await uploadImage(membership.image[0], `membership-${membership.id}`) };
+          }
+          return { ...membership, image: currentSettings.memberships[index]?.image || '' };
+      }));
 
       const docRef = doc(db, SETTINGS_DOC_PATH);
       await setDoc(docRef, { footer: finalData }, { merge: true });
-      setCurrentSettings(finalData); // Update current settings state
-      reset(finalData); // Reset form with the new data including URLs
+      setCurrentSettings(finalData);
+      reset(finalData);
       toast({ title: 'Success', description: 'Footer settings have been updated.' });
     } catch (error) {
       console.error("Error saving footer settings:", error);
@@ -214,6 +242,39 @@ export default function FooterSettingsPage() {
                         </div>
                     </AccordionContent>
                 </AccordionItem>
+                
+                <AccordionItem value="memberships" className="border rounded-lg px-4">
+                    <AccordionTrigger className="text-lg font-semibold">Membership Badges</AccordionTrigger>
+                    <AccordionContent className="pt-4 space-y-4">
+                        {membershipFields.map((field, index) => (
+                             <div key={field.id} className="flex items-start gap-4 p-4 bg-secondary/50 rounded-md">
+                                <div className="grid grid-cols-1 gap-4 flex-1">
+                                    <div className="space-y-2">
+                                        <Label>Name</Label>
+                                        <Input {...register(`memberships.${index}.name`)} />
+                                    </div>
+                                     <div className="space-y-2">
+                                        <Label>Link</Label>
+                                        <Input {...register(`memberships.${index}.link`)} />
+                                    </div>
+                                    <div className="space-y-2">
+                                      <Label>Logo Image (100x40 recommended)</Label>
+                                      <Input type="file" {...register(`memberships.${index}.image`)} accept="image/*" />
+                                       {currentSettings.memberships?.[index]?.image && (!membershipImagesPreview?.[index]?.image || typeof membershipImagesPreview[index].image !== 'object') && (
+                                         <Image src={currentSettings.memberships[index].image} alt="Current membership logo" width={100} height={40} className="mt-2 object-contain bg-slate-200 p-1 rounded-sm" />
+                                       )}
+                                    </div>
+                                </div>
+                                <Button type="button" variant="destructive" size="icon" onClick={() => removeMembership(index)}>
+                                    <Trash2 className="h-4 w-4" />
+                                </Button>
+                            </div>
+                        ))}
+                        <Button type="button" variant="outline" onClick={() => appendMembership({ id: `mem-${Date.now()}`, name: '', link: '', image: undefined })}>
+                            <PlusCircle className="mr-2 h-4 w-4" /> Add Membership Badge
+                        </Button>
+                    </AccordionContent>
+                </AccordionItem>
 
                 <AccordionItem value="contact" className="border rounded-lg px-4">
                     <AccordionTrigger className="text-lg font-semibold">Contact Information</AccordionTrigger>
@@ -238,7 +299,7 @@ export default function FooterSettingsPage() {
                 <AccordionItem value="company-links" className="border rounded-lg px-4">
                     <AccordionTrigger className="text-lg font-semibold">Company Links</AccordionTrigger>
                     <AccordionContent className="pt-4 space-y-4">
-                        {fields.map((field, index) => (
+                        {companyLinkFields.map((field, index) => (
                              <div key={field.id} className="flex items-end gap-4 p-4 bg-secondary/50 rounded-md">
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4 flex-1">
                                     <div className="space-y-2">
@@ -250,12 +311,12 @@ export default function FooterSettingsPage() {
                                         <Input {...register(`companyLinks.${index}.href`)} />
                                     </div>
                                 </div>
-                                <Button type="button" variant="destructive" size="icon" onClick={() => remove(index)}>
+                                <Button type="button" variant="destructive" size="icon" onClick={() => removeCompanyLink(index)}>
                                     <Trash2 className="h-4 w-4" />
                                 </Button>
                             </div>
                         ))}
-                        <Button type="button" variant="outline" onClick={() => append({ label: '', href: '' })}>
+                        <Button type="button" variant="outline" onClick={() => appendCompanyLink({ label: '', href: '' })}>
                             <PlusCircle className="mr-2 h-4 w-4" /> Add Link
                         </Button>
                     </AccordionContent>
