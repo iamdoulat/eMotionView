@@ -40,6 +40,13 @@ const membershipSchema = z.object({
     image: z.union([z.instanceof(FileList).optional(), z.string().optional()]),
 });
 
+const securityBadgeSchema = z.object({
+  id: z.string(),
+  name: z.string().min(1, 'Name is required'),
+  image: z.union([z.instanceof(FileList).optional(), z.string().optional()]),
+});
+
+
 const footerSettingsSchema = z.object({
   logo: z.union([z.instanceof(FileList).optional(), z.string().optional()]),
   description: z.string().min(1, 'Description is required'),
@@ -66,6 +73,8 @@ const footerSettingsSchema = z.object({
   }),
   memberships: z.array(membershipSchema),
   paymentMethodsImage: z.union([z.instanceof(FileList).optional(), z.string().optional()]),
+  copyrightText: z.string().min(1, 'Copyright text is required'),
+  securityBadges: z.array(securityBadgeSchema),
 });
 
 type FooterSettingsFormData = z.infer<typeof footerSettingsSchema>;
@@ -92,12 +101,18 @@ export default function FooterSettingsPage() {
     control,
     name: "memberships",
   });
+
+   const { fields: securityBadgeFields, append: appendSecurityBadge, remove: removeSecurityBadge } = useFieldArray({
+    control,
+    name: "securityBadges",
+  });
   
   const logoPreview = watch('logo');
   const appStoreImagePreview = watch('appStore.image');
   const googlePlayImagePreview = watch('googlePlay.image');
   const membershipImagesPreview = watch('memberships');
   const paymentMethodsImagePreview = watch('paymentMethodsImage');
+  const securityBadgesPreview = watch('securityBadges');
 
   useEffect(() => {
     const fetchFooterSettings = async () => {
@@ -128,30 +143,26 @@ export default function FooterSettingsPage() {
   
   const onSubmit: SubmitHandler<FooterSettingsFormData> = async (data) => {
     try {
-      const finalData = JSON.parse(JSON.stringify(data)); // Deep copy to avoid mutation issues
+      const finalData = JSON.parse(JSON.stringify(data));
       
-      // Handle logo upload
       if (data.logo instanceof FileList && data.logo.length > 0) {
         finalData.logo = await uploadImage(data.logo[0], 'logo');
       } else {
         finalData.logo = currentSettings.logo;
       }
 
-      // Handle App Store image upload
       if (data.appStore.image instanceof FileList && data.appStore.image.length > 0) {
         finalData.appStore.image = await uploadImage(data.appStore.image[0], 'app-store');
       } else {
         finalData.appStore.image = currentSettings.appStore.image;
       }
       
-      // Handle Google Play image upload
       if (data.googlePlay.image instanceof FileList && data.googlePlay.image.length > 0) {
         finalData.googlePlay.image = await uploadImage(data.googlePlay.image[0], 'google-play');
       } else {
         finalData.googlePlay.image = currentSettings.googlePlay.image;
       }
 
-      // Handle Membership logos upload
       finalData.memberships = await Promise.all(data.memberships.map(async (membership, index) => {
           if (membership.image instanceof FileList && membership.image.length > 0) {
               return { ...membership, image: await uploadImage(membership.image[0], `membership-${membership.id}`) };
@@ -159,12 +170,18 @@ export default function FooterSettingsPage() {
           return { ...membership, image: currentSettings.memberships[index]?.image || '' };
       }));
 
-       // Handle Payment Methods image upload
       if (data.paymentMethodsImage instanceof FileList && data.paymentMethodsImage.length > 0) {
         finalData.paymentMethodsImage = await uploadImage(data.paymentMethodsImage[0], 'payment-methods');
       } else {
         finalData.paymentMethodsImage = currentSettings.paymentMethodsImage;
       }
+      
+      finalData.securityBadges = await Promise.all(data.securityBadges.map(async (badge, index) => {
+          if (badge.image instanceof FileList && badge.image.length > 0) {
+              return { ...badge, image: await uploadImage(badge.image[0], `security-badge-${badge.id}`) };
+          }
+          return { ...badge, image: currentSettings.securityBadges[index]?.image || '' };
+      }));
 
       const docRef = doc(db, SETTINGS_DOC_PATH);
       await setDoc(docRef, { footer: finalData }, { merge: true });
@@ -367,6 +384,43 @@ export default function FooterSettingsPage() {
                         <div className="space-y-2">
                             <Label htmlFor="socialLinks.youtube">YouTube</Label>
                             <Input id="socialLinks.youtube" {...register('socialLinks.youtube')} placeholder="https://youtube.com/your-channel"/>
+                        </div>
+                    </AccordionContent>
+                </AccordionItem>
+
+                 <AccordionItem value="copyright" className="border rounded-lg px-4">
+                    <AccordionTrigger className="text-lg font-semibold">Copyright & Security</AccordionTrigger>
+                    <AccordionContent className="pt-4 space-y-6">
+                        <div className="space-y-2">
+                          <Label htmlFor="copyrightText">Copyright Text</Label>
+                          <Input id="copyrightText" {...register('copyrightText')} />
+                        </div>
+
+                         <div className="space-y-4">
+                            <Label>Security Badges</Label>
+                             {securityBadgeFields.map((field, index) => (
+                                 <div key={field.id} className="flex items-start gap-4 p-4 bg-secondary/50 rounded-md">
+                                    <div className="flex-1 space-y-4">
+                                        <div className="space-y-2">
+                                            <Label>Badge Name</Label>
+                                            <Input {...register(`securityBadges.${index}.name`)} placeholder="e.g. SSL Commerz" />
+                                        </div>
+                                        <div className="space-y-2">
+                                            <Label>Badge Image (121x24 recommended)</Label>
+                                            <Input type="file" {...register(`securityBadges.${index}.image`)} accept="image/*" />
+                                            {currentSettings.securityBadges?.[index]?.image && (!securityBadgesPreview?.[index]?.image || typeof securityBadgesPreview[index].image !== 'object') && (
+                                            <Image src={currentSettings.securityBadges[index].image} alt="Current security badge" width={121} height={24} className="mt-2 object-contain bg-slate-200 p-1 rounded-sm" />
+                                            )}
+                                        </div>
+                                    </div>
+                                    <Button type="button" variant="destructive" size="icon" onClick={() => removeSecurityBadge(index)}>
+                                        <Trash2 className="h-4 w-4" />
+                                    </Button>
+                                </div>
+                            ))}
+                            <Button type="button" variant="outline" onClick={() => appendSecurityBadge({ id: `badge-${Date.now()}`, name: '', image: undefined })}>
+                                <PlusCircle className="mr-2 h-4 w-4" /> Add Security Badge
+                            </Button>
                         </div>
                     </AccordionContent>
                 </AccordionItem>

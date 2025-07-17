@@ -29,14 +29,12 @@ const infoItems = [
 ];
 
 export async function Footer() {
-  const currentYear = new Date().getFullYear();
-
   let footerSettings: FooterSettings;
   try {
     const docRef = doc(db, 'public_content', 'homepage');
     const docSnap = await getDoc(docRef);
     if (docSnap.exists() && docSnap.data()?.footer) {
-        footerSettings = docSnap.data()?.footer as FooterSettings;
+        footerSettings = { ...defaultFooterSettings, ...docSnap.data().footer };
     } else {
         footerSettings = defaultFooterSettings;
     }
@@ -47,7 +45,6 @@ export async function Footer() {
 
   return (
     <footer className="border-t">
-      {/* Pre-footer info section - static */}
       <div className="bg-background">
         <div className="container mx-auto px-4 py-12">
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-8 text-center">
@@ -62,7 +59,6 @@ export async function Footer() {
         </div>
       </div>
 
-      {/* Main Footer - dynamic */}
       <div className="bg-[#1e2128] text-gray-300">
         <div className="container mx-auto px-4 pt-16 pb-8">
           <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-12 mb-8">
@@ -147,11 +143,12 @@ export async function Footer() {
 
           <div className="border-t border-gray-700 mt-8 pt-8 flex flex-col md:flex-row items-center justify-between gap-4 text-center">
             <p className="text-sm text-gray-400">
-              &copy; {currentYear} eMotionView. All Rights Reserved by Motion View
+              {footerSettings.copyrightText}
             </p>
             <div className="flex gap-4 items-center">
-                <Image src="https://placehold.co/100x30.png" alt="SSL Commerz" width={100} height={30} data-ai-hint="security badge" />
-                <Image src="https://placehold.co/100x30.png" alt="DMCA Protected" width={100} height={30} data-ai-hint="security badge" />
+              {footerSettings.securityBadges.map(badge => (
+                <Image key={badge.id} src={badge.image} alt={badge.name} width={121} height={24} data-ai-hint="security badge" />
+              ))}
             </div>
           </div>
         </div>

@@ -184,6 +184,12 @@ export interface FooterSettings {
     image: string;
   }[];
   paymentMethodsImage: string;
+  copyrightText: string;
+  securityBadges: {
+    id: string;
+    name: string;
+    image: string;
+  }[];
 }
 
 
@@ -502,4 +508,9 @@ export const defaultFooterSettings: FooterSettings = {
         { id: "ecab", name: "e-Cab Member", image: "https://placehold.co/100x40.png", link: "#" },
     ],
     paymentMethodsImage: "https://placehold.co/1180x139.png",
+    copyrightText: `© ${new Date().getFullYear()} eMotionView. All Rights Reserved by Motion View`,
+    securityBadges: [
+        { id: 'ssl', name: 'SSL Commerz', image: 'https://placehold.co/121x24.png' },
+        { id: 'dmca', name: 'DMCA Protected', image: 'https://placehold.co/121x24.png' },
+    ]
 };
