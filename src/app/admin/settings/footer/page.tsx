@@ -1,7 +1,8 @@
 
 "use client";
 
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
+import Image from 'next/image';
 import { useForm, useFieldArray, type SubmitHandler } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -19,8 +20,9 @@ import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Loader2, PlusCircle, Trash2 } from "lucide-react";
 import { Skeleton } from '@/components/ui/skeleton';
-import { db } from '@/lib/firebase';
+import { db, storage } from '@/lib/firebase';
 import { doc, getDoc, setDoc } from 'firebase/firestore';
+import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { useToast } from '@/hooks/use-toast';
 import { defaultFooterSettings, type FooterSettings } from '@/lib/placeholder-data';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
@@ -31,6 +33,7 @@ const linkSchema = z.object({
 });
 
 const footerSettingsSchema = z.object({
+  logo: z.union([z.instanceof(FileList).optional(), z.string().optional()]),
   description: z.string().min(1, 'Description is required'),
   socialLinks: z.object({
     facebook: z.string().url().or(z.literal('')),
@@ -38,6 +41,14 @@ const footerSettingsSchema = z.object({
     instagram: z.string().url().or(z.literal('')),
     linkedin: z.string().url().or(z.literal('')),
     youtube: z.string().url().or(z.literal('')),
+  }),
+  appStore: z.object({
+    link: z.string().url().or(z.literal('')),
+    image: z.union([z.instanceof(FileList).optional(), z.string().optional()]),
+  }),
+  googlePlay: z.object({
+    link: z.string().url().or(z.literal('')),
+    image: z.union([z.instanceof(FileList).optional(), z.string().optional()]),
   }),
   companyLinks: z.array(linkSchema),
   contact: z.object({
@@ -53,17 +64,23 @@ const SETTINGS_DOC_PATH = 'public_content/homepage';
 
 export default function FooterSettingsPage() {
   const { toast } = useToast();
+  const [currentSettings, setCurrentSettings] = useState<FooterSettings>(defaultFooterSettings);
+
   const form = useForm<FooterSettingsFormData>({
     resolver: zodResolver(footerSettingsSchema),
     defaultValues: defaultFooterSettings,
   });
   
-  const { register, control, handleSubmit, reset, formState: { isSubmitting, isLoading } } = form;
+  const { register, control, handleSubmit, reset, watch, formState: { isSubmitting, isLoading } } = form;
 
   const { fields, append, remove } = useFieldArray({
     control,
     name: "companyLinks",
   });
+  
+  const logoPreview = watch('logo');
+  const appStoreImagePreview = watch('appStore.image');
+  const googlePlayImagePreview = watch('googlePlay.image');
 
   useEffect(() => {
     const fetchFooterSettings = async () => {
@@ -71,9 +88,12 @@ export default function FooterSettingsPage() {
         const docRef = doc(db, SETTINGS_DOC_PATH);
         const docSnap = await getDoc(docRef);
         if (docSnap.exists() && docSnap.data()?.footer) {
-          reset(docSnap.data().footer);
+          const settings = docSnap.data().footer;
+          reset(settings);
+          setCurrentSettings(settings);
         } else {
           reset(defaultFooterSettings);
+          setCurrentSettings(defaultFooterSettings);
         }
       } catch (error) {
         console.error("Failed to fetch footer settings:", error);
@@ -82,11 +102,36 @@ export default function FooterSettingsPage() {
     };
     fetchFooterSettings();
   }, [reset, toast]);
+
+  const uploadImage = async (file: File, path: string): Promise<string> => {
+    const storageRef = ref(storage, `footer/${path}/${Date.now()}-${file.name}`);
+    await uploadBytes(storageRef, file);
+    return getDownloadURL(storageRef);
+  };
   
   const onSubmit: SubmitHandler<FooterSettingsFormData> = async (data) => {
     try {
+      const finalData = { ...currentSettings, ...data };
+
+      // Handle logo upload
+      if (data.logo instanceof FileList && data.logo.length > 0) {
+        finalData.logo = await uploadImage(data.logo[0], 'logo');
+      }
+
+      // Handle App Store image upload
+      if (data.appStore.image instanceof FileList && data.appStore.image.length > 0) {
+        finalData.appStore.image = await uploadImage(data.appStore.image[0], 'app-store');
+      }
+
+      // Handle Google Play image upload
+      if (data.googlePlay.image instanceof FileList && data.googlePlay.image.length > 0) {
+        finalData.googlePlay.image = await uploadImage(data.googlePlay.image[0], 'google-play');
+      }
+
       const docRef = doc(db, SETTINGS_DOC_PATH);
-      await setDoc(docRef, { footer: data }, { merge: true });
+      await setDoc(docRef, { footer: finalData }, { merge: true });
+      setCurrentSettings(finalData); // Update current settings state
+      reset(finalData); // Reset form with the new data including URLs
       toast({ title: 'Success', description: 'Footer settings have been updated.' });
     } catch (error) {
       console.error("Error saving footer settings:", error);
@@ -118,8 +163,15 @@ export default function FooterSettingsPage() {
         <CardContent>
             <Accordion type="multiple" defaultValue={['description', 'contact']} className="w-full space-y-4">
                 <AccordionItem value="description" className="border rounded-lg px-4">
-                    <AccordionTrigger className="text-lg font-semibold">General</AccordionTrigger>
+                    <AccordionTrigger className="text-lg font-semibold">General & Logo</AccordionTrigger>
                     <AccordionContent className="pt-4 space-y-4">
+                        <div className="space-y-2">
+                            <Label htmlFor="logo">Footer Logo</Label>
+                             <Input id="logo" type="file" {...register('logo')} accept="image/*" />
+                             {currentSettings.logo && typeof logoPreview !== 'object' && (
+                                <Image src={currentSettings.logo} alt="Current Logo" width={50} height={50} className="mt-2 bg-slate-400 p-1 rounded-md" />
+                             )}
+                        </div>
                         <div className="space-y-2">
                             <Label htmlFor="description">Footer Description</Label>
                             <Textarea id="description" {...register('description')} rows={4} />
@@ -127,6 +179,42 @@ export default function FooterSettingsPage() {
                     </AccordionContent>
                 </AccordionItem>
                 
+                <AccordionItem value="app-links" className="border rounded-lg px-4">
+                    <AccordionTrigger className="text-lg font-semibold">App Store Links</AccordionTrigger>
+                    <AccordionContent className="pt-4 space-y-6">
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                           <div className="space-y-4">
+                               <h4 className="font-medium">Apple App Store</h4>
+                               <div className="space-y-2">
+                                   <Label htmlFor="appStore.link">Link</Label>
+                                   <Input id="appStore.link" {...register('appStore.link')} placeholder="https://apps.apple.com/..."/>
+                               </div>
+                               <div className="space-y-2">
+                                   <Label htmlFor="appStore.image">Badge Image</Label>
+                                   <Input id="appStore.image" type="file" {...register('appStore.image')} accept="image/*"/>
+                                   {currentSettings.appStore.image && typeof appStoreImagePreview !== 'object' && (
+                                     <Image src={currentSettings.appStore.image} alt="Current App Store Badge" width={135} height={40} className="mt-2" />
+                                   )}
+                               </div>
+                           </div>
+                           <div className="space-y-4">
+                               <h4 className="font-medium">Google Play Store</h4>
+                               <div className="space-y-2">
+                                   <Label htmlFor="googlePlay.link">Link</Label>
+                                   <Input id="googlePlay.link" {...register('googlePlay.link')} placeholder="https://play.google.com/..."/>
+                               </div>
+                               <div className="space-y-2">
+                                   <Label htmlFor="googlePlay.image">Badge Image</Label>
+                                   <Input id="googlePlay.image" type="file" {...register('googlePlay.image')} accept="image/*"/>
+                                    {currentSettings.googlePlay.image && typeof googlePlayImagePreview !== 'object' &&(
+                                     <Image src={currentSettings.googlePlay.image} alt="Current Google Play Badge" width={135} height={40} className="mt-2" />
+                                   )}
+                               </div>
+                           </div>
+                        </div>
+                    </AccordionContent>
+                </AccordionItem>
+
                 <AccordionItem value="contact" className="border rounded-lg px-4">
                     <AccordionTrigger className="text-lg font-semibold">Contact Information</AccordionTrigger>
                     <AccordionContent className="pt-4 space-y-4">

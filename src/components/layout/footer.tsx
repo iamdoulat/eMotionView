@@ -1,3 +1,4 @@
+
 import Link from "next/link";
 import Image from "next/image";
 import { 
@@ -69,26 +70,26 @@ export async function Footer() {
             
             <div className="space-y-4 lg:col-span-2">
               <Link href="/" className="flex items-center gap-2 mb-4">
-                <Image src="https://placehold.co/50x50/FFFFFF/1e2128.png" alt="eMotionView Logo" width={40} height={40} data-ai-hint="logo globe white"/>
+                <Image src={footerSettings.logo} alt="eMotionView Logo" width={40} height={40} className="bg-white rounded-md p-1" data-ai-hint="logo globe white"/>
                 <span className="font-bold font-headline text-2xl text-white">eMotionView</span>
               </Link>
               <p className="text-sm max-w-md">
                 {footerSettings.description}
               </p>
               <div className="flex flex-wrap gap-4 pt-4">
-                <Link href="#">
-                  <Image src="https://placehold.co/135x40.png" alt="Download on the App Store" width={135} height={40} data-ai-hint="app store badge" />
+                <Link href={footerSettings.appStore.link}>
+                  <Image src={footerSettings.appStore.image} alt="Download on the App Store" width={135} height={40} data-ai-hint="app store badge" />
                 </Link>
-                <Link href="#">
-                  <Image src="https://placehold.co/135x40.png" alt="Get it on Google Play" width={135} height={40} data-ai-hint="google play badge" />
+                <Link href={footerSettings.googlePlay.link}>
+                  <Image src={footerSettings.googlePlay.image} alt="Get it on Google Play" width={135} height={40} data-ai-hint="google play badge" />
                 </Link>
               </div>
               <div className="flex space-x-4 pt-4">
-                <Link href={footerSettings.socialLinks.facebook}><Facebook className="h-5 w-5 text-gray-400 hover:text-white" /></Link>
-                <Link href={footerSettings.socialLinks.twitter}><Twitter className="h-5 w-5 text-gray-400 hover:text-white" /></Link>
-                <Link href={footerSettings.socialLinks.instagram}><Instagram className="h-5 w-5 text-gray-400 hover:text-white" /></Link>
-                <Link href={footerSettings.socialLinks.linkedin}><Linkedin className="h-5 w-5 text-gray-400 hover:text-white" /></Link>
-                <Link href={footerSettings.socialLinks.youtube}><Youtube className="h-5 w-5 text-gray-400 hover:text-white" /></Link>
+                {footerSettings.socialLinks.facebook && <Link href={footerSettings.socialLinks.facebook}><Facebook className="h-5 w-5 text-gray-400 hover:text-white" /></Link>}
+                {footerSettings.socialLinks.twitter && <Link href={footerSettings.socialLinks.twitter}><Twitter className="h-5 w-5 text-gray-400 hover:text-white" /></Link>}
+                {footerSettings.socialLinks.instagram && <Link href={footerSettings.socialLinks.instagram}><Instagram className="h-5 w-5 text-gray-400 hover:text-white" /></Link>}
+                {footerSettings.socialLinks.linkedin && <Link href={footerSettings.socialLinks.linkedin}><Linkedin className="h-5 w-5 text-gray-400 hover:text-white" /></Link>}
+                {footerSettings.socialLinks.youtube && <Link href={footerSettings.socialLinks.youtube}><Youtube className="h-5 w-5 text-gray-400 hover:text-white" /></Link>}
               </div>
             </div>
             

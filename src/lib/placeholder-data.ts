@@ -151,6 +151,7 @@ export interface HeroBanner {
 }
 
 export interface FooterSettings {
+  logo: string;
   description: string;
   socialLinks: {
     facebook: string;
@@ -158,6 +159,14 @@ export interface FooterSettings {
     instagram: string;
     linkedin: string;
     youtube: string;
+  };
+  appStore: {
+    link: string;
+    image: string;
+  };
+  googlePlay: {
+    link: string;
+    image: string;
   };
   companyLinks: {
     label: string;
@@ -449,6 +458,7 @@ export const defaultHeroBanners: HeroBanner[] = [
 ];
 
 export const defaultFooterSettings: FooterSettings = {
+    logo: "https://placehold.co/50x50/FFFFFF/1e2128.png",
     description: "Motion View is the largest Eco Product importer and Distributor in Bangladesh and now holds the leading position in the ecosystem industry.",
     socialLinks: {
         facebook: "#",
@@ -456,6 +466,14 @@ export const defaultFooterSettings: FooterSettings = {
         instagram: "#",
         linkedin: "#",
         youtube: "#",
+    },
+    appStore: {
+      link: "#",
+      image: "https://placehold.co/135x40.png"
+    },
+    googlePlay: {
+      link: "#",
+      image: "https://placehold.co/135x40.png"
     },
     companyLinks: [
         { href: "/privacy", label: "Privacy Policy" },
