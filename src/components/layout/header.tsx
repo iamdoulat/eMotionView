@@ -33,7 +33,12 @@ const categoryLinks = [
     { name: 'Network Components', href: '/products?category=Accessories' },
 ]
 
-export function Header() {
+interface HeaderProps {
+    logoUrl?: string;
+    companyName?: string;
+}
+
+export function Header({ logoUrl, companyName = "eMotionView" }: HeaderProps) {
   const [isScrolled, setIsScrolled] = useState(false);
   const [currentUser, setCurrentUser] = useState<FirebaseUser | null>(null);
   const [isAuthLoading, setIsAuthLoading] = useState(true);
@@ -201,8 +206,8 @@ export function Header() {
             <SheetContent side="left" className="w-[300px] p-0 flex flex-col">
               <div className="bg-primary p-4">
                 <Link href="/" className="flex items-center gap-2">
-                  <Image src="https://placehold.co/40x40/FFFFFF/8B2BE2.png" alt="eMotionView Logo" width={40} height={40} data-ai-hint="logo initial"/>
-                  <span className="font-bold text-xl text-primary-foreground">eMotionView</span>
+                  <Image src="https://placehold.co/40x40/FFFFFF/8B2BE2.png" alt={`${companyName} Logo`} width={40} height={40} data-ai-hint="logo initial"/>
+                  <span className="font-bold text-xl text-primary-foreground">{companyName}</span>
                 </Link>
               </div>
               <ScrollArea className="flex-1">
@@ -227,17 +232,21 @@ export function Header() {
 
           {/* Desktop Logo */}
           <Link href="/" className="hidden items-center gap-2 md:flex">
-             <Image 
-                src="https://placehold.co/50x50/FFFFFF/000000.png" 
-                alt="eMotionView Logo" 
-                width={isScrolled ? 32 : 40} 
-                height={isScrolled ? 32 : 40} 
-                className="transition-all duration-300"
-                data-ai-hint="logo globe"
-              />
-              <span className={cn("font-bold font-headline text-foreground transition-all duration-300", isScrolled ? 'text-xl' : 'text-2xl')}>
-                eMotionView
-              </span>
+             {logoUrl ? (
+                <Image 
+                    src={logoUrl}
+                    alt={`${companyName} Logo`}
+                    width={isScrolled ? 120 : 150}
+                    height={isScrolled ? 32 : 40}
+                    className="transition-all duration-300 h-auto"
+                    style={{width: isScrolled ? '120px' : '150px'}}
+                    data-ai-hint="logo globe"
+                />
+             ) : (
+                <span className={cn("font-bold font-headline text-foreground transition-all duration-300", isScrolled ? 'text-xl' : 'text-2xl')}>
+                    {companyName}
+                </span>
+             )}
           </Link>
 
           {/* Desktop Category Dropdown (appears on scroll) */}
@@ -264,7 +273,7 @@ export function Header() {
         <div className="flex flex-1 justify-center items-center md:px-4">
             {/* Mobile Logo (acts as a spacer on small screens) */}
              <Link href="/" className="flex items-center gap-2 md:hidden">
-              <span className="font-bold font-headline text-xl text-foreground">eMotionView</span>
+              <span className="font-bold font-headline text-xl text-foreground">{companyName}</span>
             </Link>
 
             {/* Desktop Search */}
