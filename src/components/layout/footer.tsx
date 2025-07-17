@@ -1,4 +1,5 @@
 
+
 import Link from "next/link";
 import Image from "next/image";
 import { 
@@ -26,8 +27,6 @@ const infoItems = [
     { icon: ShieldCheck, title: 'Authentic Product', text: 'Guaranteed 100% authentic product' },
     { icon: Truck, title: 'Fast Delivery', text: 'Fast Delivery is our first moto' },
 ];
-
-const paymentLogos = Array(22).fill(0);
 
 export async function Footer() {
   const currentYear = new Date().getFullYear();
@@ -131,14 +130,17 @@ export async function Footer() {
           </div>
 
           <div className="border-t border-gray-700 pt-8">
-            <div className="flex flex-col md:flex-row gap-4 items-start">
-                <span className="text-sm font-semibold shrink-0 pt-2">Pay With</span>
-                <div className="grid grid-cols-6 sm:grid-cols-8 md:grid-cols-10 lg:grid-cols-12 xl:grid-cols-15 gap-2">
-                    {paymentLogos.map((_, index) => (
-                        <div key={index} className="bg-white rounded-md p-1 flex items-center justify-center h-10">
-                            <Image src="https://placehold.co/50x30.png" alt="Payment Method" width={50} height={30} data-ai-hint="payment method logo" />
-                        </div>
-                    ))}
+            <div className="flex flex-col md:flex-row gap-4 items-center">
+                <span className="text-sm font-semibold shrink-0">Pay With</span>
+                <div className="flex-1">
+                  <Image 
+                    src={footerSettings.paymentMethodsImage} 
+                    alt="Payment Methods" 
+                    width={1180} 
+                    height={139} 
+                    className="w-full h-auto"
+                    data-ai-hint="payment methods" 
+                  />
                 </div>
             </div>
           </div>

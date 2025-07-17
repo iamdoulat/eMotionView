@@ -183,6 +183,7 @@ export interface FooterSettings {
     link: string;
     image: string;
   }[];
+  paymentMethodsImage: string;
 }
 
 
@@ -500,4 +501,5 @@ export const defaultFooterSettings: FooterSettings = {
         { id: "basis", name: "BASIS Member", image: "https://placehold.co/100x40.png", link: "#" },
         { id: "ecab", name: "e-Cab Member", image: "https://placehold.co/100x40.png", link: "#" },
     ],
+    paymentMethodsImage: "https://placehold.co/1180x139.png",
 };

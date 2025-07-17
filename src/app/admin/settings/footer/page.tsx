@@ -1,4 +1,5 @@
 
+
 "use client";
 
 import { useEffect, useState } from 'react';
@@ -64,6 +65,7 @@ const footerSettingsSchema = z.object({
     email: z.string().email('Valid email is required'),
   }),
   memberships: z.array(membershipSchema),
+  paymentMethodsImage: z.union([z.instanceof(FileList).optional(), z.string().optional()]),
 });
 
 type FooterSettingsFormData = z.infer<typeof footerSettingsSchema>;
@@ -95,6 +97,7 @@ export default function FooterSettingsPage() {
   const appStoreImagePreview = watch('appStore.image');
   const googlePlayImagePreview = watch('googlePlay.image');
   const membershipImagesPreview = watch('memberships');
+  const paymentMethodsImagePreview = watch('paymentMethodsImage');
 
   useEffect(() => {
     const fetchFooterSettings = async () => {
@@ -155,6 +158,13 @@ export default function FooterSettingsPage() {
           }
           return { ...membership, image: currentSettings.memberships[index]?.image || '' };
       }));
+
+       // Handle Payment Methods image upload
+      if (data.paymentMethodsImage instanceof FileList && data.paymentMethodsImage.length > 0) {
+        finalData.paymentMethodsImage = await uploadImage(data.paymentMethodsImage[0], 'payment-methods');
+      } else {
+        finalData.paymentMethodsImage = currentSettings.paymentMethodsImage;
+      }
 
       const docRef = doc(db, SETTINGS_DOC_PATH);
       await setDoc(docRef, { footer: finalData }, { merge: true });
@@ -273,6 +283,19 @@ export default function FooterSettingsPage() {
                         <Button type="button" variant="outline" onClick={() => appendMembership({ id: `mem-${Date.now()}`, name: '', link: '', image: undefined })}>
                             <PlusCircle className="mr-2 h-4 w-4" /> Add Membership Badge
                         </Button>
+                    </AccordionContent>
+                </AccordionItem>
+
+                 <AccordionItem value="payment" className="border rounded-lg px-4">
+                    <AccordionTrigger className="text-lg font-semibold">Payment Methods</AccordionTrigger>
+                    <AccordionContent className="pt-4 space-y-4">
+                        <div className="space-y-2">
+                            <Label htmlFor="paymentMethodsImage">Payment Methods Image (1180x139 recommended)</Label>
+                             <Input id="paymentMethodsImage" type="file" {...register('paymentMethodsImage')} accept="image/*" />
+                             {currentSettings.paymentMethodsImage && typeof paymentMethodsImagePreview !== 'object' && (
+                                <Image src={currentSettings.paymentMethodsImage} alt="Current Payment Methods Banner" width={590} height={70} className="mt-2 border rounded-md" />
+                             )}
+                        </div>
                     </AccordionContent>
                 </AccordionItem>
 
