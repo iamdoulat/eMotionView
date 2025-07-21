@@ -75,3 +75,6 @@ eMotionView leverages Next.js to provide a superior experience compared to tradi
 | **Developer Experience** | **Modern & Efficient.** Features like Fast Refresh, a unified toolchain, and TypeScript support make development fast and enjoyable. The component model promotes reusable and maintainable code. | **Fragmented.** Development often involves mixing PHP, JavaScript, and CSS within a theme/plugin structure, which can be less streamlined. | **Excellent.** Artisan CLI, Eloquent ORM, and a clean MVC structure provide a world-class developer experience for backend development. |
 
 In summary, Next.js was chosen for eMotionView to guarantee a top-tier user experience through unparalleled speed and optimization, while providing a modern and scalable foundation for future growth.
+
+# Contact
+Contact: https://cards.mddoulat.com/iamdoulat
