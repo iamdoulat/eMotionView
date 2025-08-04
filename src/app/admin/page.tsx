@@ -75,12 +75,15 @@ export default function AdminDashboardPage() {
         const allOrders = ordersSnapshot.docs.map(docToJSON) as Order[];
         
         const totalCustomers = customersSnapshot.size;
+        
         const nonCancelledOrders = allOrders.filter(o => o.status !== 'Cancelled');
-        const totalRevenue = nonCancelledOrders.reduce((sum, order) => sum + order.total, 0);
+        const deliveredOrders = allOrders.filter(o => o.status === 'Delivered');
+
+        const totalRevenue = deliveredOrders.reduce((sum, order) => sum + order.total, 0);
         const totalSales = nonCancelledOrders.length;
         
         const monthlyRevenue = [...initialData];
-        nonCancelledOrders.forEach(order => {
+        deliveredOrders.forEach(order => {
           const month = new Date(order.date).getMonth();
           monthlyRevenue[month].total += order.total;
         });
@@ -132,7 +135,7 @@ export default function AdminDashboardPage() {
                 <>
                     <div className="text-2xl font-bold">${stats?.totalRevenue.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</div>
                     <p className="text-xs text-muted-foreground">
-                      Based on all non-cancelled orders
+                      Based on all delivered orders
                     </p>
                 </>
             )}
