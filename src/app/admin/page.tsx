@@ -50,9 +50,16 @@ export default function AdminDashboardPage() {
     const fetchDashboardData = async () => {
       try {
         // Fetch orders, customers, and recent sales in parallel
-        const ordersSnapshotPromise = getDocs(collection(db, 'orders'));
-        const customersSnapshotPromise = getDocs(collection(db, 'customers'));
-        const recentSalesQuery = query(collection(db, 'orders'), orderBy('date', 'desc'), limit(5));
+        const ordersCollectionRef = collection(db, 'orders');
+        const customersCollectionRef = collection(db, 'customers');
+
+        const ordersQuery = query(ordersCollectionRef);
+        const deliveredOrdersQuery = query(ordersCollectionRef, where('status', '==', 'Delivered'));
+        const recentSalesQuery = query(ordersCollectionRef, orderBy('date', 'desc'), limit(5));
+
+        const ordersSnapshotPromise = getDocs(ordersQuery);
+        const deliveredOrdersSnapshotPromise = getDocs(deliveredOrdersQuery);
+        const customersSnapshotPromise = getDocs(customersCollectionRef);
         const recentSalesSnapshotPromise = getDocs(recentSalesQuery);
 
         // Fetch today's visitor count
@@ -61,24 +68,26 @@ export default function AdminDashboardPage() {
         const visitorDocPromise = getDoc(visitorDocRef);
 
         const [
-            ordersSnapshot, 
+            ordersSnapshot,
+            deliveredOrdersSnapshot,
             customersSnapshot, 
             recentSalesSnapshot, 
             visitorDoc
         ] = await Promise.all([
-            ordersSnapshotPromise, 
+            ordersSnapshotPromise,
+            deliveredOrdersSnapshotPromise,
             customersSnapshotPromise, 
             recentSalesSnapshotPromise, 
             visitorDocPromise
         ]);
 
         const allOrders = ordersSnapshot.docs.map(docToJSON) as Order[];
+        const deliveredOrders = deliveredOrdersSnapshot.docs.map(docToJSON) as Order[];
         
         const totalCustomers = customersSnapshot.size;
         
         const nonCancelledOrders = allOrders.filter(o => o.status !== 'Cancelled');
-        const deliveredOrders = allOrders.filter(o => o.status === 'Delivered');
-
+        
         const totalRevenue = deliveredOrders.reduce((sum, order) => sum + order.total, 0);
         const totalSales = nonCancelledOrders.length;
         
@@ -88,7 +97,7 @@ export default function AdminDashboardPage() {
           monthlyRevenue[month].total += order.total;
         });
 
-        const recentSales = recentSalesSnapshot.docs.map(doc => docToJSON as unknown as Order);
+        const recentSales = recentSalesSnapshot.docs.map(doc => docToJSON(doc) as Order);
         
         const dailyVisitors = visitorDoc.exists() ? visitorDoc.data().count : 0;
 
