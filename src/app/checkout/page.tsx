@@ -15,7 +15,7 @@ import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/
 import { onAuthStateChanged, type User } from 'firebase/auth';
 import { auth, db } from '@/lib/firebase';
 import { useToast } from '@/hooks/use-toast';
-import { doc, setDoc } from 'firebase/firestore';
+import { doc, setDoc, collection } from 'firebase/firestore';
 
 export default function CheckoutPage() {
   const router = useRouter();
@@ -56,14 +56,15 @@ export default function CheckoutPage() {
     }
     setIsLoading(true);
 
-    const orderId = `order-${Date.now()}`;
-    const newOrder: Order = {
-        id: orderId,
+    const newOrderRef = doc(collection(db, 'orders'));
+    const orderId = newOrderRef.id;
+
+    const newOrder: Omit<Order, 'id'> = {
         userId: user.uid,
         orderNumber: `USA-${Math.floor(Math.random() * 900000) + 100000}`,
         date: new Date().toISOString(),
         customerName: user.displayName || 'John Doe',
-        customerAvatar: user.photoURL || 'https://placehold.co/40x40.png',
+        customerAvatar: user.photoURL || `https://placehold.co/40x40.png?text=${user.displayName?.charAt(0) || 'U'}`,
         status: 'Pending',
         total: total,
         items: cart.map(item => ({
@@ -80,14 +81,12 @@ export default function CheckoutPage() {
     };
 
     try {
-        // Save the order to Firestore
-        await setDoc(doc(db, 'orders', orderId), newOrder);
+        await setDoc(newOrderRef, newOrder);
         
         clearCart();
         
-        // Wait a bit for the database write to propagate before redirecting.
         setTimeout(() => {
-          router.push(`/checkout/thank-you?orderId=${newOrder.id}`);
+          router.push(`/checkout/thank-you?orderId=${orderId}`);
         }, 500);
 
     } catch (error) {
