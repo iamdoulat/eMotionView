@@ -10,7 +10,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card"
-import { DollarSign, Users, CreditCard, Activity, Eye } from "lucide-react"
+import { DollarSign, Users, CreditCard, Eye } from "lucide-react"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Skeleton } from "@/components/ui/skeleton"
 import { SeedButton } from "@/components/admin/seed-button"
@@ -49,7 +49,6 @@ export default function AdminDashboardPage() {
   useEffect(() => {
     const fetchDashboardData = async () => {
       try {
-        // Fetch orders, customers, and recent sales in parallel
         const ordersCollectionRef = collection(db, 'orders');
         const customersCollectionRef = collection(db, 'customers');
 
@@ -57,29 +56,21 @@ export default function AdminDashboardPage() {
         const deliveredOrdersQuery = query(ordersCollectionRef, where('status', '==', 'Delivered'));
         const recentSalesQuery = query(ordersCollectionRef, orderBy('date', 'desc'), limit(5));
 
-        const ordersSnapshotPromise = getDocs(ordersQuery);
-        const deliveredOrdersSnapshotPromise = getDocs(deliveredOrdersQuery);
-        const customersSnapshotPromise = getDocs(customersCollectionRef);
-        const recentSalesSnapshotPromise = getDocs(recentSalesQuery);
-
-        // Fetch today's visitor count
-        const today = new Date().toISOString().split('T')[0];
-        const visitorDocRef = doc(db, 'analytics', `daily_visits_${today}`);
-        const visitorDocPromise = getDoc(visitorDocRef);
-
         const [
             ordersSnapshot,
             deliveredOrdersSnapshot,
             customersSnapshot, 
-            recentSalesSnapshot, 
-            visitorDoc
+            recentSalesSnapshot
         ] = await Promise.all([
-            ordersSnapshotPromise,
-            deliveredOrdersSnapshotPromise,
-            customersSnapshotPromise, 
-            recentSalesSnapshotPromise, 
-            visitorDocPromise
+            getDocs(ordersQuery),
+            getDocs(deliveredOrdersQuery),
+            getDocs(customersCollectionRef), 
+            getDocs(recentSalesQuery)
         ]);
+        
+        const today = new Date().toISOString().split('T')[0];
+        const visitorDocRef = doc(db, 'analytics', `daily_visits_${today}`);
+        const visitorDoc = await getDoc(visitorDocRef);
 
         const allOrders = ordersSnapshot.docs.map(docToJSON) as Order[];
         const deliveredOrders = deliveredOrdersSnapshot.docs.map(docToJSON) as Order[];
@@ -91,7 +82,7 @@ export default function AdminDashboardPage() {
         const totalRevenue = deliveredOrders.reduce((sum, order) => sum + order.total, 0);
         const totalSales = nonCancelledOrders.length;
         
-        const monthlyRevenue = [...initialData];
+        const monthlyRevenue = [...initialData].map(m => ({ ...m }));
         deliveredOrders.forEach(order => {
           const month = new Date(order.date).getMonth();
           monthlyRevenue[month].total += order.total;
