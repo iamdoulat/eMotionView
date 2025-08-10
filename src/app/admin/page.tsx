@@ -54,7 +54,7 @@ export default function AdminDashboardPage() {
 
         const ordersQuery = query(ordersCollectionRef);
         const deliveredOrdersQuery = query(ordersCollectionRef, where('status', '==', 'Delivered'));
-        const recentSalesQuery = query(ordersCollectionRef, orderBy('date', 'desc'), limit(5));
+        const recentSalesQuery = query(ordersCollectionRef, orderBy('date', 'desc'), limit(10));
 
         const [
             ordersSnapshot,
@@ -245,13 +245,13 @@ export default function AdminDashboardPage() {
           <CardHeader>
             <CardTitle>Recent Sales</CardTitle>
             <CardDescription>
-              Your 5 most recent sales.
+              Your 10 most recent sales.
             </CardDescription>
           </CardHeader>
           <CardContent>
             {loading ? (
                 <div className="space-y-8">
-                    {[...Array(5)].map((_, i) => (
+                    {[...Array(10)].map((_, i) => (
                     <div className="flex items-center" key={i}>
                         <Skeleton className="h-9 w-9 rounded-full" />
                         <div className="ml-4 space-y-2">
