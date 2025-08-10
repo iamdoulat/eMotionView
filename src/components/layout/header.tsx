@@ -108,7 +108,7 @@ export function Header({ logoUrl, companyName = "eMotionView" }: HeaderProps) {
   );
 
   const CartButton = ({ className }: { className?: string }) => (
-    <Button variant="ghost" asChild className={cn("relative h-10 w-10", className)}>
+    <Button variant="ghost" size="icon" asChild className={cn("relative", className)}>
       <Link href="/cart" aria-label="Shopping Cart">
         <ShoppingCart className="h-6 w-6" />
         {isCartInitialized && (
