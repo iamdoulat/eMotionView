@@ -3,7 +3,7 @@
 
 import { useState, useMemo, useEffect } from "react";
 import Link from "next/link";
-import { orders as initialOrders, type Order } from "@/lib/placeholder-data";
+import { type Order } from "@/lib/placeholder-data";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -14,37 +14,35 @@ import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { MoreHorizontal, Search, FileText } from "lucide-react";
+import { MoreHorizontal, Search, FileText, Loader2 } from "lucide-react";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { format } from 'date-fns';
+import { collection, getDocs, doc, setDoc } from 'firebase/firestore';
+import { db, docToJSON } from "@/lib/firebase";
 
 type StatusFilter = "all" | Order['status'];
 
 export default function AdminOrdersPage() {
   const [orders, setOrders] = useState<Order[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
   const [orderToEdit, setOrderToEdit] = useState<Order | null>(null);
   const [filter, setFilter] = useState<StatusFilter>("all");
   const [searchTerm, setSearchTerm] = useState("");
 
   useEffect(() => {
-    // Function to load and combine orders
-    const loadOrders = () => {
-        const storedOrders: Order[] = JSON.parse(localStorage.getItem('newOrders') || '[]');
-        const combinedOrders = [...initialOrders];
-        
-        // Add new orders from storage, avoiding duplicates
-        storedOrders.forEach(storedOrder => {
-            if (!combinedOrders.some(o => o.id === storedOrder.id)) {
-                combinedOrders.push(storedOrder);
-            }
-        });
-        setOrders(combinedOrders);
-    };
-
-    loadOrders();
-    // Also listen for storage events to update orders in real-time from other tabs
-    window.addEventListener('storage', loadOrders);
-    return () => window.removeEventListener('storage', loadOrders);
+    const fetchOrders = async () => {
+        setIsLoading(true);
+        try {
+            const ordersSnapshot = await getDocs(collection(db, 'orders'));
+            const ordersList = ordersSnapshot.docs.map(doc => docToJSON(doc) as Order);
+            setOrders(ordersList);
+        } catch (error) {
+            console.error("Failed to fetch orders:", error);
+        } finally {
+            setIsLoading(false);
+        }
+    }
+    fetchOrders();
   }, []);
 
   const filteredOrders = useMemo(() => {
@@ -57,28 +55,13 @@ export default function AdminOrdersPage() {
       .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
   }, [orders, filter, searchTerm]);
 
-  const handleSaveChanges = () => {
+  const handleSaveChanges = async () => {
     if (!orderToEdit) return;
     
-    // Update state
-    const updatedOrdersState = orders.map(o => o.id === orderToEdit.id ? orderToEdit : o);
-    setOrders(updatedOrdersState);
+    const docRef = doc(db, 'orders', orderToEdit.id);
+    await setDoc(docRef, orderToEdit, { merge: true });
 
-    // Update local storage for orders that came from it
-    const storedOrders: Order[] = JSON.parse(localStorage.getItem('newOrders') || '[]');
-    const isStoredOrder = storedOrders.some(o => o.id === orderToEdit.id);
-
-    if (isStoredOrder) {
-        const newStoredOrders = storedOrders.map(o => o.id === orderToEdit.id ? orderToEdit : o);
-        localStorage.setItem('newOrders', JSON.stringify(newStoredOrders));
-    } else {
-        // This is a more complex case - if we edit a non-stored (initial) order,
-        // we might want to add it to local storage to persist the change.
-        // For simplicity, we'll just add it to newOrders to persist changes.
-        const otherStoredOrders = storedOrders.filter(o => o.id !== orderToEdit.id);
-        localStorage.setItem('newOrders', JSON.stringify([...otherStoredOrders, orderToEdit]));
-    }
-
+    setOrders(orders.map(o => o.id === orderToEdit.id ? orderToEdit : o));
     setOrderToEdit(null);
   };
   
@@ -136,7 +119,13 @@ export default function AdminOrdersPage() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {filteredOrders.length > 0 ? filteredOrders.map((order) => (
+                {isLoading ? (
+                    <TableRow>
+                        <TableCell colSpan={6} className="h-24 text-center">
+                            <Loader2 className="h-6 w-6 animate-spin mx-auto" />
+                        </TableCell>
+                    </TableRow>
+                ) : filteredOrders.length > 0 ? filteredOrders.map((order) => (
                   <TableRow key={order.id}>
                     <TableCell className="font-medium">{order.orderNumber}</TableCell>
                     <TableCell>
