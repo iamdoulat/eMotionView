@@ -21,41 +21,22 @@ export function useAuth() {
         const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
             if (firebaseUser) {
                 let userRole: UserRole | undefined;
-
-                // A simple heuristic: if displayName or email is missing, they are likely a customer.
-                // This avoids unnecessary Firestore reads for regular customer logins.
-                const isLikelyStaff = firebaseUser.displayName || firebaseUser.email;
-
-                if (isLikelyStaff) {
-                     try {
-                        // Try fetching from 'users' collection first (for Admin/Staff)
-                        const userDocRef = doc(db, "users", firebaseUser.uid);
-                        const userDocSnap = await getDoc(userDocRef);
-                        if (userDocSnap.exists()) {
-                            userRole = userDocSnap.data().role;
-                        }
-                    } catch (error) {
-                        // This will likely be a permissions error if the user is a customer. We can ignore it.
-                        if (error instanceof FirebaseError && error.code !== 'permission-denied') {
-                            console.error("Error fetching staff user data:", error);
-                        }
-                    }
-                }
-               
-
-                // If no role was found in 'users', check 'customers' collection.
-                if (!userRole) {
-                    try {
-                        const customerDocRef = doc(db, "customers", firebaseUser.uid);
-                        const customerDocSnap = await getDoc(customerDocRef);
+                try {
+                    // Try fetching from 'users' collection first (for Admin/Staff)
+                    let userDocSnap = await getDoc(doc(db, "users", firebaseUser.uid));
+                    
+                    if (userDocSnap.exists()) {
+                        userRole = userDocSnap.data().role;
+                    } else {
+                        // If not in 'users', check 'customers'
+                        const customerDocSnap = await getDoc(doc(db, "customers", firebaseUser.uid));
                         if (customerDocSnap.exists()) {
                             userRole = customerDocSnap.data().role;
                         }
-                    } catch (error) {
-                         // This could fail if an admin is not also in the customers collection. Ignore permission errors.
-                        if (error instanceof FirebaseError && error.code !== 'permission-denied') {
-                            console.error("Error fetching customer data:", error);
-                        }
+                    }
+                } catch (error) {
+                    if (error instanceof FirebaseError && error.code !== 'permission-denied') {
+                        console.error("Error fetching user data:", error);
                     }
                 }
                 

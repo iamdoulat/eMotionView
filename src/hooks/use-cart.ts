@@ -41,19 +41,16 @@ export function useCart() {
   useEffect(() => {
     setCart(getCartFromStorage());
     setIsInitialized(true);
-  }, []);
 
-  // This effect listens for storage changes from other tabs
-  const onStorageChange = useCallback(() => {
-    setCart(getCartFromStorage());
-  }, []);
+    const onStorageChange = () => {
+        setCart(getCartFromStorage());
+    };
 
-  useEffect(() => {
     window.addEventListener('storage', onStorageChange);
     return () => {
       window.removeEventListener('storage', onStorageChange);
     };
-  }, [onStorageChange]);
+  }, []);
 
   const addToCart = (product: Product, quantity: number = 1) => {
     const currentCart = getCartFromStorage();
