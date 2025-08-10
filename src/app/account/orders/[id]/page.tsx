@@ -1,7 +1,7 @@
 
 "use client";
 
-import { orders as initialOrders, type Order } from "@/lib/placeholder-data";
+import { type Order } from "@/lib/placeholder-data";
 import { notFound, useParams } from "next/navigation";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -9,16 +9,19 @@ import { Separator } from "@/components/ui/separator";
 import Image from "next/image";
 import Link from "next/link";
 import { Badge } from "@/components/ui/badge";
-import { Download, RefreshCw } from "lucide-react";
+import { Download, RefreshCw, Loader2 } from "lucide-react";
 import { useEffect, useState, useRef } from "react";
 import { Skeleton } from "@/components/ui/skeleton";
 import jsPDF from "jspdf";
 import html2canvas from "html2canvas";
+import { doc, getDoc } from "firebase/firestore";
+import { db } from "@/lib/firebase";
 
 
 export default function OrderDetailPage() {
   const params = useParams<{ id: string }>();
   const [order, setOrder] = useState<Order | null | undefined>(undefined);
+  const [isLoading, setIsLoading] = useState(true);
   const [formattedDate, setFormattedDate] = useState('');
   const [formattedInvoiceDate, setFormattedInvoiceDate] = useState('');
 
@@ -26,18 +29,29 @@ export default function OrderDetailPage() {
   const id = params.id;
 
   useEffect(() => {
-    if (id) {
-        const storedOrders: Order[] = JSON.parse(localStorage.getItem('newOrders') || '[]');
-        const allOrders = [...initialOrders, ...storedOrders];
-        const foundOrder = allOrders.find(o => o.id === id);
-        setOrder(foundOrder);
-        if (foundOrder) {
+    if (!id) {
+        setOrder(null);
+        setIsLoading(false);
+        return;
+    }
+    
+    const fetchOrder = async () => {
+        setIsLoading(true);
+        const orderRef = doc(db, 'orders', id as string);
+        const docSnap = await getDoc(orderRef);
+
+        if (docSnap.exists()) {
+            const foundOrder = { id: docSnap.id, ...docSnap.data() } as Order;
+            setOrder(foundOrder);
             setFormattedDate(new Date(foundOrder.date).toLocaleDateString());
             setFormattedInvoiceDate(new Date(foundOrder.date).toLocaleDateString());
+        } else {
+            setOrder(null);
         }
-    } else {
-        setOrder(null);
-    }
+        setIsLoading(false);
+    };
+
+    fetchOrder();
   }, [id]);
 
   const handleDownloadInvoice = () => {
@@ -59,7 +73,7 @@ export default function OrderDetailPage() {
     });
   };
 
-  if (order === undefined) {
+  if (isLoading) {
     return (
         <div>
             <Skeleton className="h-12 w-1/2 mb-6" />
@@ -68,8 +82,9 @@ export default function OrderDetailPage() {
                     <Skeleton className="h-8 w-3/4" />
                     <Skeleton className="h-4 w-1/2 mt-2" />
                 </CardHeader>
-                <CardContent>
-                    <Skeleton className="h-48 w-full" />
+                <CardContent className="space-y-4">
+                    <Skeleton className="h-24 w-full" />
+                    <Skeleton className="h-16 w-full" />
                 </CardContent>
             </Card>
         </div>
@@ -79,6 +94,10 @@ export default function OrderDetailPage() {
   if (!order) {
     notFound();
   }
+  
+  const subtotal = order.items.reduce((sum, item) => sum + item.price * item.quantity, 0);
+  const shipping = order.total - subtotal;
+
 
   const getStatusVariant = (status: Order['status']) => {
     switch (status) {
@@ -116,7 +135,7 @@ export default function OrderDetailPage() {
 
             <div style={{ marginBottom: '2rem' }}>
               <h3 style={{ fontWeight: 'bold', borderBottom: '1px solid #eee', paddingBottom: '0.5rem', marginBottom: '0.5rem' }}>Customer Address</h3>
-              <p style={{ margin: 0 }}>John Doe</p>
+              <p style={{ margin: 0 }}>{order.customerName}</p>
               <p style={{ margin: 0 }}>123 Main Street</p>
               <p style={{ margin: 0 }}>Anytown, USA 12345</p>
             </div>
@@ -146,11 +165,11 @@ export default function OrderDetailPage() {
               <div style={{ width: '50%' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', padding: '0.5rem 0' }}>
                   <span>Subtotal:</span>
-                  <span>${(order.total - 5).toFixed(2)}</span>
+                  <span>${subtotal.toFixed(2)}</span>
                 </div>
                 <div style={{ display: 'flex', justifyContent: 'space-between', padding: '0.5rem 0' }}>
                   <span>Shipping:</span>
-                  <span>$5.00</span>
+                  <span>${shipping.toFixed(2)}</span>
                 </div>
                 <div style={{ display: 'flex', justifyContent: 'space-between', padding: '0.75rem 0', marginTop: '0.5rem', borderTop: '2px solid #333', fontWeight: 'bold', fontSize: '1.25rem' }}>
                   <span>Total:</span>
@@ -229,7 +248,7 @@ export default function OrderDetailPage() {
               <div>
                 <h3 className="font-semibold text-lg mb-4">Shipping Address</h3>
                 <address className="not-italic text-muted-foreground">
-                  John Doe<br/>
+                  {order.customerName}<br/>
                   123 Main Street<br/>
                   Anytown, USA 12345
                 </address>
@@ -239,11 +258,11 @@ export default function OrderDetailPage() {
                 <div className="space-y-2 text-muted-foreground">
                   <div className="flex justify-between">
                     <span>Subtotal:</span>
-                    <span>${(order.total - 5).toFixed(2)}</span>
+                    <span>${subtotal.toFixed(2)}</span>
                   </div>
                   <div className="flex justify-between">
                     <span>Shipping:</span>
-                    <span>$5.00</span>
+                    <span>${shipping.toFixed(2)}</span>
                   </div>
                   <div className="flex justify-between font-bold text-foreground">
                     <span>Total:</span>

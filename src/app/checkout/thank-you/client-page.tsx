@@ -4,31 +4,58 @@
 import { useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import Image from 'next/image';
-import { orders as initialOrders, type Order } from '@/lib/placeholder-data';
+import { type Order } from '@/lib/placeholder-data';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
-import { CheckCircle, Home } from 'lucide-react';
+import { CheckCircle, Home, Loader2 } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { Skeleton } from '@/components/ui/skeleton';
+import { doc, getDoc } from 'firebase/firestore';
+import { db } from '@/lib/firebase';
 
 export function ThankYouClientPage() {
     const searchParams = useSearchParams();
     const orderId = searchParams.get('orderId');
     const [order, setOrder] = useState<Order | null | undefined>(undefined);
+    const [isLoading, setIsLoading] = useState(true);
 
     useEffect(() => {
-        if (orderId) {
-            const storedOrders: Order[] = JSON.parse(localStorage.getItem('newOrders') || '[]');
-            // The new order will be in storedOrders, but we check initialOrders as a fallback.
-            const allOrders = [...initialOrders, ...storedOrders];
-            const foundOrder = allOrders.find(o => o.id === orderId);
-            setOrder(foundOrder || null);
-        } else {
+        if (!orderId) {
             setOrder(null);
+            setIsLoading(false);
+            return;
         }
+
+        const fetchOrder = async () => {
+            setIsLoading(true);
+            try {
+                const orderRef = doc(db, 'orders', orderId);
+                const orderSnap = await getDoc(orderRef);
+                if (orderSnap.exists()) {
+                    setOrder({ id: orderSnap.id, ...orderSnap.data() } as Order);
+                } else {
+                    setOrder(null);
+                }
+            } catch (error) {
+                console.error("Error fetching order:", error);
+                setOrder(null);
+            } finally {
+                setIsLoading(false);
+            }
+        };
+
+        fetchOrder();
     }, [orderId]);
 
+    if (isLoading) {
+        return (
+            <div className="container mx-auto px-4 py-12 flex justify-center items-center min-h-[calc(100vh-16rem)]">
+                <Loader2 className="h-8 w-8 animate-spin text-primary" />
+            </div>
+        );
+    }
+    
     if (order === undefined) {
         return (
             <div className="container mx-auto px-4 py-12 max-w-3xl">
@@ -58,6 +85,9 @@ export function ThankYouClientPage() {
             </div>
         );
     }
+
+    const subtotal = order.items.reduce((sum, item) => sum + item.price * item.quantity, 0);
+    const shipping = order.total - subtotal;
 
     return (
         <div className="container mx-auto px-4 py-12 max-w-3xl">
@@ -96,11 +126,11 @@ export function ThankYouClientPage() {
                     <div className="space-y-2 text-right">
                          <div className="flex justify-between">
                             <span className="text-muted-foreground">Subtotal:</span>
-                            <span>${(order.total - 5).toFixed(2)}</span>
+                            <span>${subtotal.toFixed(2)}</span>
                         </div>
                          <div className="flex justify-between">
                             <span className="text-muted-foreground">Shipping:</span>
-                            <span>$5.00</span>
+                            <span>${shipping.toFixed(2)}</span>
                         </div>
                          <div className="flex justify-between font-bold text-lg">
                             <span>Total:</span>

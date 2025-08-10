@@ -13,8 +13,9 @@ import { Label } from '@/components/ui/label';
 import { Separator } from '@/components/ui/separator';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import { onAuthStateChanged, type User } from 'firebase/auth';
-import { auth } from '@/lib/firebase';
+import { auth, db } from '@/lib/firebase';
 import { useToast } from '@/hooks/use-toast';
+import { doc, setDoc } from 'firebase/firestore';
 
 export default function CheckoutPage() {
   const router = useRouter();
@@ -43,7 +44,7 @@ export default function CheckoutPage() {
     }
   }, [isInitialized, user, cart, router, isLoading]);
 
-  const handlePlaceOrder = () => {
+  const handlePlaceOrder = async () => {
     if (!user) {
         toast({
             variant: 'destructive',
@@ -55,8 +56,9 @@ export default function CheckoutPage() {
     }
     setIsLoading(true);
 
+    const orderId = `order-${Date.now()}`;
     const newOrder: Order = {
-        id: `order-${Date.now()}`,
+        id: orderId,
         userId: user.uid,
         orderNumber: `USA-${Math.floor(Math.random() * 900000) + 100000}`,
         date: new Date().toISOString(),
@@ -77,24 +79,26 @@ export default function CheckoutPage() {
         })),
     };
 
-    setTimeout(() => {
-        try {
-            const existingOrders: Order[] = JSON.parse(localStorage.getItem('newOrders') || '[]');
-            localStorage.setItem('newOrders', JSON.stringify([...existingOrders, newOrder]));
-            
-            clearCart();
-            
-            router.push(`/checkout/thank-you?orderId=${newOrder.id}`);
-        } catch (error) {
-            console.error("Failed to place order:", error);
-            toast({
-                variant: 'destructive',
-                title: 'Order Failed',
-                description: 'There was a problem placing your order. Please try again.',
-            });
-            setIsLoading(false);
-        }
-    }, 1500);
+    try {
+        // Save the order to Firestore
+        await setDoc(doc(db, 'orders', orderId), newOrder);
+        
+        clearCart();
+        
+        // Wait a bit for the database write to propagate before redirecting.
+        setTimeout(() => {
+          router.push(`/checkout/thank-you?orderId=${newOrder.id}`);
+        }, 500);
+
+    } catch (error) {
+        console.error("Failed to place order:", error);
+        toast({
+            variant: 'destructive',
+            title: 'Order Failed',
+            description: 'There was a problem placing your order. Please try again.',
+        });
+        setIsLoading(false);
+    }
   };
   
   if (!isInitialized || !user || (cart.length === 0 && !isLoading)) {
