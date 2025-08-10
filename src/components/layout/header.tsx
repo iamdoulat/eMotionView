@@ -241,7 +241,6 @@ export function Header({ logoUrl, companyName = "eMotionView" }: HeaderProps) {
                     className="transition-all duration-300 h-auto"
                     style={{width: isScrolled ? '120px' : '150px'}}
                     data-ai-hint="logo globe"
-                    priority
                 />
              ) : (
                 <span className={cn("font-bold font-headline text-foreground transition-all duration-300", isScrolled ? 'text-xl' : 'text-2xl')}>
