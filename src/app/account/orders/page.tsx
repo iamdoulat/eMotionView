@@ -95,7 +95,7 @@ export default function OrdersPage() {
                         ) : orders.length > 0 ? (
                             orders.map((order) => (
                                 <TableRow key={order.id}>
-                                    <TableCell className="font-medium">{order.orderNumber}</TableCell>
+                                    <TableCell className="font-medium">#{order.orderNumber}</TableCell>
                                     <TableCell>{new Date(order.date).toLocaleDateString()}</TableCell>
                                     <TableCell>
                                         <Badge variant={getStatusVariant(order.status)}>
