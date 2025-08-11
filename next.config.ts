@@ -13,7 +13,7 @@ const nextConfig: NextConfig = {
     config.experiments = { ...config.experiments, asyncWebAssembly: true };
     
     // This is to fix a build error with genkit, "Module not found: Can't resolve 'node:process'"
-    config.externals = [...config.externals, "node:process"];
+    config.externals = [...config.externals, "node:process", "node:stream"];
 
     return config;
   },
