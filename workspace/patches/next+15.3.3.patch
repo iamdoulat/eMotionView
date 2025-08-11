@@ -1,0 +1,36 @@
+diff --git a/node_modules/next/dist/server/lib/find-page-file.js b/node_modules/next/dist/server/lib/find-page-file.js
+index 45bf7a1c77f5255476a8b79f647053e1a0678546..f713170e30a598c76067f9b8c0671607590835f8 100644
+--- a/node_modules/next/dist/server/lib/find-page-file.js
++++ b/node_modules/next/dist/server/lib/find-page-file.js
+@@ -1,3 +1,4 @@
++require('dotenv').config()
+ "use strict";
+ Object.defineProperty(exports, "__esModule", {
+     value: true
+diff --git a/node_modules/next/dist/server/next-server.js b/node_modules/next/dist/server/next-server.js
+index 7380927c3298818227b7f320b925b6a782b5f36e..76b53ccdf7f29f0302b545d051f654b9d363b96e 100644
+--- a/node_modules/next/dist/server/next-server.js
++++ b/node_modules/next/dist/server/next-server.js
+@@ -1,3 +1,4 @@
++require('dotenv').config()
+ "use strict";
+ Object.defineProperty(exports, "__esModule", {
+     value: true
+diff --git a/node_modules/next/dist/server/render.js b/node_modules/next/dist/server/render.js
+index 0c95a287c80529d472c676f4523c96996d9f96ad..a934f0391d171542f61e71a1795c692a71d7c355 100644
+--- a/node_modules/next/dist/server/render.js
++++ b/node_modules/next/dist/server/render.js
+@@ -1,3 +1,4 @@
++require('dotenv').config()
+ "use strict";
+ Object.defineProperty(exports, "__esModule", {
+     value: true
+diff --git a/node_modules/next/dist/server/router.js b/node_modules/next/dist/server/router.js
+index 00832414777e4362b25c3453a2b724490f3c5f40..d913612711d9573887224209930f305a3962b1af 100644
+--- a/node_modules/next/dist/server/router.js
++++ b/node_modules/next/dist/server/router.js
+@@ -1,3 +1,4 @@
++require('dotenv').config()
+ "use strict";
+ Object.defineProperty(exports, "__esModule", {
+     value: true
