@@ -66,9 +66,13 @@ export default function AdminProductsPage() {
   useEffect(() => {
     const fetchProducts = async () => {
         setIsLoading(true);
-        const productsSnapshot = await getDocs(collection(db, 'products'));
-        const productList = productsSnapshot.docs.map(docToJSON) as Product[];
-        setProducts(productList);
+        try {
+            const productsSnapshot = await getDocs(collection(db, 'products'));
+            const productList = productsSnapshot.docs.map(docToJSON) as Product[];
+            setProducts(productList);
+        } catch (error) {
+            console.error(error);
+        }
         setIsLoading(false);
     }
     fetchProducts();

@@ -1,4 +1,5 @@
 
+
 "use client";
 
 import { useState, useMemo, useEffect } from "react";
@@ -63,9 +64,13 @@ export default function DigitalProductsPage() {
   useEffect(() => {
     const fetchProducts = async () => {
         setIsLoading(true);
-        const productsSnapshot = await getDocs(collection(db, 'products'));
-        const productList = productsSnapshot.docs.map(docToJSON) as Product[];
-        setAllProducts(productList);
+        try {
+            const productsSnapshot = await getDocs(collection(db, 'products'));
+            const productList = productsSnapshot.docs.map(docToJSON) as Product[];
+            setAllProducts(productList);
+        } catch (error) {
+            console.error(error);
+        }
         setIsLoading(false);
     }
     fetchProducts();
