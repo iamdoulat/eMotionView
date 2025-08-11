@@ -1,5 +1,4 @@
 
-
 import type {NextConfig} from 'next';
 
 const withPWA = require('@ducanh2912/next-pwa').default({
@@ -10,6 +9,10 @@ const withPWA = require('@ducanh2912/next-pwa').default({
 });
 
 const nextConfig: NextConfig = {
+  webpack(config, { isServer }) {
+    config.experiments = { ...config.experiments, asyncWebAssembly: true };
+    return config;
+  },
   env: {
     NEXT_PUBLIC_FIREBASE_API_KEY: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
     NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN: process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN,
