@@ -19,24 +19,30 @@ export default function OrdersPage() {
     const [isOrdersLoading, setIsOrdersLoading] = useState(true);
 
     useEffect(() => {
+        if (isAuthLoading) return;
+        
         if (!user) {
-            if (!isAuthLoading) {
-                setIsOrdersLoading(false);
-            }
+            setIsOrdersLoading(false);
             return;
         };
 
         const fetchOrders = async () => {
+            if (!user?.uid) return;
             setIsOrdersLoading(true);
-            const ordersQuery = query(
-                collection(db, 'orders'),
-                where('userId', '==', user.uid),
-                orderBy('date', 'desc')
-            );
-            const querySnapshot = await getDocs(ordersQuery);
-            const userOrders = querySnapshot.docs.map(doc => docToJSON(doc) as Order);
-            setOrders(userOrders);
-            setIsOrdersLoading(false);
+            try {
+                const ordersQuery = query(
+                    collection(db, 'orders'),
+                    where('userId', '==', user.uid),
+                    orderBy('date', 'desc')
+                );
+                const querySnapshot = await getDocs(ordersQuery);
+                const userOrders = querySnapshot.docs.map(doc => docToJSON(doc) as Order);
+                setOrders(userOrders);
+            } catch (error) {
+                console.error("Failed to fetch orders:", error);
+            } finally {
+                setIsOrdersLoading(false);
+            }
         };
 
         fetchOrders();
