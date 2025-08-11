@@ -11,6 +11,10 @@ const withPWA = require('@ducanh2912/next-pwa').default({
 const nextConfig: NextConfig = {
   webpack(config, { isServer }) {
     config.experiments = { ...config.experiments, asyncWebAssembly: true };
+    
+    // This is to fix a build error with genkit, "Module not found: Can't resolve 'node:process'"
+    config.externals = [...config.externals, "node:process"];
+
     return config;
   },
   env: {
