@@ -3,7 +3,7 @@
 "use client"
 
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import {
   LayoutDashboard,
@@ -30,6 +30,7 @@ import {
   GalleryVertical,
   Footprints,
   FileText,
+  LogOut,
 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from "../ui/card";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
@@ -71,8 +72,13 @@ const settingsNavItems = [
 
 export function AdminSidebar() {
     const pathname = usePathname();
+    const router = useRouter();
     const [isProductsOpen, setIsProductsOpen] = useState(() => pathname.startsWith('/admin/products'));
     const [isSettingsOpen, setIsSettingsOpen] = useState(() => pathname.startsWith('/admin/settings'));
+
+    const handleSignOut = async () => {
+        await router.push('/api/auth/sign-out');
+    };
 
     return (
         <aside className="sticky top-24">
@@ -170,8 +176,13 @@ export function AdminSidebar() {
                       ))}
                     </CollapsibleContent>
                   </Collapsible>
-
+                  
                   <div className="flex-grow" />
+
+                  <Button onClick={handleSignOut} variant="ghost" className="justify-start text-destructive hover:text-destructive">
+                    <LogOut className="mr-2 h-4 w-4" />
+                    Sign Out
+                  </Button>
               </CardContent>
           </Card>
         </aside>

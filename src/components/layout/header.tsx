@@ -8,16 +8,16 @@ import { useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet"
-import { Search, ShoppingCart, Menu, Phone, User, Heart, LayoutGrid, LogOut, Package, Tag, Building, ChevronsRight, Boxes, MapPin } from "lucide-react"
+import { Search, ShoppingCart, Menu, Phone, User, Heart, LayoutGrid, LogOut } from "lucide-react"
 import { Badge } from "@/components/ui/badge"
 import { cn } from "@/lib/utils"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
 import { Separator } from "@/components/ui/separator"
 import { ScrollArea } from "../ui/scroll-area"
 import { useCart } from "@/hooks/use-cart"
-import { auth } from "@/lib/firebase"
-import { onAuthStateChanged, signOut, type User as FirebaseUser } from "firebase/auth"
+import { useAuth } from "@/hooks/use-auth"
 import { Skeleton } from "../ui/skeleton"
+import { ClientOnly } from "../client-only"
 
 const categoryLinks = [
     { name: 'Smart Watches', href: '/products?category=Wearables' },
@@ -40,8 +40,7 @@ interface HeaderProps {
 
 export function Header({ logoUrl, companyName = "eMotionView" }: HeaderProps) {
   const [isScrolled, setIsScrolled] = useState(false);
-  const [currentUser, setCurrentUser] = useState<FirebaseUser | null>(null);
-  const [isAuthLoading, setIsAuthLoading] = useState(true);
+  const { user, isLoading: isAuthLoading } = useAuth();
   const router = useRouter();
   const { cartCount, isInitialized: isCartInitialized } = useCart();
   
@@ -58,13 +57,6 @@ export function Header({ logoUrl, companyName = "eMotionView" }: HeaderProps) {
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
 
-  useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, (user) => {
-        setCurrentUser(user);
-        setIsAuthLoading(false);
-    });
-    return () => unsubscribe();
-  }, []);
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -77,9 +69,7 @@ export function Header({ logoUrl, companyName = "eMotionView" }: HeaderProps) {
   }, []);
 
   const handleLogout = async () => {
-    await signOut(auth);
-    router.push('/sign-in');
-    router.refresh();
+    await router.push('/api/auth/sign-out');
   };
   
   const handleSearchSubmit = (e: React.FormEvent) => {
@@ -103,29 +93,31 @@ export function Header({ logoUrl, companyName = "eMotionView" }: HeaderProps) {
   
   const searchButton = (
     <Button type="submit" size="icon" className="absolute right-1 top-1/2 -translate-y-1/2 rounded-full bg-primary text-primary-foreground hover:bg-primary/90 h-8 w-8 md:h-10 md:w-10">
-      <Search className={cn("h-5 w-5 transition-transform duration-500", isSearchFocused && "rotate-[360deg]")} />
+      <span className="flex items-center gap-2"><Search className={cn("h-5 w-5 transition-transform duration-500", isSearchFocused && "rotate-[360deg]")} /></span>
     </Button>
   );
 
   const CartButton = ({ className }: { className?: string }) => (
-    <Button variant="ghost" size="icon" asChild className={cn("relative", className)}>
-      <Link href="/cart" aria-label="Shopping Cart">
-        <ShoppingCart className="h-6 w-6" />
-        {isCartInitialized && (
-          <Badge className="absolute -top-1 -right-1 h-5 w-5 justify-center rounded-full p-0 text-xs bg-blue-600 text-primary-foreground hover:bg-blue-700 border-none">
-            {cartCount > 0 ? cartCount : 0}
-          </Badge>
-        )}
-      </Link>
-    </Button>
+    <ClientOnly fallback={<Skeleton className="h-10 w-10 rounded-full" />}>
+        <Button variant="ghost" size="icon" asChild className={cn("relative", className)}>
+            <Link href="/cart" aria-label="Shopping Cart">
+                <ShoppingCart className="h-6 w-6" />
+                {isCartInitialized && (
+                <Badge className="absolute -top-1 -right-1 h-5 w-5 justify-center rounded-full p-0 text-xs bg-blue-600 text-primary-foreground hover:bg-blue-700 border-none">
+                    {cartCount > 0 ? cartCount : 0}
+                </Badge>
+                )}
+            </Link>
+        </Button>
+    </ClientOnly>
   );
 
   const AccountLinks = ({isMobile = false}: {isMobile?: boolean}) => {
     if (isAuthLoading) {
-      return isMobile ? null : <Skeleton className="h-4 w-12" />;
+      return isMobile ? null : <Skeleton className="h-6 w-24" />;
     }
 
-    if (currentUser) {
+    if (user) {
         return isMobile ? (
             <>
                 <Button variant="ghost" asChild className="w-full justify-start">
@@ -136,10 +128,23 @@ export function Header({ logoUrl, companyName = "eMotionView" }: HeaderProps) {
                 </Button>
             </>
         ) : (
-            <button onClick={handleLogout} className="flex items-center gap-1 hover:text-primary text-sm">
-                <LogOut className="h-4 w-4" />
-                Logout
-            </button>
+             <div className="flex items-center gap-1 hover:text-primary text-sm">
+                <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                        <Button variant="ghost" size="icon" aria-label="Account">
+                            <User className="h-6 w-6" />
+                        </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end">
+                        <DropdownMenuItem asChild>
+                            <Link href="/account">My Account</Link>
+                        </DropdownMenuItem>
+                        <DropdownMenuItem onClick={handleLogout}>
+                            Logout
+                        </DropdownMenuItem>
+                    </DropdownMenuContent>
+                </DropdownMenu>
+            </div>
         )
     }
 
@@ -166,13 +171,15 @@ export function Header({ logoUrl, companyName = "eMotionView" }: HeaderProps) {
           <div className="font-bold text-sm">
             <span>Biggest Smart Gadget & SmartPhone Collection</span>
           </div>
-          <div className="flex items-center gap-4 text-sm">
+           <div className="flex items-center gap-4 text-sm">
             <a href="tel:09677460460" className="flex items-center gap-1 hover:text-primary">
               <Phone className="h-4 w-4" />
               09677460460
             </a>
-            <span className="text-muted-foreground">|</span>
-             <AccountLinks />
+             <span className="text-muted-foreground">|</span>
+             <ClientOnly fallback={<Skeleton className="h-4 w-12" />}>
+                <AccountLinks />
+             </ClientOnly>
              <span className="text-muted-foreground">|</span>
              <Link href="/track-order" className="flex items-center gap-1 hover:text-primary">
                 <MapPin className="h-4 w-4" />
@@ -213,7 +220,9 @@ export function Header({ logoUrl, companyName = "eMotionView" }: HeaderProps) {
               <ScrollArea className="flex-1">
                 <div className="p-4 space-y-2">
                     <h3 className="font-semibold px-2 text-lg mb-2">Account</h3>
-                    <AccountLinks isMobile={true} />
+                     <ClientOnly>
+                        <AccountLinks isMobile={true} />
+                    </ClientOnly>
                 </div>
                 <Separator/>
                 <div className="p-4 space-y-2">
@@ -289,42 +298,22 @@ export function Header({ logoUrl, companyName = "eMotionView" }: HeaderProps) {
         
         {/* --- Right Group --- */}
         <div className="flex flex-shrink-0 items-center justify-end gap-1">
-          <Button variant="ghost" size="icon" asChild className="hidden lg:inline-flex">
-              <Link href="/wishlist">
-                  <Heart className="h-6 w-6" />
-                  <span className="sr-only">Wishlist</span>
-              </Link>
-          </Button>
+          <ClientOnly fallback={<Skeleton className="h-10 w-10 rounded-full hidden lg:block" />}>
+              <Button variant="ghost" size="icon" asChild className="hidden lg:inline-flex">
+                  <Link href="/wishlist">
+                      <Heart className="h-6 w-6" />
+                      <span className="sr-only">Wishlist</span>
+                  </Link>
+              </Button>
+          </ClientOnly>
 
           <CartButton />
           
-          <div className="hidden lg:inline-flex items-center">
-            <DropdownMenu>
-                  <DropdownMenuTrigger asChild>
-                      <Button variant="ghost" size="icon" aria-label="Account">
-                          <User className="h-6 w-6" />
-                      </Button>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent align="end">
-                      {isAuthLoading ? (
-                          <DropdownMenuItem disabled>Loading...</DropdownMenuItem>
-                      ) : currentUser ? (
-                          <>
-                              <DropdownMenuItem asChild>
-                                  <Link href="/account">My Account</Link>
-                              </DropdownMenuItem>
-                              <DropdownMenuItem onClick={handleLogout}>
-                                  Logout
-                              </DropdownMenuItem>
-                          </>
-                      ) : (
-                          <DropdownMenuItem asChild>
-                              <Link href="/sign-in">Sign In</Link>
-                          </DropdownMenuItem>
-                      )}
-                  </DropdownMenuContent>
-              </DropdownMenu>
-          </div>
+          <ClientOnly fallback={<Skeleton className="h-10 w-10 rounded-full hidden lg:block" />}>
+            <div className="hidden lg:inline-flex items-center">
+              <AccountLinks />
+            </div>
+          </ClientOnly>
         </div>
       </div>
 

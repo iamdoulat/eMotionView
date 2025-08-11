@@ -38,13 +38,24 @@ export default function SignInPage() {
   async function onSubmit(values: z.infer<typeof formSchema>) {
     setIsLoading(true);
     try {
-      await signInWithEmailAndPassword(auth, values.email, values.password);
-      toast({
-        title: 'Login Successful',
-        description: 'Welcome back!',
+      const userCredential = await signInWithEmailAndPassword(auth, values.email, values.password);
+      const idToken = await userCredential.user.getIdToken();
+      
+      const response = await fetch('/api/auth/sign-in', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ idToken }),
       });
-      router.push('/account');
-      router.refresh(); 
+
+      if (response.ok) {
+        toast({
+            title: 'Login Successful',
+            description: 'Welcome back!',
+        });
+        router.push('/account');
+      } else {
+        throw new Error('Failed to create session');
+      }
     } catch (error) {
        let description = 'An unexpected error occurred. Please try again.';
        if (error instanceof FirebaseError) {
@@ -61,6 +72,8 @@ export default function SignInPage() {
             description = 'Login failed. Please try again later.'
             break;
         }
+      } else if (error instanceof Error && error.message === 'Failed to create session') {
+        description = 'There was an issue logging you in. Please try again.';
       }
       toast({
         variant: 'destructive',
