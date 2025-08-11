@@ -6,6 +6,7 @@ import { onAuthStateChanged, type User as FirebaseUser } from 'firebase/auth';
 import { doc, getDoc } from 'firebase/firestore';
 import { auth, db } from '@/lib/firebase';
 import { FirebaseError } from 'firebase/app';
+import { useHasMounted } from './use-has-mounted';
 
 export type UserRole = 'Admin' | 'Manager' | 'Staff' | 'Customer';
 
@@ -16,8 +17,11 @@ export interface AuthUser extends FirebaseUser {
 export function useAuth() {
     const [user, setUser] = useState<AuthUser | null>(null);
     const [isLoading, setIsLoading] = useState(true);
+    const hasMounted = useHasMounted();
 
     useEffect(() => {
+        if (!hasMounted) return;
+
         const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
             if (firebaseUser) {
                 let userRole: UserRole | undefined;
@@ -49,7 +53,7 @@ export function useAuth() {
         });
 
         return () => unsubscribe();
-    }, []);
+    }, [hasMounted]);
 
-    return { user, role: user?.role, isLoading };
+    return { user, role: user?.role, isLoading: isLoading || !hasMounted };
 }
