@@ -22,24 +22,58 @@ export default function OrdersPage() {
         if (isAuthLoading) return;
         
         if (!user) {
+            setOrders([]);
             setIsOrdersLoading(false);
             return;
-        };
+        }
 
         const fetchOrders = async () => {
-            if (!user?.uid) return;
             setIsOrdersLoading(true);
             try {
-                const ordersQuery = query(
-                    collection(db, 'orders'),
-                    where('userId', '==', user.uid),
-                    orderBy('date', 'desc')
-                );
-                const querySnapshot = await getDocs(ordersQuery);
-                const userOrders = querySnapshot.docs.map(doc => docToJSON(doc) as Order);
+                const queries = [];
+
+                if (user.uid) {
+                    const byUserQ = query(
+                        collection(db, 'orders'),
+                        where('userId', '==', user.uid),
+                        orderBy('date', 'desc')
+                    );
+                    queries.push(getDocs(byUserQ));
+                }
+
+                if (user.email) {
+                    const byEmailQ = query(
+                        collection(db, 'orders'),
+                        where('customerEmail', '==', user.email),
+                        orderBy('date', 'desc')
+                    );
+                    queries.push(getDocs(byEmailQ));
+                }
+
+                const snapshots = await Promise.all(queries);
+
+                const orderMap = new Map<string, Order>();
+
+                for (const snap of snapshots) {
+                    snap.docs.forEach(d => {
+                        const data = docToJSON(d) as Order;
+                        const withId = { ...data, id: data.id || d.id } as Order;
+                        orderMap.set(withId.id, withId);
+                    });
+                }
+
+                const userOrders = Array.from(orderMap.values());
+                // Sort by date in descending order (newest first)
+                userOrders.sort((a, b) => {
+                    const dateA = new Date(a.date).getTime();
+                    const dateB = new Date(b.date).getTime();
+                    return dateB - dateA;
+                });
+
                 setOrders(userOrders);
             } catch (error) {
                 console.error("Failed to fetch orders:", error);
+                setOrders([]);
             } finally {
                 setIsOrdersLoading(false);
             }
@@ -54,76 +88,75 @@ export default function OrdersPage() {
                 return 'default';
             case 'Processing':
             case 'Shipped':
-                return 'secondary';
             case 'Pending':
-                 return 'secondary';
+                return 'secondary';
             case 'Cancelled':
                 return 'destructive';
             default:
                 return 'outline';
         }
-    }
+    };
     
     const isLoading = isAuthLoading || isOrdersLoading;
 
-  return (
-    <div>
-        <h1 className="font-headline text-3xl font-bold text-foreground mb-6">My Orders</h1>
-        <Card>
-            <CardHeader>
-                <CardTitle>Order History</CardTitle>
-                <CardDescription>View your past orders and their status.</CardDescription>
-            </CardHeader>
-            <CardContent>
-                <Table>
-                    <TableHeader>
-                        <TableRow>
-                            <TableHead>Order</TableHead>
-                            <TableHead>Date</TableHead>
-                            <TableHead>Status</TableHead>
-                            <TableHead className="text-right">Total</TableHead>
-                            <TableHead className="text-right">View</TableHead>
-                        </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                        {isLoading ? (
+    return (
+        <div>
+            <h1 className="font-headline text-3xl font-bold text-foreground mb-6">My Orders</h1>
+            <Card>
+                <CardHeader>
+                    <CardTitle>Order History</CardTitle>
+                    <CardDescription>View your past orders and their status.</CardDescription>
+                </CardHeader>
+                <CardContent>
+                    <Table>
+                        <TableHeader>
                             <TableRow>
-                                <TableCell colSpan={5} className="h-24 text-center">
-                                    <Loader2 className="mx-auto h-6 w-6 animate-spin" />
-                                </TableCell>
+                                <TableHead>Order</TableHead>
+                                <TableHead>Date</TableHead>
+                                <TableHead>Status</TableHead>
+                                <TableHead className="text-right">Total</TableHead>
+                                <TableHead className="text-right">View</TableHead>
                             </TableRow>
-                        ) : orders.length > 0 ? (
-                            orders.map((order) => (
-                                <TableRow key={order.id}>
-                                    <TableCell className="font-medium">#{order.orderNumber}</TableCell>
-                                    <TableCell>{new Date(order.date).toLocaleDateString()}</TableCell>
-                                    <TableCell>
-                                        <Badge variant={getStatusVariant(order.status)}>
-                                            {order.status}
-                                        </Badge>
-                                    </TableCell>
-                                    <TableCell className="text-right">${order.total.toFixed(2)}</TableCell>
-                                    <TableCell className="text-right">
-                                        <Button asChild variant="ghost" size="icon">
-                                            <Link href={`/account/orders/${order.id}`}>
-                                                <ArrowRight className="h-4 w-4"/>
-                                                <span className="sr-only">View Order</span>
-                                            </Link>
-                                        </Button>
+                        </TableHeader>
+                        <TableBody>
+                            {isLoading ? (
+                                <TableRow>
+                                    <TableCell colSpan={5} className="h-24 text-center">
+                                        <Loader2 className="mx-auto h-6 w-6 animate-spin" />
                                     </TableCell>
                                 </TableRow>
-                            ))
-                        ) : (
-                             <TableRow>
-                                <TableCell colSpan={5} className="h-24 text-center">
-                                    You have not placed any orders yet.
-                                </TableCell>
-                            </TableRow>
-                        )}
-                    </TableBody>
-                </Table>
-            </CardContent>
-        </Card>
-    </div>
-  );
+                            ) : orders.length > 0 ? (
+                                orders.map((order) => (
+                                    <TableRow key={order.id}>
+                                        <TableCell className="font-medium">#{order.orderNumber}</TableCell>
+                                        <TableCell>{new Date(order.date).toLocaleDateString()}</TableCell>
+                                        <TableCell>
+                                            <Badge variant={getStatusVariant(order.status)}>
+                                                {order.status}
+                                            </Badge>
+                                        </TableCell>
+                                        <TableCell className="text-right">${order.total.toFixed(2)}</TableCell>
+                                        <TableCell className="text-right">
+                                            <Button asChild variant="ghost" size="icon">
+                                                <Link href={`/account/orders/${order.id}`}>
+                                                    <ArrowRight className="h-4 w-4"/>
+                                                    <span className="sr-only">View Order</span>
+                                                </Link>
+                                            </Button>
+                                        </TableCell>
+                                    </TableRow>
+                                ))
+                            ) : (
+                                <TableRow>
+                                    <TableCell colSpan={5} className="h-24 text-center">
+                                        You have not placed any orders yet.
+                                    </TableCell>
+                                </TableRow>
+                            )}
+                        </TableBody>
+                    </Table>
+                </CardContent>
+            </Card>
+        </div>
+    );
 }

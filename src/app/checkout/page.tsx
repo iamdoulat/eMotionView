@@ -24,6 +24,16 @@ export default function CheckoutPage() {
   const { cart, subtotal, clearCart, isInitialized } = useCart();
   const [user, setUser] = useState<User | null>(null);
   
+  const [shippingAddress, setShippingAddress] = useState({
+    firstName: "John",
+    lastName: "Doe",
+    address: "123 Main St",
+    city: "Anytown",
+    state: "CA",
+    zipCode: "12345",
+    country: "USA",
+  });
+
   const shipping = cart.length > 0 ? 5.00 : 0;
   const total = subtotal + shipping;
 
@@ -57,7 +67,6 @@ export default function CheckoutPage() {
     setIsLoading(true);
 
     try {
-        // Fetch customer details from Firestore for accurate data
         const customerRef = doc(db, 'customers', user.uid);
         const customerSnap = await getDoc(customerRef);
         
@@ -73,12 +82,20 @@ export default function CheckoutPage() {
         const newOrder: Order = {
             id: orderId,
             userId: user.uid,
+            customerEmail: user.email ?? '',
             orderNumber: `USA-${Math.floor(Math.random() * 900000) + 100000}`,
             date: new Date().toISOString(),
             customerName: customerData.name || 'N/A',
             customerAvatar: customerData.avatar || `https://placehold.co/40x40.png?text=${customerData.name?.charAt(0) || 'U'}`,
             status: 'Pending',
             total: total,
+            shippingAddress: {
+                street: shippingAddress.address,
+                city: shippingAddress.city,
+                state: shippingAddress.state,
+                zipCode: shippingAddress.zipCode,
+                country: shippingAddress.country,
+            },
             items: cart.map(item => ({
                 productId: item.id,
                 name: item.name,
@@ -111,6 +128,25 @@ export default function CheckoutPage() {
     }
   };
   
+  const handleShippingChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { id, value } = e.target;
+    const keyMap = {
+        'first-name': 'firstName',
+        'last-name': 'lastName',
+        'address': 'address',
+        'city': 'city',
+        'zip': 'zipCode',
+        'state': 'state',
+        'country': 'country'
+    } as const;
+    
+    type FormId = keyof typeof keyMap;
+    if (id in keyMap) {
+        setShippingAddress(prev => ({ ...prev, [keyMap[id as FormId]]: value }));
+    }
+  }
+
+
   if (!isInitialized || !user || (cart.length === 0 && !isLoading)) {
     return (
       <div className="container mx-auto px-4 py-8 flex justify-center items-center min-h-[calc(100vh-16rem)]">
@@ -135,25 +171,35 @@ export default function CheckoutPage() {
                     <div className="grid grid-cols-2 gap-4">
                       <div className="space-y-2">
                         <Label htmlFor="first-name">First Name</Label>
-                        <Input id="first-name" placeholder="John" defaultValue="John"/>
+                        <Input id="first-name" placeholder="John" defaultValue={shippingAddress.firstName} onChange={handleShippingChange} />
                       </div>
                       <div className="space-y-2">
                         <Label htmlFor="last-name">Last Name</Label>
-                        <Input id="last-name" placeholder="Doe" defaultValue="Doe"/>
+                        <Input id="last-name" placeholder="Doe" defaultValue={shippingAddress.lastName} onChange={handleShippingChange} />
                       </div>
                     </div>
                     <div className="space-y-2">
                       <Label htmlFor="address">Address</Label>
-                      <Input id="address" placeholder="123 Main St" defaultValue="123 Main St"/>
+                      <Input id="address" placeholder="123 Main St" defaultValue={shippingAddress.address} onChange={handleShippingChange} />
                     </div>
                     <div className="grid grid-cols-3 gap-4">
                        <div className="space-y-2 col-span-2">
                         <Label htmlFor="city">City</Label>
-                        <Input id="city" placeholder="Anytown" defaultValue="Anytown"/>
+                        <Input id="city" placeholder="Anytown" defaultValue={shippingAddress.city} onChange={handleShippingChange} />
                       </div>
                        <div className="space-y-2">
                         <Label htmlFor="zip">ZIP Code</Label>
-                        <Input id="zip" placeholder="12345" defaultValue="12345"/>
+                        <Input id="zip" placeholder="12345" defaultValue={shippingAddress.zipCode} onChange={handleShippingChange} />
+                      </div>
+                    </div>
+                     <div className="grid grid-cols-2 gap-4">
+                       <div className="space-y-2">
+                        <Label htmlFor="state">State</Label>
+                        <Input id="state" placeholder="CA" defaultValue={shippingAddress.state} onChange={handleShippingChange} />
+                      </div>
+                       <div className="space-y-2">
+                        <Label htmlFor="country">Country</Label>
+                        <Input id="country" placeholder="USA" defaultValue={shippingAddress.country} onChange={handleShippingChange} />
                       </div>
                     </div>
                   </CardContent>

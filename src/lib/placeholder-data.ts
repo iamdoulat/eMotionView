@@ -46,6 +46,14 @@ export type Review = {
   };
 };
 
+export type ShippingAddress = {
+  street: string;
+  city: string;
+  state: string;
+  zipCode: string;
+  country: string;
+}
+
 export type Order = {
   id: string;
   userId: string;
@@ -53,8 +61,10 @@ export type Order = {
   date: string;
   customerName: string;
   customerAvatar: string;
+  customerEmail: string;
   status: 'Pending' | 'Delivered' | 'Processing' | 'Shipped' | 'Cancelled';
   total: number;
+  shippingAddress?: ShippingAddress;
   items: {
     productId: string;
     name: string;

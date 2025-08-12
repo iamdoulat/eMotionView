@@ -6,7 +6,7 @@ import { NextRequest, NextResponse } from 'next/server';
 export async function GET(request: NextRequest) {
   const sessionCookie = cookies().get('session')?.value;
   if (!sessionCookie) {
-    return NextResponse.redirect(new URL('/sign-in', request.url));
+    return NextResponse.redirect(new URL('/', request.url));
   }
 
   cookies().delete('session');
@@ -18,5 +18,5 @@ export async function GET(request: NextRequest) {
     console.error('Error revoking session cookie:', error);
   }
 
-  return NextResponse.redirect(new URL('/sign-in', request.url));
+  return NextResponse.redirect(new URL('/', request.url));
 }
