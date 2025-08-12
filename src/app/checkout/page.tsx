@@ -70,7 +70,8 @@ export default function CheckoutPage() {
         const newOrderRef = doc(collection(db, 'orders'));
         const orderId = newOrderRef.id;
 
-        const newOrder: Omit<Order, 'id'> = {
+        const newOrder: Order = {
+            id: orderId,
             userId: user.uid,
             orderNumber: `USA-${Math.floor(Math.random() * 900000) + 100000}`,
             date: new Date().toISOString(),
