@@ -33,19 +33,19 @@ export default function OrdersPage() {
                 const queries = [];
 
                 if (user.uid) {
+                    // Query without server-side ordering
                     const byUserQ = query(
                         collection(db, 'orders'),
-                        where('userId', '==', user.uid),
-                        orderBy('date', 'desc')
+                        where('userId', '==', user.uid)
                     );
                     queries.push(getDocs(byUserQ));
                 }
 
                 if (user.email) {
+                    // Query without server-side ordering
                     const byEmailQ = query(
                         collection(db, 'orders'),
-                        where('customerEmail', '==', user.email),
-                        orderBy('date', 'desc')
+                        where('customerEmail', '==', user.email)
                     );
                     queries.push(getDocs(byEmailQ));
                 }
@@ -63,7 +63,8 @@ export default function OrdersPage() {
                 }
 
                 const userOrders = Array.from(orderMap.values());
-                // Sort by date in descending order (newest first)
+                
+                // Sort the combined orders on the client-side
                 userOrders.sort((a, b) => {
                     const dateA = new Date(a.date).getTime();
                     const dateB = new Date(b.date).getTime();
