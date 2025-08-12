@@ -10,7 +10,7 @@ import Link from "next/link";
 import { ArrowRight, Loader2 } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useAuth } from "@/hooks/use-auth";
-import { collection, query, where, getDocs, orderBy } from 'firebase/firestore';
+import { collection, query, where, getDocs } from 'firebase/firestore';
 import { db, docToJSON } from "@/lib/firebase";
 
 export default function OrdersPage() {
@@ -30,47 +30,19 @@ export default function OrdersPage() {
         const fetchOrders = async () => {
             setIsOrdersLoading(true);
             try {
-                const queries = [];
-
-                if (user.uid) {
-                    // Query without server-side ordering
-                    const byUserQ = query(
-                        collection(db, 'orders'),
-                        where('userId', '==', user.uid)
-                    );
-                    queries.push(getDocs(byUserQ));
-                }
-
-                if (user.email) {
-                    // Query without server-side ordering
-                    const byEmailQ = query(
-                        collection(db, 'orders'),
-                        where('customerEmail', '==', user.email)
-                    );
-                    queries.push(getDocs(byEmailQ));
-                }
-
-                const snapshots = await Promise.all(queries);
-
-                const orderMap = new Map<string, Order>();
-
-                for (const snap of snapshots) {
-                    snap.docs.forEach(d => {
-                        const data = docToJSON(d) as Order;
-                        const withId = { ...data, id: data.id || d.id } as Order;
-                        orderMap.set(withId.id, withId);
-                    });
-                }
-
-                const userOrders = Array.from(orderMap.values());
+                // Simplified query: Only fetch orders by the authenticated user's ID.
+                // This aligns with the security rules and is the most reliable method.
+                const ordersQuery = query(
+                    collection(db, 'orders'),
+                    where('userId', '==', user.uid)
+                );
                 
-                // Sort the combined orders on the client-side
-                userOrders.sort((a, b) => {
-                    const dateA = new Date(a.date).getTime();
-                    const dateB = new Date(b.date).getTime();
-                    return dateB - dateA;
-                });
+                const querySnapshot = await getDocs(ordersQuery);
+                const userOrders = querySnapshot.docs.map(d => docToJSON(d) as Order);
 
+                // Sort orders by date on the client-side
+                userOrders.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+                
                 setOrders(userOrders);
             } catch (error) {
                 console.error("Failed to fetch orders:", error);
