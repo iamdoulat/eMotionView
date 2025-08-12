@@ -2,7 +2,7 @@
 "use client";
 
 import { useRouter } from 'next/navigation';
-import type { Order } from '@/lib/placeholder-data';
+import type { Order, User as Customer } from '@/lib/placeholder-data';
 import { useState, useEffect } from 'react';
 import { Loader2 } from 'lucide-react';
 import { useCart } from '@/hooks/use-cart';
@@ -15,7 +15,7 @@ import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/
 import { onAuthStateChanged, type User } from 'firebase/auth';
 import { auth, db } from '@/lib/firebase';
 import { useToast } from '@/hooks/use-toast';
-import { doc, setDoc, collection } from 'firebase/firestore';
+import { doc, setDoc, collection, getDoc } from 'firebase/firestore';
 
 export default function CheckoutPage() {
   const router = useRouter();
@@ -56,31 +56,41 @@ export default function CheckoutPage() {
     }
     setIsLoading(true);
 
-    const newOrderRef = doc(collection(db, 'orders'));
-    const orderId = newOrderRef.id;
-
-    const newOrder: Omit<Order, 'id'> = {
-        userId: user.uid,
-        orderNumber: `USA-${Math.floor(Math.random() * 900000) + 100000}`,
-        date: new Date().toISOString(),
-        customerName: user.displayName || 'John Doe',
-        customerAvatar: user.photoURL || `https://placehold.co/40x40.png?text=${user.displayName?.charAt(0) || 'U'}`,
-        status: 'Pending',
-        total: total,
-        items: cart.map(item => ({
-            productId: item.id,
-            name: item.name,
-            image: item.images[0],
-            quantity: item.quantity,
-            price: item.price,
-            productType: item.productType,
-            downloadUrl: item.downloadUrl,
-            digitalProductNote: item.digitalProductNote,
-            permalink: item.permalink,
-        })),
-    };
-
     try {
+        // Fetch customer details from Firestore for accurate data
+        const customerRef = doc(db, 'customers', user.uid);
+        const customerSnap = await getDoc(customerRef);
+        
+        if (!customerSnap.exists()) {
+            throw new Error("Customer data not found.");
+        }
+        
+        const customerData = customerSnap.data() as Customer;
+
+        const newOrderRef = doc(collection(db, 'orders'));
+        const orderId = newOrderRef.id;
+
+        const newOrder: Omit<Order, 'id'> = {
+            userId: user.uid,
+            orderNumber: `USA-${Math.floor(Math.random() * 900000) + 100000}`,
+            date: new Date().toISOString(),
+            customerName: customerData.name || 'N/A',
+            customerAvatar: customerData.avatar || `https://placehold.co/40x40.png?text=${customerData.name?.charAt(0) || 'U'}`,
+            status: 'Pending',
+            total: total,
+            items: cart.map(item => ({
+                productId: item.id,
+                name: item.name,
+                image: item.images[0],
+                quantity: item.quantity,
+                price: item.price,
+                productType: item.productType,
+                downloadUrl: item.downloadUrl,
+                digitalProductNote: item.digitalProductNote,
+                permalink: item.permalink,
+            })),
+        };
+        
         await setDoc(newOrderRef, newOrder);
         
         clearCart();
