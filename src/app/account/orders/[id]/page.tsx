@@ -161,9 +161,10 @@ export default function OrderDetailPage() {
                     <div>
                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', borderBottom: '1px solid #ccc', paddingBottom: '1rem', marginBottom: '1rem' }}>
                             <div>
-                                <img src="https://placehold.co/150x50.png" alt="Store Logo" style={{ width: '150px' }} />
+                                <img src="/logo.png" alt="eMotionView Logo" style={{ width: '180px', marginBottom: '0.5rem' }} />
                                 <h1 style={{ fontSize: '1.5rem', fontWeight: 'bold', margin: '0.5rem 0 0.25rem' }}>eMotionView</h1>
                                 <p style={{ margin: 0, fontSize: '0.875rem' }}>10/25 Eastern Plaza, Hatirpool, Dhaka-1205</p>
+                                <p style={{ margin: 0, fontSize: '0.875rem' }}>Phone: 09677460460 | Email: motionview22@gmail.com.bd</p>
                             </div>
                             <div style={{ textAlign: 'right' }}>
                                 <h2 style={{ fontSize: '2rem', fontWeight: 'bold', margin: 0 }}>INVOICE</h2>
