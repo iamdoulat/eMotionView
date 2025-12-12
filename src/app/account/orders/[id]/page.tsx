@@ -343,6 +343,35 @@ export default function OrderDetailPage() {
                                 </address>
                             </div>
                             <div>
+                                <h3 className="font-semibold text-lg mb-4">Payment Information</h3>
+                                <div className="space-y-2 text-muted-foreground">
+                                    <div className="flex justify-between">
+                                        <span>Payment Method:</span>
+                                        <span className="font-medium text-foreground">
+                                            {order.paymentMethod === 'bkash' ? (
+                                                <Badge className="bg-pink-600">bKash</Badge>
+                                            ) : order.paymentMethod === 'card' ? (
+                                                <Badge variant="secondary">Card</Badge>
+                                            ) : (
+                                                'N/A'
+                                            )}
+                                        </span>
+                                    </div>
+                                    {order.paymentStatus && (
+                                        <div className="flex justify-between">
+                                            <span>Payment Status:</span>
+                                            <span className="font-medium text-foreground capitalize">{order.paymentStatus}</span>
+                                        </div>
+                                    )}
+                                    {order.paymentDetails?.bkash?.trxID && (
+                                        <div className="flex justify-between">
+                                            <span>Transaction ID:</span>
+                                            <span className="font-mono text-xs">{order.paymentDetails.bkash.trxID}</span>
+                                        </div>
+                                    )}
+                                </div>
+                            </div>
+                            <div>
                                 <h3 className="font-semibold text-lg mb-4">Payment Summary</h3>
                                 <div className="space-y-2 text-muted-foreground">
                                     <div className="flex justify-between">
