@@ -60,7 +60,6 @@ const mainNavItems = [
   { href: "/admin/inventory", label: "Inventory", icon: Boxes },
   { href: "/admin/customers", label: "Customers", icon: Users },
   { href: "/admin/users", label: "Staff", icon: UserCog },
-  { href: "/admin/analytics", label: "Analytics", icon: LineChart },
   { href: "/admin/club-points", label: "Club Points", icon: Award },
 ];
 
