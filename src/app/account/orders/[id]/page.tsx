@@ -16,6 +16,7 @@ import html2canvas from "html2canvas";
 import { doc, getDoc } from "firebase/firestore";
 import { db, docToJSON } from "@/lib/firebase";
 import { useAuth } from "@/hooks/use-auth";
+import QRCode from 'qrcode';
 
 export default function OrderDetailPage() {
     const params = useParams<{ id: string }>();
@@ -25,6 +26,7 @@ export default function OrderDetailPage() {
     const [isLoading, setIsLoading] = useState(true);
     const [formattedDate, setFormattedDate] = useState('');
     const [formattedInvoiceDate, setFormattedInvoiceDate] = useState('');
+    const [qrCodeUrl, setQrCodeUrl] = useState('');
 
     const pdfRef = useRef<HTMLDivElement>(null);
     const id = params.id;
@@ -65,6 +67,14 @@ export default function OrderDetailPage() {
                         setOrder(foundOrder);
                         setFormattedDate(new Date(foundOrder.date).toLocaleDateString());
                         setFormattedInvoiceDate(new Date(foundOrder.date).toLocaleDateString());
+
+                        // Generate QR code with order details
+                        const totalQty = foundOrder.items.reduce((sum, item) => sum + item.quantity, 0);
+                        const qrData = `Order: ${foundOrder.orderNumber}\nCustomer: ${foundOrder.customerName}\nDate: ${new Date(foundOrder.date).toLocaleDateString()}\nQty: ${totalQty}\nTotal: $${foundOrder.total.toFixed(2)}`;
+
+                        QRCode.toDataURL(qrData, { width: 150, margin: 1 })
+                            .then(url => setQrCodeUrl(url))
+                            .catch(err => console.error('QR Code generation error:', err));
                     }
                 } else {
                     setOrder(null);
@@ -159,14 +169,27 @@ export default function OrderDetailPage() {
             <div style={{ position: 'absolute', left: '-9999px', top: 'auto', width: '210mm', padding: '20mm', background: 'white', color: 'black', fontFamily: 'sans-serif' }} ref={pdfRef}>
                 {order && (
                     <div>
-                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', borderBottom: '1px solid #ccc', paddingBottom: '1rem', marginBottom: '1rem' }}>
-                            <div>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', borderBottom: '2px solid #333', paddingBottom: '1.5rem', marginBottom: '1.5rem' }}>
+                            {/* Left: Logo and Company Info */}
+                            <div style={{ flex: '1' }}>
                                 <img src="/logo.png" alt="eMotionView Logo" style={{ width: '180px', marginBottom: '0.5rem' }} />
                                 <h1 style={{ fontSize: '1.5rem', fontWeight: 'bold', margin: '0.5rem 0 0.25rem' }}>eMotionView</h1>
                                 <p style={{ margin: 0, fontSize: '0.875rem' }}>10/25 Eastern Plaza, Hatirpool, Dhaka-1205</p>
                                 <p style={{ margin: 0, fontSize: '0.875rem' }}>Phone: 09677460460 | Email: motionview22@gmail.com.bd</p>
                             </div>
-                            <div style={{ textAlign: 'right' }}>
+
+                            {/* Center: QR Code */}
+                            <div style={{ flex: '0 0 auto', display: 'flex', flexDirection: 'column', alignItems: 'center', padding: '0 1rem' }}>
+                                {qrCodeUrl && (
+                                    <>
+                                        <img src={qrCodeUrl} alt="Order QR Code" style={{ width: '150px', height: '150px' }} />
+                                        <p style={{ margin: '0.5rem 0 0', fontSize: '0.75rem', textAlign: 'center' }}>Scan for Details</p>
+                                    </>
+                                )}
+                            </div>
+
+                            {/* Right: Invoice Text and Details */}
+                            <div style={{ flex: '1', textAlign: 'right' }}>
                                 <h2 style={{ fontSize: '2rem', fontWeight: 'bold', margin: 0 }}>INVOICE</h2>
                                 <p style={{ margin: '0.25rem 0 0' }}><strong>Invoice #:</strong> {order.orderNumber}</p>
                                 <p style={{ margin: '0.25rem 0 0' }}><strong>Date:</strong> {formattedInvoiceDate}</p>

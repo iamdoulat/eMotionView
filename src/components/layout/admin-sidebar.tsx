@@ -30,6 +30,7 @@ import {
   GalleryVertical,
   Footprints,
   FileText,
+  Activity,
   LogOut,
 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from "../ui/card";
@@ -65,6 +66,7 @@ const mainNavItems = [
 
 const settingsNavItems = [
   { href: "/admin/settings/general", label: "General Settings", icon: SlidersHorizontal },
+  { href: "/admin/settings/tracking", label: "Tracking & Analytics", icon: Activity },
   { href: "/admin/settings/pages", label: "Pages", icon: FileText },
   { href: "/admin/settings/homepage-layout", label: "Homepage Layout", icon: GalleryVertical },
   { href: "/admin/settings/homepage-hero", label: "Homepage Hero", icon: Image },
