@@ -301,6 +301,101 @@ export default function AdminDashboardPage() {
           </CardContent>
         </Card>
       </div>
+
+      {/* New Analytics Section */}
+      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-7">
+        <Card className="col-span-4">
+          <CardHeader>
+            <CardTitle>Sales & Revenue Trends</CardTitle>
+            <CardDescription>Detailed sales and revenue analysis</CardDescription>
+          </CardHeader>
+          <CardContent className="pl-2">
+            {loading ? (
+              <Skeleton className="h-[350px] w-full" />
+            ) : (
+              <ResponsiveContainer width="100%" height={350}>
+                <LineChart data={stats?.chartData || initialData}>
+                  <CartesianGrid strokeDasharray="3 3" />
+                  <XAxis dataKey="name" stroke="#888888" fontSize={12} tickLine={false} axisLine={false} />
+                  <YAxis stroke="#888888" fontSize={12} tickLine={false} axisLine={false} tickFormatter={(value) => `$${value}`} />
+                  <Tooltip />
+                  <Legend />
+                  <Line type="monotone" dataKey="total" stroke="hsl(var(--primary))" activeDot={{ r: 8 }} name="Revenue" />
+                </LineChart>
+              </ResponsiveContainer>
+            )}
+          </CardContent>
+        </Card>
+
+        <Card className="col-span-3">
+          <CardHeader>
+            <CardTitle>Order Status Distribution</CardTitle>
+            <CardDescription>Breakdown of orders by status</CardDescription>
+          </CardHeader>
+          <CardContent>
+            {loading ? (
+              <Skeleton className="h-[350px] w-full" />
+            ) : (
+              <div className="flex items-center justify-center h-[350px]">
+                <p className="text-sm text-muted-foreground">Status distribution chart (Coming soon)</p>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Top Products/Orders Table */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Top Customers by Revenue</CardTitle>
+          <CardDescription>Customers with highest order values</CardDescription>
+        </CardHeader>
+        <CardContent>
+          {loading ? (
+            <div className="space-y-4">
+              {[...Array(5)].map((_, i) => (
+                <div key={i} className="flex items-center space-x-4">
+                  <Skeleton className="h-12 w-12 rounded" />
+                  <div className="space-y-2 flex-1">
+                    <Skeleton className="h-4 w-1/3" />
+                    <Skeleton className="h-3 w-1/4" />
+                  </div>
+                  <Skeleton className="h-4 w-20" />
+                </div>
+              ))}
+            </div>
+          ) : (
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Customer</TableHead>
+                  <TableHead>Email</TableHead>
+                  <TableHead className="text-right">Orders</TableHead>
+                  <TableHead className="text-right">Total Spent</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {stats?.recentSales.slice(0, 5).map((order) => (
+                  <TableRow key={order.id}>
+                    <TableCell>
+                      <div className="flex items-center gap-3">
+                        <Avatar className="h-8 w-8">
+                          <AvatarImage src={order.customerAvatar} alt={order.customerName} data-ai-hint="person face" />
+                          <AvatarFallback>{order.customerName.charAt(0)}</AvatarFallback>
+                        </Avatar>
+                        <span className="font-medium">{order.customerName}</span>
+                      </div>
+                    </TableCell>
+                    <TableCell>{order.customerEmail}</TableCell>
+                    <TableCell className="text-right">1</TableCell>
+                    <TableCell className="text-right">${order.total.toFixed(2)}</TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          )}
+        </CardContent>
+      </Card>
     </div>
   )
 }
