@@ -52,12 +52,23 @@ const defaultSettings = {
   companyName: 'eMotionView',
 };
 
+const defaultTrackingSettings = {
+  gtmId: '',
+  gtmEnabled: false,
+  gaId: '',
+  gaEnabled: false,
+  fbPixelId: '',
+  fbPixelEnabled: false,
+};
+
 export default async function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
   let settings = defaultSettings;
+  let trackingSettings = defaultTrackingSettings;
+
   try {
     const settingsSnap = await getDoc(doc(db, 'settings/general'));
     if (settingsSnap.exists()) {
@@ -65,6 +76,15 @@ export default async function RootLayout({
     }
   } catch (error) {
     console.warn("Could not fetch general settings. Using default values.", error);
+  }
+
+  try {
+    const trackingSnap = await getDoc(doc(db, 'settings/tracking'));
+    if (trackingSnap.exists()) {
+      trackingSettings = { ...defaultTrackingSettings, ...trackingSnap.data() };
+    }
+  } catch (error) {
+    console.warn("Could not fetch tracking settings. Tracking disabled.", error);
   }
 
   return (
