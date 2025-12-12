@@ -2,7 +2,7 @@
 "use client"
 
 import { useEffect, useState } from "react"
-import { Bar, BarChart, ResponsiveContainer, XAxis, YAxis, Tooltip } from "recharts"
+import { Bar, BarChart, ResponsiveContainer, XAxis, YAxis, Tooltip, CartesianGrid, Legend, Line, LineChart, Pie, PieChart, Cell } from "recharts"
 import {
   Card,
   CardContent,
@@ -10,10 +10,11 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card"
-import { DollarSign, Users, CreditCard, Eye } from "lucide-react"
+import { DollarSign, Users, CreditCard, Eye, ShoppingBag } from "lucide-react"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Skeleton } from "@/components/ui/skeleton"
 import { SeedButton } from "@/components/admin/seed-button"
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { collection, getDocs, query, where, orderBy, limit, doc, getDoc } from "firebase/firestore"
 import { db, docToJSON } from "@/lib/firebase"
 import type { Order, User } from "@/lib/placeholder-data"

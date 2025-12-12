@@ -72,7 +72,7 @@ export default function OrderDetailPage() {
                         const totalQty = foundOrder.items.reduce((sum, item) => sum + item.quantity, 0);
                         const qrData = `Order: ${foundOrder.orderNumber}\nCustomer: ${foundOrder.customerName}\nDate: ${new Date(foundOrder.date).toLocaleDateString()}\nQty: ${totalQty}\nTotal: $${foundOrder.total.toFixed(2)}`;
 
-                        QRCode.toDataURL(qrData, { width: 150, margin: 1 })
+                        QRCode.toDataURL(qrData, { width: 112, margin: 1 })
                             .then(url => setQrCodeUrl(url))
                             .catch(err => console.error('QR Code generation error:', err));
                     }
@@ -182,7 +182,7 @@ export default function OrderDetailPage() {
                             <div style={{ flex: '0 0 auto', display: 'flex', flexDirection: 'column', alignItems: 'center', padding: '0 1rem' }}>
                                 {qrCodeUrl && (
                                     <>
-                                        <img src={qrCodeUrl} alt="Order QR Code" style={{ width: '150px', height: '150px' }} />
+                                        <img src={qrCodeUrl} alt="Order QR Code" style={{ width: '112px', height: '112px' }} />
                                         <p style={{ margin: '0.5rem 0 0', fontSize: '0.75rem', textAlign: 'center' }}>Scan for Details</p>
                                     </>
                                 )}
