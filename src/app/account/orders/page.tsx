@@ -20,7 +20,7 @@ export default function OrdersPage() {
 
     useEffect(() => {
         if (isAuthLoading) return;
-        
+
         if (!user) {
             setOrders([]);
             setIsOrdersLoading(false);
@@ -30,22 +30,36 @@ export default function OrdersPage() {
         const fetchOrders = async () => {
             setIsOrdersLoading(true);
             try {
+                console.log('Fetching orders for user:', user.uid);
+                console.log('User email:', user.email);
+
                 // Simplified query: Only fetch orders by the authenticated user's ID.
                 // This aligns with the security rules and is the most reliable method.
                 const ordersQuery = query(
                     collection(db, 'orders'),
                     where('userId', '==', user.uid)
                 );
-                
+
+                console.log('Executing query...');
                 const querySnapshot = await getDocs(ordersQuery);
-                const userOrders = querySnapshot.docs.map(d => docToJSON(d) as Order);
+                console.log('Query returned', querySnapshot.size, 'documents');
+
+                const userOrders = querySnapshot.docs.map(d => {
+                    const order = docToJSON(d) as Order;
+                    console.log('Order found:', order.id, 'userId:', order.userId, 'orderNumber:', order.orderNumber);
+                    return order;
+                });
 
                 // Sort orders by date on the client-side
                 userOrders.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
-                
+
+                console.log('Total orders for user:', userOrders.length);
                 setOrders(userOrders);
             } catch (error) {
                 console.error("Failed to fetch orders:", error);
+                if (error instanceof Error) {
+                    console.error("Error message:", error.message);
+                }
                 setOrders([]);
             } finally {
                 setIsOrdersLoading(false);
@@ -69,7 +83,7 @@ export default function OrdersPage() {
                 return 'outline';
         }
     };
-    
+
     const isLoading = isAuthLoading || isOrdersLoading;
 
     return (
@@ -112,7 +126,7 @@ export default function OrdersPage() {
                                         <TableCell className="text-right">
                                             <Button asChild variant="ghost" size="icon">
                                                 <Link href={`/account/orders/${order.id}`}>
-                                                    <ArrowRight className="h-4 w-4"/>
+                                                    <ArrowRight className="h-4 w-4" />
                                                     <span className="sr-only">View Order</span>
                                                 </Link>
                                             </Button>

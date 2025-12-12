@@ -4,12 +4,12 @@ import { cookies } from 'next/headers';
 import { NextRequest, NextResponse } from 'next/server';
 
 export async function GET(request: NextRequest) {
-  const sessionCookie = cookies().get('session')?.value;
+  const sessionCookie = (await cookies()).get('session')?.value;
   if (!sessionCookie) {
     return NextResponse.redirect(new URL('/', request.url));
   }
 
-  cookies().delete('session');
+  (await cookies()).delete('session');
 
   try {
     const decodedClaims = await auth.verifySessionCookie(sessionCookie);

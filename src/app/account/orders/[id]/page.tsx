@@ -20,7 +20,7 @@ import { useAuth } from "@/hooks/use-auth";
 export default function OrderDetailPage() {
     const params = useParams<{ id: string }>();
     const router = useRouter();
-    const { user, isLoading: isAuthLoading } = useAuth();
+    const { user, role, isLoading: isAuthLoading } = useAuth();
     const [order, setOrder] = useState<Order | null | undefined>(undefined);
     const [isLoading, setIsLoading] = useState(true);
     const [formattedDate, setFormattedDate] = useState('');
@@ -31,18 +31,18 @@ export default function OrderDetailPage() {
 
     useEffect(() => {
         if (isAuthLoading) return;
-        
+
         if (!user) {
             router.push('/sign-in');
             return;
         }
-        
+
         if (!id) {
             setOrder(null);
             setIsLoading(false);
             return;
         }
-        
+
         const fetchOrder = async () => {
             setIsLoading(true);
             try {
@@ -51,13 +51,14 @@ export default function OrderDetailPage() {
 
                 if (docSnap.exists()) {
                     const foundOrder = docToJSON(docSnap) as Order;
-                    
-                    // Verify the order belongs to the current user
-                    const orderBelongsToUser = 
-                        foundOrder.userId === user.uid || 
+
+                    // Verify the order belongs to the current user OR user is admin/staff
+                    const isAdminUser = role && ['Admin', 'Manager', 'Staff'].includes(role);
+                    const orderBelongsToUser =
+                        foundOrder.userId === user.uid ||
                         (!!foundOrder.customerEmail && foundOrder.customerEmail === user.email);
-                    
-                    if (!orderBelongsToUser) {
+
+                    if (!orderBelongsToUser && !isAdminUser) {
                         console.error("Order does not belong to current user");
                         setOrder(null);
                     } else {
@@ -115,7 +116,7 @@ export default function OrderDetailPage() {
             </div>
         );
     }
-    
+
     if (!order) {
         return (
             <Card>
@@ -133,7 +134,7 @@ export default function OrderDetailPage() {
             </Card>
         );
     }
-    
+
     const subtotal = order.items.reduce((sum, item) => sum + item.price * item.quantity, 0);
     const shipping = order.total - subtotal;
 
@@ -244,7 +245,7 @@ export default function OrderDetailPage() {
                     <Button onClick={handleDownloadInvoice}><Download className="mr-2 h-4 w-4" /> Download Invoice</Button>
                 </div>
             </div>
-            
+
             <div className="p-1">
                 <Card>
                     <CardHeader>
@@ -264,12 +265,12 @@ export default function OrderDetailPage() {
                                 <div key={index}>
                                     <div className="flex items-center justify-between">
                                         <div className="flex items-center gap-4">
-                                            <Image 
-                                                src={item.image || 'https://placehold.co/64x64.png'} 
-                                                alt={item.name} 
-                                                width={64} 
-                                                height={64} 
-                                                className="rounded-md" 
+                                            <Image
+                                                src={item.image || 'https://placehold.co/64x64.png'}
+                                                alt={item.name}
+                                                width={64}
+                                                height={64}
+                                                className="rounded-md"
                                             />
                                             <div>
                                                 {item.productType === 'Physical' ? (
@@ -295,23 +296,23 @@ export default function OrderDetailPage() {
                                 </div>
                             ))}
                         </div>
-                        
+
                         <Separator className="my-6" />
-                        
+
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                             <div>
                                 <h3 className="font-semibold text-lg mb-4">Shipping Address</h3>
                                 <address className="not-italic text-muted-foreground">
-                                    {order.customerName}<br/>
+                                    {order.customerName}<br />
                                     {order.shippingAddress ? (
                                         <>
-                                            {order.shippingAddress.street}<br/>
-                                            {order.shippingAddress.city}, {order.shippingAddress.state} {order.shippingAddress.zipCode}<br/>
+                                            {order.shippingAddress.street}<br />
+                                            {order.shippingAddress.city}, {order.shippingAddress.state} {order.shippingAddress.zipCode}<br />
                                             {order.shippingAddress.country}
                                         </>
                                     ) : (
                                         <>
-                                            123 Main Street<br/>
+                                            123 Main Street<br />
                                             Anytown, USA 12345
                                         </>
                                     )}

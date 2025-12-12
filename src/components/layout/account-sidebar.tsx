@@ -7,6 +7,8 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { User, ShoppingBag, Heart, LogOut } from 'lucide-react';
 import { cn } from "@/lib/utils";
+import { auth } from "@/lib/firebase";
+import { signOut } from "firebase/auth";
 
 const navItems = [
     { href: "/account/profile", label: "Profile", icon: User },
@@ -19,6 +21,11 @@ export function AccountSidebar() {
     const router = useRouter();
 
     const handleSignOut = async () => {
+        try {
+            await signOut(auth);
+        } catch (error) {
+            console.error("Error signing out client:", error);
+        }
         await router.push('/api/auth/sign-out');
     };
 

@@ -159,7 +159,7 @@ export default function AdminAnalyticsPage() {
                       <span className="font-medium">{product.name}</span>
                     </div>
                   </TableCell>
-                  <TableCell>{product.category}</TableCell>
+                  <TableCell>{product.categories[0]}</TableCell>
                   <TableCell className="text-right">{product.sales}</TableCell>
                   <TableCell className="text-right">${product.revenue.toLocaleString()}</TableCell>
                 </TableRow>

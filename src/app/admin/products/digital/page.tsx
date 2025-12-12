@@ -31,14 +31,14 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import {
-    AlertDialog,
-    AlertDialogAction,
-    AlertDialogCancel,
-    AlertDialogContent,
-    AlertDialogDescription,
-    AlertDialogFooter,
-    AlertDialogHeader,
-    AlertDialogTitle,
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import {
   DropdownMenu,
@@ -60,18 +60,18 @@ export default function DigitalProductsPage() {
   const [productToDelete, setProductToDelete] = useState<Product | null>(null);
   const [isSaving, setIsSaving] = useState(false);
   const { toast } = useToast();
-  
+
   useEffect(() => {
     const fetchProducts = async () => {
-        setIsLoading(true);
-        try {
-            const productsSnapshot = await getDocs(collection(db, 'products'));
-            const productList = productsSnapshot.docs.map(docToJSON) as Product[];
-            setAllProducts(productList);
-        } catch (error) {
-            console.error(error);
-        }
-        setIsLoading(false);
+      setIsLoading(true);
+      try {
+        const productsSnapshot = await getDocs(collection(db, 'products'));
+        const productList = productsSnapshot.docs.map(docToJSON) as Product[];
+        setAllProducts(productList);
+      } catch (error) {
+        console.error(error);
+      }
+      setIsLoading(false);
     }
     fetchProducts();
   }, []);
@@ -130,14 +130,14 @@ export default function DigitalProductsPage() {
       <Card>
         <CardHeader>
           <div className="flex items-center justify-between">
-              <div>
-                  <CardTitle>Digital Products</CardTitle>
-                  <CardDescription>Manage your downloadable products and services.</CardDescription>
-              </div>
-              <Button onClick={() => handleOpenForm()}>
-                  <PlusCircle className="mr-2 h-4 w-4" />
-                  Add Product
-              </Button>
+            <div>
+              <CardTitle>Digital Products</CardTitle>
+              <CardDescription>Manage your downloadable products and services.</CardDescription>
+            </div>
+            <Button onClick={() => handleOpenForm()}>
+              <PlusCircle className="mr-2 h-4 w-4" />
+              Add Product
+            </Button>
           </div>
         </CardHeader>
         <CardContent>
@@ -158,11 +158,11 @@ export default function DigitalProductsPage() {
             </TableHeader>
             <TableBody>
               {isLoading ? (
-                  <TableRow>
-                      <TableCell colSpan={6} className="h-24 text-center">
-                          <Loader2 className="h-6 w-6 animate-spin mx-auto" />
-                      </TableCell>
-                  </TableRow>
+                <TableRow>
+                  <TableCell colSpan={6} className="h-24 text-center">
+                    <Loader2 className="h-6 w-6 animate-spin mx-auto" />
+                  </TableCell>
+                </TableRow>
               ) : digitalProducts.map((product) => (
                 <TableRow key={product.id}>
                   <TableCell className="hidden sm:table-cell">
@@ -177,7 +177,7 @@ export default function DigitalProductsPage() {
                   </TableCell>
                   <TableCell className="font-medium">{product.name}</TableCell>
                   <TableCell>${product.price.toFixed(2)}</TableCell>
-                  <TableCell className="hidden md:table-cell">{product.category}</TableCell>
+                  <TableCell className="hidden md:table-cell">{product.categories[0]}</TableCell>
                   <TableCell className="hidden md:table-cell">{product.sku}</TableCell>
                   <TableCell>
                     <DropdownMenu>
@@ -193,7 +193,7 @@ export default function DigitalProductsPage() {
                           <Edit className="mr-2 h-4 w-4" /> Edit
                         </DropdownMenuItem>
                         <DropdownMenuItem className="text-destructive" onClick={() => setProductToDelete(product)}>
-                           <Trash2 className="mr-2 h-4 w-4" /> Delete
+                          <Trash2 className="mr-2 h-4 w-4" /> Delete
                         </DropdownMenuItem>
                       </DropdownMenuContent>
                     </DropdownMenu>
@@ -211,35 +211,35 @@ export default function DigitalProductsPage() {
       </Card>
 
       <Dialog open={isFormOpen} onOpenChange={setIsFormOpen}>
-          <DialogContent className="sm:max-w-3xl">
-              <DialogHeader>
-                  <DialogTitle>{productToEdit ? "Edit Product" : "Add New Product"}</DialogTitle>
-                  <DialogDescription>
-                      {productToEdit ? "Update the details for this product." : "Fill in the details for the new product."}
-                  </DialogDescription>
-              </DialogHeader>
-              <ProductForm
-                  product={productToEdit}
-                  onSave={handleSaveProduct}
-                  onCancel={handleCloseForm}
-                  isSaving={isSaving}
-              />
-          </DialogContent>
+        <DialogContent className="sm:max-w-3xl">
+          <DialogHeader>
+            <DialogTitle>{productToEdit ? "Edit Product" : "Add New Product"}</DialogTitle>
+            <DialogDescription>
+              {productToEdit ? "Update the details for this product." : "Fill in the details for the new product."}
+            </DialogDescription>
+          </DialogHeader>
+          <ProductForm
+            product={productToEdit}
+            onSave={handleSaveProduct}
+            onCancel={handleCloseForm}
+            isSaving={isSaving}
+          />
+        </DialogContent>
       </Dialog>
 
       <AlertDialog open={!!productToDelete} onOpenChange={(open) => !open && setProductToDelete(null)}>
-          <AlertDialogContent>
-            <AlertDialogHeader>
-              <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
-              <AlertDialogDescription>
-                This action cannot be undone. This will permanently delete the product "{productToDelete?.name}".
-              </AlertDialogDescription>
-            </AlertDialogHeader>
-            <AlertDialogFooter>
-              <AlertDialogCancel onClick={() => setProductToDelete(null)}>Cancel</AlertDialogCancel>
-              <AlertDialogAction onClick={handleDeleteProduct} className="bg-destructive hover:bg-destructive/90">Delete Product</AlertDialogAction>
-            </AlertDialogFooter>
-          </AlertDialogContent>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This action cannot be undone. This will permanently delete the product "{productToDelete?.name}".
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={() => setProductToDelete(null)}>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={handleDeleteProduct} className="bg-destructive hover:bg-destructive/90">Delete Product</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
       </AlertDialog>
     </div>
   );
