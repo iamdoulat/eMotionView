@@ -54,7 +54,7 @@ export type ShippingAddress = {
   country: string;
 }
 
-export type PaymentMethod = 'card' | 'bkash';
+export type PaymentMethod = 'card' | 'bkash' | 'sslcommerz';
 export type PaymentStatus = 'pending' | 'completed' | 'failed' | 'refunded';
 
 export type BkashPaymentDetails = {
@@ -69,10 +69,31 @@ export type BkashPaymentDetails = {
   merchantInvoiceNumber?: string;
 }
 
+export type SSLCommerzPaymentDetails = {
+  tran_id: string;
+  val_id: string;
+  amount: number;
+  card_type?: string;
+  store_amount?: number;
+  card_no?: string;
+  bank_tran_id?: string;
+  status: string;
+  tran_date: string;
+  currency: string;
+  card_issuer?: string;
+  card_brand?: string;
+  card_issuer_country?: string;
+  verify_sign?: string;
+  verify_key?: string;
+  risk_level?: string;
+  risk_title?: string;
+}
+
 export type PaymentDetails = {
   method: PaymentMethod;
   status: PaymentStatus;
   bkash?: BkashPaymentDetails;
+  sslcommerz?: SSLCommerzPaymentDetails;
 }
 
 export type BkashSettings = {
@@ -83,6 +104,15 @@ export type BkashSettings = {
   isSandbox: boolean;
   isEnabled: boolean;
   baseURL: string;
+  updatedAt?: string;
+  updatedBy?: string;
+}
+
+export type SSLCommerzSettings = {
+  storeId: string;
+  storePassword: string;
+  isSandbox: boolean;
+  isEnabled: boolean;
   updatedAt?: string;
   updatedBy?: string;
 }

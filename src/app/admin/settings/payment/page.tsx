@@ -14,9 +14,18 @@ import { doc, getDoc, setDoc } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { useAuth } from '@/hooks/use-auth';
 import { Loader2 } from 'lucide-react';
-import type { BkashSettings } from '@/lib/placeholder-data';
+import type { BkashSettings, SSLCommerzSettings } from '@/lib/placeholder-data';
 
 const bkashSettingsSchema = z.object({
+    appKey: z.string().min(1, 'App Key is required'),
+    appSecret: z.string().min(1, 'App Secret is required'),
+    username: z.string().min(1, 'Username is required'),
+    password: z.string().min(1, 'Password is required'),
+    isSandbox: z.boolean().default(true),
+    isEnabled: z.boolean().default(false),
+});
+
+const sslcommerzSettingsSchema = z.object({
     appKey: z.string().min(1, 'App Key is required'),
     appSecret: z.string().min(1, 'App Secret is required'),
     username: z.string().min(1, 'Username is required'),

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { doc, setDoc } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
@@ -8,7 +8,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Loader2 } from 'lucide-react';
 import type { Order } from '@/lib/placeholder-data';
 
-export default function BkashCallbackPage() {
+function BkashCallbackContent() {
     const router = useRouter();
     const searchParams = useSearchParams();
     const [status, setStatus] = useState<'processing' | 'success' | 'failed'>('processing');
@@ -161,5 +161,17 @@ export default function BkashCallbackPage() {
                 </CardContent>
             </Card>
         </div>
+    );
+}
+
+export default function BkashCallbackPage() {
+    return (
+        <Suspense fallback={
+            <div className="container mx-auto px-4 py-16 flex justify-center items-center min-h-[60vh]">
+                <Loader2 className="h-12 w-12 animate-spin text-primary" />
+            </div>
+        }>
+            <BkashCallbackContent />
+        </Suspense>
     );
 }
