@@ -26,26 +26,30 @@ const bkashSettingsSchema = z.object({
 });
 
 const sslcommerzSettingsSchema = z.object({
-    appKey: z.string().min(1, 'App Key is required'),
-    appSecret: z.string().min(1, 'App Secret is required'),
-    username: z.string().min(1, 'Username is required'),
-    password: z.string().min(1, 'Password is required'),
+    storeId: z.string().min(1, 'Store ID is required'),
+    storePassword: z.string().min(1, 'Store Password is required'),
     isSandbox: z.boolean().default(true),
     isEnabled: z.boolean().default(false),
 });
 
 type BkashSettingsFormData = z.infer<typeof bkashSettingsSchema>;
+type SSLCommerzSettingsFormData = z.infer<typeof sslcommerzSettingsSchema>;
 
-const SETTINGS_DOC_PATH = 'admin_settings/bkash_payment';
-
-export default function BkashPaymentSettingsPage() {
+export default function PaymentSettingsPage() {
     const { toast } = useToast();
     const { user } = useAuth();
     const [isLoading, setIsLoading] = useState(false);
-    const [isSaving, setIsSaving] = useState(false);
-    const [currentSettings, setCurrentSettings] = useState<BkashSettings | null>(null);
 
-    const { register, handleSubmit, formState: { errors }, reset, watch, setValue } = useForm<BkashSettingsFormData>({
+    // Bkash State
+    const [isBkashSaving, setIsBkashSaving] = useState(false);
+    const [bkashSettings, setBkashSettings] = useState<BkashSettings | null>(null);
+
+    // SSLCommerz State
+    const [isSSLSaving, setIsSSLSaving] = useState(false);
+    const [sslSettings, setSSLSettings] = useState<SSLCommerzSettings | null>(null);
+
+    // Bkash Form
+    const bkashForm = useForm<BkashSettingsFormData>({
         resolver: zodResolver(bkashSettingsSchema),
         defaultValues: {
             appKey: '',
@@ -57,20 +61,28 @@ export default function BkashPaymentSettingsPage() {
         },
     });
 
-    const isSandbox = watch('isSandbox');
-    const isEnabled = watch('isEnabled');
+    // SSLCommerz Form
+    const sslForm = useForm<SSLCommerzSettingsFormData>({
+        resolver: zodResolver(sslcommerzSettingsSchema),
+        defaultValues: {
+            storeId: '',
+            storePassword: '',
+            isSandbox: true,
+            isEnabled: false,
+        },
+    });
 
     useEffect(() => {
         const fetchSettings = async () => {
             setIsLoading(true);
             try {
-                const settingsRef = doc(db, 'admin_settings', 'bkash_payment');
-                const docSnap = await getDoc(settingsRef);
-
-                if (docSnap.exists()) {
-                    const data = docSnap.data() as BkashSettings;
-                    setCurrentSettings(data);
-                    reset({
+                // Fetch Bkash Settings
+                const bkashRef = doc(db, 'admin_settings', 'bkash_payment');
+                const bkashSnap = await getDoc(bkashRef);
+                if (bkashSnap.exists()) {
+                    const data = bkashSnap.data() as BkashSettings;
+                    setBkashSettings(data);
+                    bkashForm.reset({
                         appKey: data.appKey || '',
                         appSecret: data.appSecret || '',
                         username: data.username || '',
@@ -79,12 +91,26 @@ export default function BkashPaymentSettingsPage() {
                         isEnabled: data.isEnabled ?? false,
                     });
                 }
+
+                // Fetch SSLCommerz Settings
+                const sslRef = doc(db, 'admin_settings', 'sslcommerz_payment');
+                const sslSnap = await getDoc(sslRef);
+                if (sslSnap.exists()) {
+                    const data = sslSnap.data() as SSLCommerzSettings;
+                    setSSLSettings(data);
+                    sslForm.reset({
+                        storeId: data.storeId || '',
+                        storePassword: data.storePassword || '',
+                        isSandbox: data.isSandbox ?? true,
+                        isEnabled: data.isEnabled ?? false,
+                    });
+                }
             } catch (error) {
-                console.error('Error fetching Bkash settings:', error);
+                console.error('Error fetching settings:', error);
                 toast({
                     variant: 'destructive',
                     title: 'Error',
-                    description: 'Failed to load Bkash settings',
+                    description: 'Failed to load payment settings',
                 });
             } finally {
                 setIsLoading(false);
@@ -92,54 +118,52 @@ export default function BkashPaymentSettingsPage() {
         };
 
         fetchSettings();
-    }, [reset, toast]);
+    }, [toast, bkashForm, sslForm]);
 
-    const onSubmit = async (data: BkashSettingsFormData) => {
-        if (!user) {
-            toast({
-                variant: 'destructive',
-                title: 'Error',
-                description: 'You must be logged in to save settings',
-            });
-            return;
-        }
-
-        setIsSaving(true);
+    const onBkashSubmit = async (data: BkashSettingsFormData) => {
+        if (!user) return;
+        setIsBkashSaving(true);
         try {
             const baseURL = data.isSandbox
                 ? 'https://tokenized.sandbox.bka.sh/v1.2.0-beta'
                 : 'https://tokenized.pay.bka.sh/v1.2.0-beta';
 
             const settingsData: BkashSettings = {
-                appKey: data.appKey,
-                appSecret: data.appSecret,
-                username: data.username,
-                password: data.password,
-                isSandbox: data.isSandbox,
-                isEnabled: data.isEnabled,
+                ...data,
                 baseURL,
                 updatedAt: new Date().toISOString(),
                 updatedBy: user.uid,
             };
 
-            const settingsRef = doc(db, 'admin_settings', 'bkash_payment');
-            await setDoc(settingsRef, settingsData);
-
-            setCurrentSettings(settingsData);
-
-            toast({
-                title: 'Success',
-                description: 'Bkash payment settings saved successfully',
-            });
+            await setDoc(doc(db, 'admin_settings', 'bkash_payment'), settingsData);
+            setBkashSettings(settingsData);
+            toast({ title: 'Success', description: 'Bkash settings saved successfully' });
         } catch (error) {
             console.error('Error saving Bkash settings:', error);
-            toast({
-                variant: 'destructive',
-                title: 'Error',
-                description: 'Failed to save Bkash settings',
-            });
+            toast({ variant: 'destructive', title: 'Error', description: 'Failed to save Bkash settings' });
         } finally {
-            setIsSaving(false);
+            setIsBkashSaving(false);
+        }
+    };
+
+    const onSSLSubmit = async (data: SSLCommerzSettingsFormData) => {
+        if (!user) return;
+        setIsSSLSaving(true);
+        try {
+            const settingsData: SSLCommerzSettings = {
+                ...data,
+                updatedAt: new Date().toISOString(),
+                updatedBy: user.uid,
+            };
+
+            await setDoc(doc(db, 'admin_settings', 'sslcommerz_payment'), settingsData);
+            setSSLSettings(settingsData);
+            toast({ title: 'Success', description: 'SSLCommerz settings saved successfully' });
+        } catch (error) {
+            console.error('Error saving SSLCommerz settings:', error);
+            toast({ variant: 'destructive', title: 'Error', description: 'Failed to save SSLCommerz settings' });
+        } finally {
+            setIsSSLSaving(false);
         }
     };
 
@@ -152,124 +176,116 @@ export default function BkashPaymentSettingsPage() {
     }
 
     return (
-        <div className="container mx-auto px-4 py-8">
+        <div className="container mx-auto px-4 py-8 space-y-8">
             <div className="mb-6">
-                <h1 className="text-3xl font-bold">Bkash Payment Settings</h1>
+                <h1 className="text-3xl font-bold">Payment Gateway Settings</h1>
                 <p className="text-muted-foreground mt-2">
-                    Configure Bkash payment gateway credentials and settings
+                    Configure your payment gateways
                 </p>
             </div>
 
-            <form onSubmit={handleSubmit(onSubmit)}>
+            {/* Bkash Settings */}
+            <form onSubmit={bkashForm.handleSubmit(onBkashSubmit)}>
                 <Card>
                     <CardHeader>
-                        <CardTitle>Bkash API Credentials</CardTitle>
-                        <CardDescription>
-                            Enter your Bkash merchant credentials. Keep these secure and never share them publicly.
-                        </CardDescription>
+                        <CardTitle className="text-pink-600">bKash Payment Settings</CardTitle>
+                        <CardDescription>API v1.2.0-beta configuration</CardDescription>
                     </CardHeader>
                     <CardContent className="space-y-6">
-                        <div className="space-y-2">
-                            <Label htmlFor="appKey">App Key</Label>
-                            <Input
-                                id="appKey"
-                                type="text"
-                                {...register('appKey')}
-                                placeholder="Enter Bkash App Key"
-                            />
-                            {errors.appKey && (
-                                <p className="text-sm text-destructive">{errors.appKey.message}</p>
-                            )}
-                        </div>
-
-                        <div className="space-y-2">
-                            <Label htmlFor="appSecret">App Secret</Label>
-                            <Input
-                                id="appSecret"
-                                type="password"
-                                {...register('appSecret')}
-                                placeholder="Enter Bkash App Secret"
-                            />
-                            {errors.appSecret && (
-                                <p className="text-sm text-destructive">{errors.appSecret.message}</p>
-                            )}
-                        </div>
-
-                        <div className="space-y-2">
-                            <Label htmlFor="username">Username</Label>
-                            <Input
-                                id="username"
-                                type="text"
-                                {...register('username')}
-                                placeholder="Enter Bkash Username"
-                            />
-                            {errors.username && (
-                                <p className="text-sm text-destructive">{errors.username.message}</p>
-                            )}
-                        </div>
-
-                        <div className="space-y-2">
-                            <Label htmlFor="password">Password</Label>
-                            <Input
-                                id="password"
-                                type="password"
-                                {...register('password')}
-                                placeholder="Enter Bkash Password"
-                            />
-                            {errors.password && (
-                                <p className="text-sm text-destructive">{errors.password.message}</p>
-                            )}
-                        </div>
-
-                        <div className="space-y-4 pt-4 border-t">
-                            <div className="flex items-center justify-between">
-                                <div className="space-y-0.5">
-                                    <Label htmlFor="isSandbox">Sandbox Mode</Label>
-                                    <p className="text-sm text-muted-foreground">
-                                        Enable sandbox mode for testing (recommended for development)
-                                    </p>
-                                </div>
-                                <Switch
-                                    id="isSandbox"
-                                    checked={isSandbox}
-                                    onCheckedChange={(checked) => setValue('isSandbox', checked)}
-                                />
+                        <div className="grid md:grid-cols-2 gap-4">
+                            <div className="space-y-2">
+                                <Label>App Key</Label>
+                                <Input type="text" {...bkashForm.register('appKey')} placeholder="App Key" />
+                                {bkashForm.formState.errors.appKey && <p className="text-sm text-destructive">{bkashForm.formState.errors.appKey.message}</p>}
                             </div>
+                            <div className="space-y-2">
+                                <Label>App Secret</Label>
+                                <Input type="password" {...bkashForm.register('appSecret')} placeholder="App Secret" />
+                                {bkashForm.formState.errors.appSecret && <p className="text-sm text-destructive">{bkashForm.formState.errors.appSecret.message}</p>}
+                            </div>
+                            <div className="space-y-2">
+                                <Label>Username</Label>
+                                <Input type="text" {...bkashForm.register('username')} placeholder="Username" />
+                                {bkashForm.formState.errors.username && <p className="text-sm text-destructive">{bkashForm.formState.errors.username.message}</p>}
+                            </div>
+                            <div className="space-y-2">
+                                <Label>Password</Label>
+                                <Input type="password" {...bkashForm.register('password')} placeholder="Password" />
+                                {bkashForm.formState.errors.password && <p className="text-sm text-destructive">{bkashForm.formState.errors.password.message}</p>}
+                            </div>
+                        </div>
 
-                            <div className="flex items-center justify-between">
-                                <div className="space-y-0.5">
-                                    <Label htmlFor="isEnabled">Enable Bkash Payment</Label>
-                                    <p className="text-sm text-muted-foreground">
-                                        Allow customers to pay using Bkash during checkout
-                                    </p>
-                                </div>
+                        <div className="flex items-center justify-between pt-4 border-t">
+                            <div className="flex items-center space-x-2">
                                 <Switch
-                                    id="isEnabled"
-                                    checked={isEnabled}
-                                    onCheckedChange={(checked) => setValue('isEnabled', checked)}
+                                    checked={bkashForm.watch('isSandbox')}
+                                    onCheckedChange={(c) => bkashForm.setValue('isSandbox', c)}
                                 />
+                                <Label>Sandbox Mode</Label>
+                            </div>
+                            <div className="flex items-center space-x-2">
+                                <Switch
+                                    checked={bkashForm.watch('isEnabled')}
+                                    onCheckedChange={(c) => bkashForm.setValue('isEnabled', c)}
+                                />
+                                <Label>Enable bKash</Label>
                             </div>
                         </div>
 
                         <div className="pt-4">
-                            <Button type="submit" disabled={isSaving}>
-                                {isSaving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                                Save Settings
+                            <Button type="submit" disabled={isBkashSaving} className="bg-pink-600 hover:bg-pink-700 text-white">
+                                {isBkashSaving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                                Save bKash Settings
                             </Button>
                         </div>
+                    </CardContent>
+                </Card>
+            </form>
 
-                        {currentSettings && (
-                            <div className="pt-4 border-t">
-                                <p className="text-sm text-muted-foreground">
-                                    Base URL: <span className="font-mono text-foreground">{currentSettings.baseURL}</span>
-                                </p>
-                                {currentSettings.updatedAt && (
-                                    <p className="text-sm text-muted-foreground mt-1">
-                                        Last updated: {new Date(currentSettings.updatedAt).toLocaleString()}
-                                    </p>
-                                )}
+            {/* SSLCommerz Settings */}
+            <form onSubmit={sslForm.handleSubmit(onSSLSubmit)}>
+                <Card>
+                    <CardHeader>
+                        <CardTitle className="text-blue-600">SSLCommerz Settings</CardTitle>
+                        <CardDescription>Payment gateway configuration</CardDescription>
+                    </CardHeader>
+                    <CardContent className="space-y-6">
+                        <div className="grid md:grid-cols-2 gap-4">
+                            <div className="space-y-2">
+                                <Label>Store ID</Label>
+                                <Input type="text" {...sslForm.register('storeId')} placeholder="Store ID" />
+                                {sslForm.formState.errors.storeId && <p className="text-sm text-destructive">{sslForm.formState.errors.storeId.message}</p>}
                             </div>
-                        )}
+                            <div className="space-y-2">
+                                <Label>Store Password</Label>
+                                <Input type="password" {...sslForm.register('storePassword')} placeholder="Store Password" />
+                                {sslForm.formState.errors.storePassword && <p className="text-sm text-destructive">{sslForm.formState.errors.storePassword.message}</p>}
+                            </div>
+                        </div>
+
+                        <div className="flex items-center justify-between pt-4 border-t">
+                            <div className="flex items-center space-x-2">
+                                <Switch
+                                    checked={sslForm.watch('isSandbox')}
+                                    onCheckedChange={(c) => sslForm.setValue('isSandbox', c)}
+                                />
+                                <Label>Sandbox Mode</Label>
+                            </div>
+                            <div className="flex items-center space-x-2">
+                                <Switch
+                                    checked={sslForm.watch('isEnabled')}
+                                    onCheckedChange={(c) => sslForm.setValue('isEnabled', c)}
+                                />
+                                <Label>Enable SSLCommerz</Label>
+                            </div>
+                        </div>
+
+                        <div className="pt-4">
+                            <Button type="submit" disabled={isSSLSaving} className="bg-blue-600 hover:bg-blue-700 text-white">
+                                {isSSLSaving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                                Save SSLCommerz Settings
+                            </Button>
+                        </div>
                     </CardContent>
                 </Card>
             </form>

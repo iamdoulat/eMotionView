@@ -58,6 +58,7 @@ const productNavItems = [
 
 const mainNavItems = [
   { href: "/admin/inventory", label: "Inventory", icon: Boxes },
+  { href: "/admin/payments", label: "Payments", icon: Tag },
   { href: "/admin/customers", label: "Customers", icon: Users },
   { href: "/admin/users", label: "Staff", icon: UserCog },
   { href: "/admin/club-points", label: "Club Points", icon: Award },
@@ -65,6 +66,7 @@ const mainNavItems = [
 
 const settingsNavItems = [
   { href: "/admin/settings/general", label: "General Settings", icon: SlidersHorizontal },
+  { href: "/admin/settings/payment", label: "Payment Gateway", icon: Tag },
   { href: "/admin/settings/tracking", label: "Tracking & Analytics", icon: Activity },
   { href: "/admin/settings/pages", label: "Pages", icon: FileText },
   { href: "/admin/settings/homepage-layout", label: "Homepage Layout", icon: GalleryVertical },

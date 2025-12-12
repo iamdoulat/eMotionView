@@ -2,7 +2,7 @@
 "use client";
 
 import { useRouter } from 'next/navigation';
-import type { Order, User as Customer, BkashSettings } from '@/lib/placeholder-data';
+import type { Order, User as Customer, BkashSettings, SSLCommerzSettings } from '@/lib/placeholder-data';
 import { useState, useEffect } from 'react';
 import { Loader2 } from 'lucide-react';
 import { useCart } from '@/hooks/use-cart';
@@ -24,8 +24,9 @@ export default function CheckoutPage() {
   const [isLoading, setIsLoading] = useState(false);
   const { cart, subtotal, clearCart, isInitialized } = useCart();
   const [user, setUser] = useState<User | null>(null);
-  const [paymentMethod, setPaymentMethod] = useState<'card' | 'bkash'>('card');
+  const [paymentMethod, setPaymentMethod] = useState<'card' | 'bkash' | 'sslcommerz'>('card');
   const [bkashEnabled, setBkashEnabled] = useState(false);
+  const [sslCommerzEnabled, setSslCommerzEnabled] = useState(false);
 
   const [shippingAddress, setShippingAddress] = useState({
     firstName: "John",
@@ -65,7 +66,23 @@ export default function CheckoutPage() {
         console.error('Error checking Bkash settings:', error);
       }
     };
+
+    // Check if SSLCommerz is enabled
+    const checkSSLSettings = async () => {
+      try {
+        const settingsRef = doc(db, 'admin_settings', 'sslcommerz_payment');
+        const settingsSnap = await getDoc(settingsRef);
+        if (settingsSnap.exists()) {
+          const settings = settingsSnap.data() as SSLCommerzSettings;
+          setSslCommerzEnabled(settings.isEnabled);
+        }
+      } catch (error) {
+        console.error('Error checking SSLCommerz settings:', error);
+      }
+    };
+
     checkBkashSettings();
+    checkSSLSettings();
   }, []);
 
   useEffect(() => {
@@ -87,8 +104,72 @@ export default function CheckoutPage() {
 
     if (paymentMethod === 'bkash') {
       await handleBkashPayment();
+    } else if (paymentMethod === 'sslcommerz') {
+      await handleSSLCommerzPayment();
     } else {
       await handleCardPayment();
+    }
+  };
+
+  const handleSSLCommerzPayment = async () => {
+    setIsLoading(true);
+    try {
+      const orderId = doc(collection(db, 'orders')).id;
+      const orderNumber = `ORD-${Math.floor(100000 + Math.random() * 900000)}`;
+
+      const customerData = {
+        name: shippingAddress.firstName + ' ' + shippingAddress.lastName,
+        email: user?.email || '',
+        phone: '01700000000', // Placeholder as we don't collect phone yet
+        uid: user?.uid,
+      };
+
+      // Store order details in session storage
+      const pendingOrder = {
+        orderId,
+        orderNumber,
+        customerData,
+        shippingAddress,
+        cart,
+        total,
+      };
+      sessionStorage.setItem('pendingOrder', JSON.stringify(pendingOrder));
+
+      // Initiate Payment
+      const response = await fetch('/api/sslcommerz/init-payment', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          amount: total,
+          tranId: orderId, // using orderId as transaction ID
+          customerData,
+          shippingAddress,
+          cart,
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to initiate SSLCommerz payment');
+      }
+
+      const data = await response.json();
+
+      if (data.status === 'SUCCESS' && data.GatewayPageURL) {
+        window.location.href = data.GatewayPageURL;
+      } else {
+        throw new Error('Invalid SSLCommerz response');
+      }
+
+    } catch (error) {
+      console.error('SSLCommerz payment error:', error);
+      toast({
+        variant: 'destructive',
+        title: 'Payment Error',
+        description: 'Failed to initiate payment. Please try again.',
+      });
+      setIsLoading(false);
     }
   };
 
@@ -319,7 +400,7 @@ export default function CheckoutPage() {
                   <CardContent className="pt-6 space-y-6">
                     <div className="space-y-4">
                       <Label>Payment Method</Label>
-                      <RadioGroup value={paymentMethod} onValueChange={(value) => setPaymentMethod(value as 'card' | 'bkash')}>
+                      <RadioGroup value={paymentMethod} onValueChange={(value) => setPaymentMethod(value as 'card' | 'bkash' | 'sslcommerz')}>
                         <div className="flex items-center space-x-2">
                           <RadioGroupItem value="card" id="card" />
                           <Label htmlFor="card" className="font-normal cursor-pointer">Credit / Debit Card</Label>
@@ -330,6 +411,15 @@ export default function CheckoutPage() {
                             <Label htmlFor="bkash" className="font-normal cursor-pointer flex items-center gap-2">
                               <span className="px-2 py-1 bg-pink-600 text-white text-xs font-semibold rounded">bKash</span>
                               Mobile Payment
+                            </Label>
+                          </div>
+                        )}
+                        {sslCommerzEnabled && (
+                          <div className="flex items-center space-x-2">
+                            <RadioGroupItem value="sslcommerz" id="sslcommerz" />
+                            <Label htmlFor="sslcommerz" className="font-normal cursor-pointer flex items-center gap-2">
+                              <span className="px-2 py-1 bg-blue-600 text-white text-xs font-semibold rounded">SSLCommerz</span>
+                              Cards / Mobile Banking
                             </Label>
                           </div>
                         )}
@@ -368,6 +458,23 @@ export default function CheckoutPage() {
                         </div>
                         <p className="text-sm">
                           After clicking "Place Order", you'll be redirected to the secure bKash payment gateway to complete your transaction.
+                        </p>
+                      </div>
+                    )}
+
+                    {paymentMethod === 'sslcommerz' && (
+                      <div className="p-6 bg-blue-50 dark:bg-blue-950/20 rounded-lg border-2 border-blue-200 dark:border-blue-900">
+                        <div className="flex items-center gap-3 mb-4">
+                          <div className="w-12 h-12 bg-blue-600 rounded-full flex items-center justify-center">
+                            <span className="text-white font-bold text-lg">SSL</span>
+                          </div>
+                          <div>
+                            <h4 className="font-semibold text-lg">SSLCommerz Payment</h4>
+                            <p className="text-sm text-muted-foreground">Cards, Mobile Banking, Internet Banking</p>
+                          </div>
+                        </div>
+                        <p className="text-sm">
+                          After clicking "Place Order", you'll be redirected to the secure SSLCommerz payment gateway to complete your transaction.
                         </p>
                       </div>
                     )}
