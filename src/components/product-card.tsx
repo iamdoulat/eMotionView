@@ -149,7 +149,7 @@ export function ProductCard({ product }: ProductCardProps) {
         </CardContent>
       </Card>
 
-      <DialogContent className="sm:max-w-4xl p-8">
+      <DialogContent className="sm:max-w-4xl max-h-[90vh] overflow-y-auto p-8">
         <DialogHeader>
           <DialogTitle className="text-2xl font-bold font-headline leading-snug tracking-tight">{product.name}</DialogTitle>
         </DialogHeader>
@@ -196,11 +196,17 @@ export function ProductCard({ product }: ProductCardProps) {
               <a href={`/products/${product.permalink || product.id}#reviews`} className="ml-2 text-sm text-muted-foreground hover:text-primary">({product.reviewCount || 0} reviews)</a>
             </div>
 
+            {product.sku && (
+              <div className="text-sm text-muted-foreground mb-2">
+                SKU: <span className="font-medium text-foreground">{product.sku}</span>
+              </div>
+            )}
+
             <p className="text-3xl font-bold text-primary">৳{product.price.toLocaleString()}</p>
 
             <p className={`text-sm font-medium mt-2 ${isStockManaged
-                ? (product.stock > 0 ? 'text-green-600' : 'text-red-600')
-                : 'text-green-600'
+              ? (product.stock > 0 ? 'text-green-600' : 'text-red-600')
+              : 'text-green-600'
               }`}>
               {isStockManaged
                 ? (product.stock > 0 ? `In Stock (${product.stock} available)` : "Out of Stock")

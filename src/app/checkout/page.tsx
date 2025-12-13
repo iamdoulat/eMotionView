@@ -433,6 +433,7 @@ export default function CheckoutPage() {
           quantity: item.quantity,
           price: item.price,
           productType: item.productType,
+          sku: item.sku,
           downloadUrl: item.downloadUrl,
           digitalProductNote: item.digitalProductNote,
           permalink: item.permalink,

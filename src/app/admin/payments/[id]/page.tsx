@@ -76,6 +76,14 @@ export default function PaymentDetailPage() {
         switch (method) {
             case 'bkash':
                 return <Badge className="bg-pink-600 hover:bg-pink-700">Bkash</Badge>;
+            case 'sslcommerz':
+                return <Badge className="bg-blue-600 hover:bg-blue-700">SSLCommerz</Badge>;
+            case 'cod':
+                return <Badge className="bg-green-600 hover:bg-green-700">COD</Badge>;
+            case 'stripe':
+                return <Badge className="bg-purple-600 hover:bg-purple-700">Stripe</Badge>;
+            case 'paypal':
+                return <Badge className="bg-blue-500 hover:bg-blue-600">PayPal</Badge>;
             case 'card':
                 return <Badge variant="secondary">Card</Badge>;
             default:
@@ -148,6 +156,16 @@ export default function PaymentDetailPage() {
                             <div>
                                 <p className="text-sm font-medium text-muted-foreground">Amount</p>
                                 <p className="text-lg font-semibold">${order.total.toFixed(2)}</p>
+                            </div>
+                            <div>
+                                <p className="text-sm font-medium text-muted-foreground">Transaction ID</p>
+                                <p className="font-mono text-sm">
+                                    {order.paymentDetails?.bkash?.trxID ||
+                                        order.paymentDetails?.sslcommerz?.tran_id ||
+                                        order.paymentDetails?.bkash?.transactionID ||
+                                        order.paymentDetails?.bkash?.paymentID ||
+                                        'N/A'}
+                                </p>
                             </div>
                             <div>
                                 <p className="text-sm font-medium text-muted-foreground">Date</p>
@@ -227,6 +245,10 @@ export default function PaymentDetailPage() {
                                 <p className="text-sm font-medium text-muted-foreground">Email</p>
                                 <p>{order.customerEmail}</p>
                             </div>
+                            <div>
+                                <p className="text-sm font-medium text-muted-foreground">Mobile Number</p>
+                                <p>{order.shippingAddress?.phone || 'N/A'}</p>
+                            </div>
                         </div>
                         {order.shippingAddress && (
                             <>
@@ -253,9 +275,12 @@ export default function PaymentDetailPage() {
                         <div className="space-y-4">
                             {order.items.map((item, index) => (
                                 <div key={index} className="flex justify-between items-center">
-                                    <div>
+                                    <div className="flex-1">
                                         <p className="font-medium">{item.name}</p>
                                         <p className="text-sm text-muted-foreground">Qty: {item.quantity}</p>
+                                        {item.sku && (
+                                            <p className="text-sm text-muted-foreground">SKU: {item.sku}</p>
+                                        )}
                                     </div>
                                     <p className="font-medium">${(item.price * item.quantity).toFixed(2)}</p>
                                 </div>

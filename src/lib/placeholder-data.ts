@@ -195,6 +195,7 @@ export type Order = {
     quantity: number;
     price: number;
     productType: 'Physical' | 'Digital';
+    sku?: string; // Added SKU field
     downloadUrl?: string;
     digitalProductNote?: string;
     permalink?: string;
