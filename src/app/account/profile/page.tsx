@@ -65,6 +65,14 @@ export default function ProfilePage() {
             toast({ variant: 'destructive', title: 'Error', description: 'Could not find user data to update. Please try again.' });
             return;
         }
+        if (!name || name.trim() === '') {
+            toast({ variant: 'destructive', title: 'Validation Error', description: 'Full Name is required.' });
+            return;
+        }
+        if (!email || email.trim() === '') {
+            toast({ variant: 'destructive', title: 'Validation Error', description: 'Email is required.' });
+            return;
+        }
         if (!mobile || mobile.trim() === '') {
             toast({ variant: 'destructive', title: 'Validation Error', description: 'Mobile Number is required.' });
             return;
@@ -146,12 +154,12 @@ export default function ProfilePage() {
                 </CardHeader>
                 <CardContent className="space-y-4">
                     <div className="space-y-2">
-                        <Label htmlFor="name">Full Name</Label>
-                        <Input id="name" value={name} onChange={(e) => setName(e.target.value)} disabled={isSaving} />
+                        <Label htmlFor="name">Full Name <span className="text-red-500">*</span></Label>
+                        <Input id="name" value={name} onChange={(e) => setName(e.target.value)} disabled={isSaving} required />
                     </div>
                     <div className="space-y-2">
-                        <Label htmlFor="email">Email</Label>
-                        <Input id="email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} disabled={isSaving} />
+                        <Label htmlFor="email">Email <span className="text-red-500">*</span></Label>
+                        <Input id="email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} disabled={isSaving} required />
                     </div>
                     <div className="space-y-2">
                         <Label htmlFor="mobile">Mobile Number <span className="text-red-500">*</span></Label>

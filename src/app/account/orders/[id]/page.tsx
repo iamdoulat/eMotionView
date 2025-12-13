@@ -291,6 +291,7 @@ export default function OrderDetailPage() {
                         <table style={{ width: '100%', borderCollapse: 'collapse', marginBottom: '2rem' }}>
                             <thead>
                                 <tr style={{ backgroundColor: '#f0f0f0' }}>
+                                    <th style={{ padding: '0.75rem', textAlign: 'left', borderBottom: '1px solid #ddd', width: '60px' }}>Image</th>
                                     <th style={{ padding: '0.75rem', textAlign: 'left', borderBottom: '1px solid #ddd' }}>Item</th>
                                     <th style={{ padding: '0.75rem', textAlign: 'center', borderBottom: '1px solid #ddd' }}>Quantity</th>
                                     <th style={{ padding: '0.75rem', textAlign: 'right', borderBottom: '1px solid #ddd' }}>Price</th>
@@ -300,6 +301,13 @@ export default function OrderDetailPage() {
                             <tbody>
                                 {order.items.map((item, index) => (
                                     <tr key={index} style={{ borderBottom: '1px solid #eee' }}>
+                                        <td style={{ padding: '0.75rem' }}>
+                                            <img
+                                                src={item.image || 'https://placehold.co/48x48.png'}
+                                                alt=""
+                                                style={{ width: '48px', height: '48px', objectFit: 'cover', borderRadius: '4px' }}
+                                            />
+                                        </td>
                                         <td style={{ padding: '0.75rem' }}>{item.name}</td>
                                         <td style={{ padding: '0.75rem', textAlign: 'center' }}>{item.quantity}</td>
                                         <td style={{ padding: '0.75rem', textAlign: 'right' }}>${item.price.toFixed(2)}</td>
