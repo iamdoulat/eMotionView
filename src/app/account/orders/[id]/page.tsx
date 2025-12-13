@@ -230,16 +230,16 @@ export default function OrderDetailPage() {
     return (
         <div>
             {/* Hidden Invoice structure for PDF generation */}
-            <div style={{ position: 'absolute', left: '-9999px', top: 'auto', width: '210mm', padding: '10px', background: 'white', color: 'black', fontFamily: 'sans-serif' }} ref={pdfRef}>
+            <div style={{ position: 'absolute', left: '-9999px', top: 'auto', width: '210mm', padding: '25px', background: 'white', color: 'black', fontFamily: 'sans-serif', fontSize: '13px' }} ref={pdfRef}>
                 {order && (
                     <div>
                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', borderBottom: '2px solid #333', paddingBottom: '1.5rem', marginBottom: '1.5rem' }}>
                             {/* Left: Logo and Company Info */}
                             <div style={{ flex: '1' }}>
                                 <img src="/logo.png" alt="eMotionView Logo" style={{ width: '180px', marginBottom: '0.5rem' }} />
-                                <h1 style={{ fontSize: '1.5rem', fontWeight: 'bold', margin: '0.5rem 0 0.25rem' }}>eMotionView</h1>
-                                <p style={{ margin: 0, fontSize: '0.875rem' }}>10/25 Eastern Plaza, Hatirpool, Dhaka-1205</p>
-                                <p style={{ margin: 0, fontSize: '0.875rem' }}>Phone: 09677460460 | Email: motionview22@gmail.com.bd</p>
+                                <h1 style={{ fontSize: '1.5em', fontWeight: 'bold', margin: '0.5rem 0 0.25rem' }}>eMotionView</h1>
+                                <p style={{ margin: 0, fontSize: '0.9em' }}>10/25 Eastern Plaza, Hatirpool, Dhaka-1205</p>
+                                <p style={{ margin: 0, fontSize: '0.9em' }}>Phone: 09677460460 | Email: motionview22@gmail.com.bd</p>
                             </div>
 
                             {/* Center: QR Code */}
@@ -247,14 +247,14 @@ export default function OrderDetailPage() {
                                 {qrCodeUrl && (
                                     <>
                                         <img src={qrCodeUrl} alt="Order QR Code" style={{ width: '112px', height: '112px' }} />
-                                        <p style={{ margin: '0.5rem 0 0', fontSize: '0.75rem', textAlign: 'center' }}>Scan for Details</p>
+                                        <p style={{ margin: '0.5rem 0 0', fontSize: '0.75em', textAlign: 'center' }}>Scan for Details</p>
                                     </>
                                 )}
                             </div>
 
                             {/* Right: Invoice Text and Details */}
                             <div style={{ flex: '1', textAlign: 'right' }}>
-                                <h2 style={{ fontSize: '2rem', fontWeight: 'bold', margin: 0 }}>INVOICE</h2>
+                                <h2 style={{ fontSize: '2em', fontWeight: 'bold', margin: 0 }}>INVOICE</h2>
                                 <p style={{ margin: '0.25rem 0 0' }}><strong>Invoice #:</strong> {order.orderNumber}</p>
                                 <p style={{ margin: '0.25rem 0 0' }}><strong>Date:</strong> {formattedInvoiceDate}</p>
                             </div>
