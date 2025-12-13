@@ -32,6 +32,7 @@ import {
   FileText,
   Activity,
   LogOut,
+  Truck,
 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from "../ui/card";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
@@ -67,6 +68,7 @@ const mainNavItems = [
 const settingsNavItems = [
   { href: "/admin/settings/general", label: "General Settings", icon: SlidersHorizontal },
   { href: "/admin/settings/payment", label: "Payment Gateway", icon: Tag },
+  { href: "/admin/settings/shipping", label: "Shipping Methods", icon: Truck },
   { href: "/admin/settings/tracking", label: "Tracking & Analytics", icon: Activity },
   { href: "/admin/settings/pages", label: "Pages", icon: FileText },
   { href: "/admin/settings/homepage-layout", label: "Homepage Layout", icon: GalleryVertical },

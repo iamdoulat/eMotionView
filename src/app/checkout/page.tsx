@@ -6,6 +6,8 @@ import type { Order, User as Customer, BkashSettings, SSLCommerzSettings, CODSet
 import { useState, useEffect } from 'react';
 import { Loader2 } from 'lucide-react';
 import { useCart } from '@/hooks/use-cart';
+import { useCurrency } from '@/hooks/use-currency';
+import { useShipping } from '@/hooks/use-shipping';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -23,11 +25,13 @@ export default function CheckoutPage() {
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(false);
   const { cart, subtotal, clearCart, isInitialized } = useCart();
+  const { currency, symbol, formatPrice } = useCurrency();
+  const { methods: shippingMethods, selectedMethod, selectMethod, isLoading: isLoadingShipping, shippingCost } = useShipping(subtotal);
   const [user, setUser] = useState<User | null>(null);
-  const [paymentMethod, setPaymentMethod] = useState<'card' | 'bkash' | 'sslcommerz' | 'cod' | 'stripe' | 'paypal'>('card');
+  const [paymentMethod, setPaymentMethod] = useState<'bkash' | 'sslcommerz' | 'cod' | 'stripe' | 'paypal'>('cod');
   const [bkashEnabled, setBkashEnabled] = useState(false);
   const [sslCommerzEnabled, setSslCommerzEnabled] = useState(false);
-  const [codEnabled, setCodEnabled] = useState(false);
+  const [codEnabled, setCodEnabled] = useState(true); // COD enabled by default
   const [stripeEnabled, setStripeEnabled] = useState(false);
   const [paypalEnabled, setPaypalEnabled] = useState(false);
 
@@ -41,7 +45,7 @@ export default function CheckoutPage() {
     country: "USA",
   });
 
-  const shipping = cart.length > 0 ? 5.00 : 0;
+  const shipping = shippingCost;
   const total = subtotal + shipping;
 
   useEffect(() => {
@@ -161,7 +165,8 @@ export default function CheckoutPage() {
     } else if (paymentMethod === 'paypal') {
       await handlePayPalPayment();
     } else {
-      await handleCardPayment();
+      // Default to COD if nothing else matches
+      await handleCODPayment();
     }
   };
 
@@ -222,73 +227,6 @@ export default function CheckoutPage() {
         variant: 'destructive',
         title: 'Payment Error',
         description: 'Failed to initiate payment. Please try again.',
-      });
-      setIsLoading(false);
-    }
-  };
-
-  const handleCardPayment = async () => {
-    setIsLoading(true);
-
-    try {
-      const customerRef = doc(db, 'customers', user!.uid);
-      const customerSnap = await getDoc(customerRef);
-
-      if (!customerSnap.exists()) {
-        throw new Error("Customer data not found.");
-      }
-
-      const customerData = customerSnap.data() as Customer;
-
-      const newOrderRef = doc(collection(db, 'orders'));
-      const orderId = newOrderRef.id;
-
-      const newOrder: Order = {
-        id: orderId,
-        userId: user!.uid,
-        customerEmail: user!.email ?? '',
-        orderNumber: `USA-${Math.floor(Math.random() * 900000) + 100000}`,
-        date: new Date().toISOString(),
-        customerName: customerData.name || 'N/A',
-        customerAvatar: customerData.avatar || `https://placehold.co/40x40.png?text=${customerData.name?.charAt(0) || 'U'}`,
-        status: 'Pending',
-        total: total,
-        paymentMethod: 'card',
-        paymentStatus: 'completed',
-        shippingAddress: {
-          street: shippingAddress.address,
-          city: shippingAddress.city,
-          state: shippingAddress.state,
-          zipCode: shippingAddress.zipCode,
-          country: shippingAddress.country,
-        },
-        items: cart.map(item => ({
-          productId: item.id,
-          name: item.name,
-          image: item.images[0],
-          quantity: item.quantity,
-          price: item.price,
-          productType: item.productType,
-          downloadUrl: item.downloadUrl,
-          digitalProductNote: item.digitalProductNote,
-          permalink: item.permalink,
-        })),
-      };
-
-      await setDoc(newOrderRef, newOrder);
-
-      clearCart();
-
-      setTimeout(() => {
-        router.push(`/checkout/thank-you?orderId=${orderId}`);
-      }, 500);
-
-    } catch (error) {
-      console.error("Failed to place order:", error);
-      toast({
-        variant: 'destructive',
-        title: 'Order Failed',
-        description: 'There was a problem placing your order. Please try again.',
       });
       setIsLoading(false);
     }
@@ -394,6 +332,12 @@ export default function CheckoutPage() {
         customerAvatar: customerData.avatar || `https://placehold.co/40x40.png?text=${customerData.name?.charAt(0) || 'U'}`,
         status: 'Pending',
         total: total,
+        currency: currency,
+        shippingMethod: selectedMethod ? {
+          id: selectedMethod.id,
+          title: selectedMethod.title,
+          cost: selectedMethod.cost,
+        } : undefined,
         paymentMethod: 'cod',
         paymentStatus: 'pending',
         shippingAddress: {
@@ -552,18 +496,56 @@ export default function CheckoutPage() {
                 </Card>
               </AccordionContent>
             </AccordionItem>
+
+            {/* Shipping Method */}
+            <AccordionItem value="shipping-method">
+              <AccordionTrigger className="text-lg font-semibold">Shipping Method</AccordionTrigger>
+              <AccordionContent className="pt-4">
+                <Card>
+                  <CardContent className="pt-6 space-y-4">
+                    {isLoadingShipping ? (
+                      <div className="flex justify-center py-4">
+                        <Loader2 className="h-6 w-6 animate-spin" />
+                      </div>
+                    ) : (
+                      <RadioGroup
+                        value={selectedMethod?.id}
+                        onValueChange={selectMethod}
+                      >
+                        {shippingMethods.map((method) => (
+                          <div key={method.id} className="flex items-center justify-between space-x-2 p-4 border rounded-lg hover:bg-accent/50 transition-colors">
+                            <div className="flex items-center space-x-2 flex-1">
+                              <RadioGroupItem value={method.id} id={method.id} />
+                              <Label htmlFor={method.id} className="font-normal cursor-pointer flex-1">
+                                <div>
+                                  <p className="font-medium">{method.title}</p>
+                                  {method.description && (
+                                    <p className="text-sm text-muted-foreground">{method.description}</p>
+                                  )}
+                                </div>
+                              </Label>
+                            </div>
+                            <span className="font-semibold">
+                              {method.cost === 0 ? 'Free' : formatPrice(method.cost)}
+                            </span>
+                          </div>
+                        ))}
+                      </RadioGroup>
+                    )}
+                  </CardContent>
+                </Card>
+              </AccordionContent>
+            </AccordionItem>
+
+            {/* Payment Details */}
             <AccordionItem value="payment">
-              <AccordionTrigger className="text-2xl font-headline">2. Payment Details</AccordionTrigger>
+              <AccordionTrigger className="text-lg font-semibold">Payment Details</AccordionTrigger>
               <AccordionContent className="pt-4">
                 <Card>
                   <CardContent className="pt-6 space-y-6">
                     <div className="space-y-4">
                       <Label>Payment Method</Label>
-                      <RadioGroup value={paymentMethod} onValueChange={(value) => setPaymentMethod(value as 'card' | 'bkash' | 'sslcommerz' | 'cod' | 'stripe' | 'paypal')}>
-                        <div className="flex items-center space-x-2">
-                          <RadioGroupItem value="card" id="card" />
-                          <Label htmlFor="card" className="font-normal cursor-pointer">Credit / Debit Card</Label>
-                        </div>
+                      <RadioGroup value={paymentMethod} onValueChange={(value) => setPaymentMethod(value as 'bkash' | 'sslcommerz' | 'cod' | 'stripe' | 'paypal')}>
                         {bkashEnabled && (
                           <div className="flex items-center space-x-2">
                             <RadioGroupItem value="bkash" id="bkash" />
@@ -611,25 +593,6 @@ export default function CheckoutPage() {
                         )}
                       </RadioGroup>
                     </div>
-
-                    {paymentMethod === 'card' && (
-                      <>
-                        <div className="space-y-2">
-                          <Label htmlFor="card-number">Card Number</Label>
-                          <Input id="card-number" placeholder="**** **** **** 1234" defaultValue="4242 4242 4242 4242" />
-                        </div>
-                        <div className="grid grid-cols-2 gap-4">
-                          <div className="space-y-2">
-                            <Label htmlFor="expiry-date">Expiry Date</Label>
-                            <Input id="expiry-date" placeholder="MM/YY" defaultValue="12/28" />
-                          </div>
-                          <div className="space-y-2">
-                            <Label htmlFor="cvc">CVC</Label>
-                            <Input id="cvc" placeholder="123" defaultValue="123" />
-                          </div>
-                        </div>
-                      </>
-                    )}
 
                     {paymentMethod === 'bkash' && (
                       <div className="p-6 bg-pink-50 dark:bg-pink-950/20 rounded-lg border-2 border-pink-200 dark:border-pink-900">
@@ -729,23 +692,23 @@ export default function CheckoutPage() {
                 {cart.map(item => (
                   <div className="flex justify-between" key={item.id}>
                     <span className="truncate pr-2">{item.quantity}x {item.name}</span>
-                    <span className="shrink-0">${(item.price * item.quantity).toFixed(2)}</span>
+                    <span className="shrink-0">{formatPrice(item.price * item.quantity)}</span>
                   </div>
                 ))}
               </div>
               <Separator />
               <div className="flex justify-between text-muted-foreground">
                 <span>Subtotal</span>
-                <span>${subtotal.toFixed(2)}</span>
+                <span>{formatPrice(subtotal)}</span>
               </div>
               <div className="flex justify-between text-muted-foreground">
                 <span>Shipping</span>
-                <span>${shipping.toFixed(2)}</span>
+                <span>{formatPrice(shipping)}</span>
               </div>
               <Separator />
               <div className="flex justify-between font-bold text-lg">
                 <span>Total</span>
-                <span>${total.toFixed(2)}</span>
+                <span>{formatPrice(total)}</span>
               </div>
             </CardContent>
             <CardFooter>

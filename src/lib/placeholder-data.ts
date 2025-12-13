@@ -58,6 +58,24 @@ export type PaymentMethod = 'card' | 'bkash' | 'sslcommerz' | 'cod' | 'stripe' |
 export type PaymentStatus = 'pending' | 'completed' | 'failed' | 'refunded';
 export type Currency = 'USD' | 'CAD' | 'BDT';
 
+export type ShippingMethodType = 'flat_rate' | 'free_shipping' | 'local_pickup';
+
+export type ShippingMethod = {
+  id: string;
+  type: ShippingMethodType;
+  title: string;
+  cost: number;
+  isEnabled: boolean;
+  minOrderAmount?: number; // For free shipping threshold
+  description?: string;
+};
+
+export type ShippingSettings = {
+  methods: ShippingMethod[];
+  updatedAt?: string;
+  updatedBy?: string;
+};
+
 export type BkashPaymentDetails = {
   paymentID: string;
   transactionID?: string;
@@ -159,7 +177,13 @@ export type Order = {
   customerEmail: string;
   status: 'Pending' | 'Delivered' | 'Processing' | 'Shipped' | 'Cancelled';
   total: number;
+  currency?: Currency; // Currency used for this order
   shippingAddress?: ShippingAddress;
+  shippingMethod?: {
+    id: string;
+    title: string;
+    cost: number;
+  };
   paymentMethod?: PaymentMethod;
   paymentStatus?: PaymentStatus;
   paymentDetails?: PaymentDetails;
