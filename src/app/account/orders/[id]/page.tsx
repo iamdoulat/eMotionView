@@ -11,6 +11,8 @@ import { Badge } from "@/components/ui/badge";
 import { Download, RefreshCw } from "lucide-react";
 import { useEffect, useState, useRef } from "react";
 import { Skeleton } from "@/components/ui/skeleton";
+import { useToast } from "@/hooks/use-toast";
+import { useCart } from "@/hooks/use-cart";
 import jsPDF from "jspdf";
 import html2canvas from "html2canvas";
 import { doc, getDoc } from "firebase/firestore";
@@ -22,6 +24,8 @@ export default function OrderDetailPage() {
     const params = useParams<{ id: string }>();
     const router = useRouter();
     const { user, role, isLoading: isAuthLoading } = useAuth();
+    const { toast } = useToast();
+    const { addToCart } = useCart();
     const [order, setOrder] = useState<Order | null | undefined>(undefined);
     const [isLoading, setIsLoading] = useState(true);
     const [formattedDate, setFormattedDate] = useState('');
@@ -107,6 +111,46 @@ export default function OrderDetailPage() {
             pdf.addImage(imgData, 'PNG', 0, 0, pdfWidth, pdfHeight);
             pdf.save(`invoice-${order.orderNumber}.pdf`);
         });
+    };
+
+    const handleReorder = async () => {
+        if (!order) return;
+
+        try {
+            // Add all items from the order back to cart
+            for (const item of order.items) {
+                // We need to reconstruct a Product object from the order item
+                const product: any = {
+                    id: item.productId,
+                    name: item.name,
+                    price: item.price,
+                    images: [item.image],
+                    productType: item.productType,
+                    downloadUrl: item.downloadUrl,
+                    digitalProductNote: item.digitalProductNote,
+                    permalink: item.permalink,
+                };
+
+                addToCart(product, item.quantity);
+            }
+
+            toast({
+                title: "Items Added to Cart",
+                description: `${order.items.length} item(s) have been added to your cart.`,
+            });
+
+            // Redirect to checkout after a brief delay
+            setTimeout(() => {
+                router.push('/checkout');
+            }, 500);
+        } catch (error) {
+            console.error('Error reordering:', error);
+            toast({
+                variant: "destructive",
+                title: "Reorder Failed",
+                description: "There was a problem adding items to your cart.",
+            });
+        }
     };
 
     if (isLoading || isAuthLoading) {
@@ -265,7 +309,7 @@ export default function OrderDetailPage() {
                     <p className="text-muted-foreground">Order #{order.orderNumber}</p>
                 </div>
                 <div className="flex gap-2 mt-4 sm:mt-0">
-                    <Button variant="outline"><RefreshCw className="mr-2 h-4 w-4" /> Reorder</Button>
+                    <Button variant="outline" onClick={handleReorder}><RefreshCw className="mr-2 h-4 w-4" /> Reorder</Button>
                     <Button onClick={handleDownloadInvoice}><Download className="mr-2 h-4 w-4" /> Download Invoice</Button>
                 </div>
             </div>
@@ -350,6 +394,14 @@ export default function OrderDetailPage() {
                                         <span className="font-medium text-foreground">
                                             {order.paymentMethod === 'bkash' ? (
                                                 <Badge className="bg-pink-600">bKash</Badge>
+                                            ) : order.paymentMethod === 'sslcommerz' ? (
+                                                <Badge className="bg-blue-600">SSLCommerz</Badge>
+                                            ) : order.paymentMethod === 'cod' ? (
+                                                <Badge className="bg-green-600">COD</Badge>
+                                            ) : order.paymentMethod === 'stripe' ? (
+                                                <Badge className="bg-purple-600">Stripe</Badge>
+                                            ) : order.paymentMethod === 'paypal' ? (
+                                                <Badge className="bg-blue-500">PayPal</Badge>
                                             ) : order.paymentMethod === 'card' ? (
                                                 <Badge variant="secondary">Card</Badge>
                                             ) : (
