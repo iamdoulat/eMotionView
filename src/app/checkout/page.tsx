@@ -29,11 +29,6 @@ export default function CheckoutPage() {
   const { methods: shippingMethods, selectedMethod, selectMethod, isLoading: isLoadingShipping, shippingCost } = useShipping(subtotal);
   const [user, setUser] = useState<User | null>(null);
   const [paymentMethod, setPaymentMethod] = useState<'bkash' | 'sslcommerz' | 'cod' | 'stripe' | 'paypal'>('cod');
-  const [bkashEnabled, setBkashEnabled] = useState(false);
-  const [sslCommerzEnabled, setSslCommerzEnabled] = useState(false);
-  const [codEnabled, setCodEnabled] = useState(true); // COD enabled by default
-  const [stripeEnabled, setStripeEnabled] = useState(false);
-  const [paypalEnabled, setPaypalEnabled] = useState(false);
 
   const [shippingAddress, setShippingAddress] = useState({
     firstName: "John",
@@ -58,84 +53,6 @@ export default function CheckoutPage() {
     });
     return () => unsubscribe();
   }, [router]);
-
-  useEffect(() => {
-    // Check if Bkash is enabled
-    const checkBkashSettings = async () => {
-      try {
-        const settingsRef = doc(db, 'admin_settings', 'bkash_payment');
-        const settingsSnap = await getDoc(settingsRef);
-        if (settingsSnap.exists()) {
-          const settings = settingsSnap.data() as BkashSettings;
-          setBkashEnabled(settings.isEnabled);
-        }
-      } catch (error) {
-        console.error('Error checking Bkash settings:', error);
-      }
-    };
-
-    // Check if SSLCommerz is enabled
-    const checkSSLSettings = async () => {
-      try {
-        const settingsRef = doc(db, 'admin_settings', 'sslcommerz_payment');
-        const settingsSnap = await getDoc(settingsRef);
-        if (settingsSnap.exists()) {
-          const settings = settingsSnap.data() as SSLCommerzSettings;
-          setSslCommerzEnabled(settings.isEnabled);
-        }
-      } catch (error) {
-        console.error('Error checking SSLCommerz settings:', error);
-      }
-    };
-
-    // Check if COD is enabled
-    const checkCODSettings = async () => {
-      try {
-        const settingsRef = doc(db, 'admin_settings', 'cod_payment');
-        const settingsSnap = await getDoc(settingsRef);
-        if (settingsSnap.exists()) {
-          const settings = settingsSnap.data() as CODSettings;
-          setCodEnabled(settings.isEnabled);
-        }
-      } catch (error) {
-        console.error('Error checking COD settings:', error);
-      }
-    };
-
-    // Check if Stripe is enabled
-    const checkStripeSettings = async () => {
-      try {
-        const settingsRef = doc(db, 'admin_settings', 'stripe_payment');
-        const settingsSnap = await getDoc(settingsRef);
-        if (settingsSnap.exists()) {
-          const settings = settingsSnap.data() as StripeSettings;
-          setStripeEnabled(settings.isEnabled);
-        }
-      } catch (error) {
-        console.error('Error checking Stripe settings:', error);
-      }
-    };
-
-    // Check if PayPal is enabled
-    const checkPayPalSettings = async () => {
-      try {
-        const settingsRef = doc(db, 'admin_settings', 'paypal_payment');
-        const settingsSnap = await getDoc(settingsRef);
-        if (settingsSnap.exists()) {
-          const settings = settingsSnap.data() as PayPalSettings;
-          setPaypalEnabled(settings.isEnabled);
-        }
-      } catch (error) {
-        console.error('Error checking PayPal settings:', error);
-      }
-    };
-
-    checkBkashSettings();
-    checkSSLSettings();
-    checkCODSettings();
-    checkStripeSettings();
-    checkPayPalSettings();
-  }, []);
 
   useEffect(() => {
     if (isInitialized && user && cart.length === 0 && !isLoading) {
@@ -313,11 +230,15 @@ export default function CheckoutPage() {
       const customerRef = doc(db, 'customers', user!.uid);
       const customerSnap = await getDoc(customerRef);
 
-      if (!customerSnap.exists()) {
-        throw new Error("Customer data not found.");
-      }
+      // Get customer data or use defaults from auth user
+      let customerName = user!.displayName || 'N/A';
+      let customerAvatar = user!.photoURL || `https://placehold.co/40x40.png?text=${customerName.charAt(0)}`;
 
-      const customerData = customerSnap.data() as Customer;
+      if (customerSnap.exists()) {
+        const customerData = customerSnap.data() as Customer;
+        customerName = customerData.name || customerName;
+        customerAvatar = customerData.avatar || customerAvatar;
+      }
 
       const newOrderRef = doc(collection(db, 'orders'));
       const orderId = newOrderRef.id;
@@ -328,8 +249,8 @@ export default function CheckoutPage() {
         customerEmail: user!.email ?? '',
         orderNumber: `USA-${Math.floor(Math.random() * 900000) + 100000}`,
         date: new Date().toISOString(),
-        customerName: customerData.name || 'N/A',
-        customerAvatar: customerData.avatar || `https://placehold.co/40x40.png?text=${customerData.name?.charAt(0) || 'U'}`,
+        customerName,
+        customerAvatar,
         status: 'Pending',
         total: total,
         currency: currency,
@@ -550,51 +471,45 @@ export default function CheckoutPage() {
                     <div className="space-y-4">
                       <Label>Payment Method</Label>
                       <RadioGroup value={paymentMethod} onValueChange={(value) => setPaymentMethod(value as 'bkash' | 'sslcommerz' | 'cod' | 'stripe' | 'paypal')}>
-                        {bkashEnabled && (
-                          <div className="flex items-center space-x-2">
-                            <RadioGroupItem value="bkash" id="bkash" />
-                            <Label htmlFor="bkash" className="font-normal cursor-pointer flex items-center gap-2">
-                              <span className="px-2 py-1 bg-pink-600 text-white text-xs font-semibold rounded">bKash</span>
-                              Mobile Payment
-                            </Label>
-                          </div>
-                        )}
-                        {sslCommerzEnabled && (
-                          <div className="flex items-center space-x-2">
-                            <RadioGroupItem value="sslcommerz" id="sslcommerz" />
-                            <Label htmlFor="sslcommerz" className="font-normal cursor-pointer flex items-center gap-2">
-                              <span className="px-2 py-1 bg-blue-600 text-white text-xs font-semibold rounded">SSLCommerz</span>
-                              Cards / Mobile Banking
-                            </Label>
-                          </div>
-                        )}
-                        {codEnabled && (
-                          <div className="flex items-center space-x-2">
-                            <RadioGroupItem value="cod" id="cod" />
-                            <Label htmlFor="cod" className="font-normal cursor-pointer flex items-center gap-2">
-                              <span className="px-2 py-1 bg-green-600 text-white text-xs font-semibold rounded">COD</span>
-                              Cash on Delivery
-                            </Label>
-                          </div>
-                        )}
-                        {stripeEnabled && (
-                          <div className="flex items-center space-x-2">
-                            <RadioGroupItem value="stripe" id="stripe" />
-                            <Label htmlFor="stripe" className="font-normal cursor-pointer flex items-center gap-2">
-                              <span className="px-2 py-1 bg-purple-600 text-white text-xs font-semibold rounded">Stripe</span>
-                              Credit / Debit Card
-                            </Label>
-                          </div>
-                        )}
-                        {paypalEnabled && (
-                          <div className="flex items-center space-x-2">
-                            <RadioGroupItem value="paypal" id="paypal" />
-                            <Label htmlFor="paypal" className="font-normal cursor-pointer flex items-center gap-2">
-                              <span className="px-2 py-1 bg-blue-500 text-white text-xs font-semibold rounded">PayPal</span>
-                              PayPal Account
-                            </Label>
-                          </div>
-                        )}
+                        <div className="flex items-center space-x-2">
+                          <RadioGroupItem value="bkash" id="bkash" />
+                          <Label htmlFor="bkash" className="font-normal cursor-pointer flex items-center gap-2">
+                            <span className="px-2 py-1 bg-pink-600 text-white text-xs font-semibold rounded">bKash</span>
+                            Mobile Payment
+                          </Label>
+                        </div>
+
+                        <div className="flex items-center space-x-2">
+                          <RadioGroupItem value="sslcommerz" id="sslcommerz" />
+                          <Label htmlFor="sslcommerz" className="font-normal cursor-pointer flex items-center gap-2">
+                            <span className="px-2 py-1 bg-blue-600 text-white text-xs font-semibold rounded">SSLCommerz</span>
+                            SSLCommerz Gateway
+                          </Label>
+                        </div>
+
+                        <div className="flex items-center space-x-2">
+                          <RadioGroupItem value="cod" id="cod" />
+                          <Label htmlFor="cod" className="font-normal cursor-pointer flex items-center gap-2">
+                            <span className="px-2 py-1 bg-green-600 text-white text-xs font-semibold rounded">COD</span>
+                            Cash on Delivery
+                          </Label>
+                        </div>
+
+                        <div className="flex items-center space-x-2">
+                          <RadioGroupItem value="stripe" id="stripe" />
+                          <Label htmlFor="stripe" className="font-normal cursor-pointer flex items-center gap-2">
+                            <span className="px-2 py-1 bg-purple-600 text-white text-xs font-semibold rounded">Stripe</span>
+                            Credit / Debit Card
+                          </Label>
+                        </div>
+
+                        <div className="flex items-center space-x-2">
+                          <RadioGroupItem value="paypal" id="paypal" />
+                          <Label htmlFor="paypal" className="font-normal cursor-pointer flex items-center gap-2">
+                            <span className="px-2 py-1 bg-blue-500 text-white text-xs font-semibold rounded">PayPal</span>
+                            PayPal Account
+                          </Label>
+                        </div>
                       </RadioGroup>
                     </div>
 
