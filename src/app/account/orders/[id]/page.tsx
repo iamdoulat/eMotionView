@@ -421,6 +421,12 @@ export default function OrderDetailPage() {
                                             <span className="font-mono text-xs">{order.paymentDetails.bkash.trxID}</span>
                                         </div>
                                     )}
+                                    <div className="flex justify-between">
+                                        <span>Shipping Method:</span>
+                                        <span className="font-medium text-foreground">
+                                            {order.shippingMethod?.title || 'Standard Shipping'}
+                                        </span>
+                                    </div>
                                 </div>
                             </div>
                             <div>
@@ -431,7 +437,7 @@ export default function OrderDetailPage() {
                                         <span>${subtotal.toFixed(2)}</span>
                                     </div>
                                     <div className="flex justify-between">
-                                        <span>Shipping:</span>
+                                        <span>Shipping {order.shippingMethod ? `(${order.shippingMethod.title})` : ''}:</span>
                                         <span>${shipping.toFixed(2)}</span>
                                     </div>
                                     <div className="flex justify-between font-bold text-foreground">
