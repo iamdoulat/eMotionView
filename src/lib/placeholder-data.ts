@@ -54,8 +54,9 @@ export type ShippingAddress = {
   country: string;
 }
 
-export type PaymentMethod = 'card' | 'bkash' | 'sslcommerz';
+export type PaymentMethod = 'card' | 'bkash' | 'sslcommerz' | 'cod' | 'stripe' | 'paypal';
 export type PaymentStatus = 'pending' | 'completed' | 'failed' | 'refunded';
+export type Currency = 'USD' | 'CAD' | 'BDT';
 
 export type BkashPaymentDetails = {
   paymentID: string;
@@ -113,6 +114,36 @@ export type SSLCommerzSettings = {
   storePassword: string;
   isSandbox: boolean;
   isEnabled: boolean;
+  updatedAt?: string;
+  updatedBy?: string;
+}
+
+export type CODSettings = {
+  isEnabled: boolean;
+  updatedAt?: string;
+  updatedBy?: string;
+}
+
+export type StripeSettings = {
+  publishableKey: string;
+  secretKey: string;
+  isSandbox: boolean;
+  isEnabled: boolean;
+  updatedAt?: string;
+  updatedBy?: string;
+}
+
+export type PayPalSettings = {
+  clientId: string;
+  secret: string;
+  isSandbox: boolean;
+  isEnabled: boolean;
+  updatedAt?: string;
+  updatedBy?: string;
+}
+
+export type CurrencySettings = {
+  currency: Currency;
   updatedAt?: string;
   updatedBy?: string;
 }

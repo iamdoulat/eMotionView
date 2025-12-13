@@ -2,7 +2,7 @@
 "use client";
 
 import { useRouter } from 'next/navigation';
-import type { Order, User as Customer, BkashSettings, SSLCommerzSettings } from '@/lib/placeholder-data';
+import type { Order, User as Customer, BkashSettings, SSLCommerzSettings, CODSettings, StripeSettings, PayPalSettings } from '@/lib/placeholder-data';
 import { useState, useEffect } from 'react';
 import { Loader2 } from 'lucide-react';
 import { useCart } from '@/hooks/use-cart';
@@ -24,9 +24,12 @@ export default function CheckoutPage() {
   const [isLoading, setIsLoading] = useState(false);
   const { cart, subtotal, clearCart, isInitialized } = useCart();
   const [user, setUser] = useState<User | null>(null);
-  const [paymentMethod, setPaymentMethod] = useState<'card' | 'bkash' | 'sslcommerz'>('card');
+  const [paymentMethod, setPaymentMethod] = useState<'card' | 'bkash' | 'sslcommerz' | 'cod' | 'stripe' | 'paypal'>('card');
   const [bkashEnabled, setBkashEnabled] = useState(false);
   const [sslCommerzEnabled, setSslCommerzEnabled] = useState(false);
+  const [codEnabled, setCodEnabled] = useState(false);
+  const [stripeEnabled, setStripeEnabled] = useState(false);
+  const [paypalEnabled, setPaypalEnabled] = useState(false);
 
   const [shippingAddress, setShippingAddress] = useState({
     firstName: "John",
@@ -81,8 +84,53 @@ export default function CheckoutPage() {
       }
     };
 
+    // Check if COD is enabled
+    const checkCODSettings = async () => {
+      try {
+        const settingsRef = doc(db, 'admin_settings', 'cod_payment');
+        const settingsSnap = await getDoc(settingsRef);
+        if (settingsSnap.exists()) {
+          const settings = settingsSnap.data() as CODSettings;
+          setCodEnabled(settings.isEnabled);
+        }
+      } catch (error) {
+        console.error('Error checking COD settings:', error);
+      }
+    };
+
+    // Check if Stripe is enabled
+    const checkStripeSettings = async () => {
+      try {
+        const settingsRef = doc(db, 'admin_settings', 'stripe_payment');
+        const settingsSnap = await getDoc(settingsRef);
+        if (settingsSnap.exists()) {
+          const settings = settingsSnap.data() as StripeSettings;
+          setStripeEnabled(settings.isEnabled);
+        }
+      } catch (error) {
+        console.error('Error checking Stripe settings:', error);
+      }
+    };
+
+    // Check if PayPal is enabled
+    const checkPayPalSettings = async () => {
+      try {
+        const settingsRef = doc(db, 'admin_settings', 'paypal_payment');
+        const settingsSnap = await getDoc(settingsRef);
+        if (settingsSnap.exists()) {
+          const settings = settingsSnap.data() as PayPalSettings;
+          setPaypalEnabled(settings.isEnabled);
+        }
+      } catch (error) {
+        console.error('Error checking PayPal settings:', error);
+      }
+    };
+
     checkBkashSettings();
     checkSSLSettings();
+    checkCODSettings();
+    checkStripeSettings();
+    checkPayPalSettings();
   }, []);
 
   useEffect(() => {
@@ -106,6 +154,12 @@ export default function CheckoutPage() {
       await handleBkashPayment();
     } else if (paymentMethod === 'sslcommerz') {
       await handleSSLCommerzPayment();
+    } else if (paymentMethod === 'cod') {
+      await handleCODPayment();
+    } else if (paymentMethod === 'stripe') {
+      await handleStripePayment();
+    } else if (paymentMethod === 'paypal') {
+      await handlePayPalPayment();
     } else {
       await handleCardPayment();
     }
@@ -314,6 +368,111 @@ export default function CheckoutPage() {
     }
   };
 
+  const handleCODPayment = async () => {
+    setIsLoading(true);
+
+    try {
+      const customerRef = doc(db, 'customers', user!.uid);
+      const customerSnap = await getDoc(customerRef);
+
+      if (!customerSnap.exists()) {
+        throw new Error("Customer data not found.");
+      }
+
+      const customerData = customerSnap.data() as Customer;
+
+      const newOrderRef = doc(collection(db, 'orders'));
+      const orderId = newOrderRef.id;
+
+      const newOrder: Order = {
+        id: orderId,
+        userId: user!.uid,
+        customerEmail: user!.email ?? '',
+        orderNumber: `USA-${Math.floor(Math.random() * 900000) + 100000}`,
+        date: new Date().toISOString(),
+        customerName: customerData.name || 'N/A',
+        customerAvatar: customerData.avatar || `https://placehold.co/40x40.png?text=${customerData.name?.charAt(0) || 'U'}`,
+        status: 'Pending',
+        total: total,
+        paymentMethod: 'cod',
+        paymentStatus: 'pending',
+        shippingAddress: {
+          street: shippingAddress.address,
+          city: shippingAddress.city,
+          state: shippingAddress.state,
+          zipCode: shippingAddress.zipCode,
+          country: shippingAddress.country,
+        },
+        items: cart.map(item => ({
+          productId: item.id,
+          name: item.name,
+          image: item.images[0],
+          quantity: item.quantity,
+          price: item.price,
+          productType: item.productType,
+          downloadUrl: item.downloadUrl,
+          digitalProductNote: item.digitalProductNote,
+          permalink: item.permalink,
+        })),
+      };
+
+      await setDoc(newOrderRef, newOrder);
+
+      clearCart();
+
+      setTimeout(() => {
+        router.push(`/checkout/thank-you?orderId=${orderId}`);
+      }, 500);
+
+    } catch (error) {
+      console.error("Failed to place COD order:", error);
+      toast({
+        variant: 'destructive',
+        title: 'Order Failed',
+        description: 'There was a problem placing your order. Please try again.',
+      });
+      setIsLoading(false);
+    }
+  };
+
+  const handleStripePayment = async () => {
+    setIsLoading(true);
+    try {
+      toast({
+        title: 'Coming Soon',
+        description: 'Stripe payment integration is not yet implemented. Please configure Stripe API keys and complete the integration.',
+      });
+      setIsLoading(false);
+    } catch (error) {
+      console.error("Failed to initiate Stripe payment:", error);
+      toast({
+        variant: 'destructive',
+        title: 'Payment Failed',
+        description: 'There was a problem initiating Stripe payment. Please try again.',
+      });
+      setIsLoading(false);
+    }
+  };
+
+  const handlePayPalPayment = async () => {
+    setIsLoading(true);
+    try {
+      toast({
+        title: 'Coming Soon',
+        description: 'PayPal payment integration is not yet implemented. Please configure PayPal API credentials and complete the integration.',
+      });
+      setIsLoading(false);
+    } catch (error) {
+      console.error("Failed to initiate PayPal payment:", error);
+      toast({
+        variant: 'destructive',
+        title: 'Payment Failed',
+        description: 'There was a problem initiating PayPal payment. Please try again.',
+      });
+      setIsLoading(false);
+    }
+  };
+
 
   const handleShippingChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { id, value } = e.target;
@@ -400,7 +559,7 @@ export default function CheckoutPage() {
                   <CardContent className="pt-6 space-y-6">
                     <div className="space-y-4">
                       <Label>Payment Method</Label>
-                      <RadioGroup value={paymentMethod} onValueChange={(value) => setPaymentMethod(value as 'card' | 'bkash' | 'sslcommerz')}>
+                      <RadioGroup value={paymentMethod} onValueChange={(value) => setPaymentMethod(value as 'card' | 'bkash' | 'sslcommerz' | 'cod' | 'stripe' | 'paypal')}>
                         <div className="flex items-center space-x-2">
                           <RadioGroupItem value="card" id="card" />
                           <Label htmlFor="card" className="font-normal cursor-pointer">Credit / Debit Card</Label>
@@ -420,6 +579,33 @@ export default function CheckoutPage() {
                             <Label htmlFor="sslcommerz" className="font-normal cursor-pointer flex items-center gap-2">
                               <span className="px-2 py-1 bg-blue-600 text-white text-xs font-semibold rounded">SSLCommerz</span>
                               Cards / Mobile Banking
+                            </Label>
+                          </div>
+                        )}
+                        {codEnabled && (
+                          <div className="flex items-center space-x-2">
+                            <RadioGroupItem value="cod" id="cod" />
+                            <Label htmlFor="cod" className="font-normal cursor-pointer flex items-center gap-2">
+                              <span className="px-2 py-1 bg-green-600 text-white text-xs font-semibold rounded">COD</span>
+                              Cash on Delivery
+                            </Label>
+                          </div>
+                        )}
+                        {stripeEnabled && (
+                          <div className="flex items-center space-x-2">
+                            <RadioGroupItem value="stripe" id="stripe" />
+                            <Label htmlFor="stripe" className="font-normal cursor-pointer flex items-center gap-2">
+                              <span className="px-2 py-1 bg-purple-600 text-white text-xs font-semibold rounded">Stripe</span>
+                              Credit / Debit Card
+                            </Label>
+                          </div>
+                        )}
+                        {paypalEnabled && (
+                          <div className="flex items-center space-x-2">
+                            <RadioGroupItem value="paypal" id="paypal" />
+                            <Label htmlFor="paypal" className="font-normal cursor-pointer flex items-center gap-2">
+                              <span className="px-2 py-1 bg-blue-500 text-white text-xs font-semibold rounded">PayPal</span>
+                              PayPal Account
                             </Label>
                           </div>
                         )}
@@ -475,6 +661,57 @@ export default function CheckoutPage() {
                         </div>
                         <p className="text-sm">
                           After clicking "Place Order", you'll be redirected to the secure SSLCommerz payment gateway to complete your transaction.
+                        </p>
+                      </div>
+                    )}
+
+                    {paymentMethod === 'cod' && (
+                      <div className="p-6 bg-green-50 dark:bg-green-950/20 rounded-lg border-2 border-green-200 dark:border-green-900">
+                        <div className="flex items-center gap-3 mb-4">
+                          <div className="w-12 h-12 bg-green-600 rounded-full flex items-center justify-center">
+                            <span className="text-white font-bold text-lg">💵</span>
+                          </div>
+                          <div>
+                            <h4 className="font-semibold text-lg">Cash on Delivery</h4>
+                            <p className="text-sm text-muted-foreground">Pay with cash when you receive your order</p>
+                          </div>
+                        </div>
+                        <p className="text-sm">
+                          After clicking "Place Order", your order will be confirmed. Please have the exact amount ready when the delivery arrives.
+                        </p>
+                      </div>
+                    )}
+
+                    {paymentMethod === 'stripe' && (
+                      <div className="p-6 bg-purple-50 dark:bg-purple-950/20 rounded-lg border-2 border-purple-200 dark:border-purple-900">
+                        <div className="flex items-center gap-3 mb-4">
+                          <div className="w-12 h-12 bg-purple-600 rounded-full flex items-center justify-center">
+                            <span className="text-white font-bold text-lg">S</span>
+                          </div>
+                          <div>
+                            <h4 className="font-semibold text-lg">Stripe Payment</h4>
+                            <p className="text-sm text-muted-foreground">Secure card payments powered by Stripe</p>
+                          </div>
+                        </div>
+                        <p className="text-sm">
+                          After clicking "Place Order", you'll be redirected to the secure Stripe payment gateway to complete your transaction.
+                        </p>
+                      </div>
+                    )}
+
+                    {paymentMethod === 'paypal' && (
+                      <div className="p-6 bg-blue-50 dark:bg-blue-950/20 rounded-lg border-2 border-blue-200 dark:border-blue-900">
+                        <div className="flex items-center gap-3 mb-4">
+                          <div className="w-12 h-12 bg-blue-500 rounded-full flex items-center justify-center">
+                            <span className="text-white font-bold text-lg">P</span>
+                          </div>
+                          <div>
+                            <h4 className="font-semibold text-lg">PayPal Payment</h4>
+                            <p className="text-sm text-muted-foreground">Pay with your PayPal account</p>
+                          </div>
+                        </div>
+                        <p className="text-sm">
+                          After clicking "Place Order", you'll be redirected to PayPal to log in and complete your payment securely.
                         </p>
                       </div>
                     )}
