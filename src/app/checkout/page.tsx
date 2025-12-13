@@ -337,7 +337,11 @@ export default function CheckoutPage() {
           id: selectedMethod.id,
           title: selectedMethod.title,
           cost: selectedMethod.cost,
-        } : undefined,
+        } : {
+          id: 'flat_rate',
+          title: 'Flat Rate',
+          cost: shipping,
+        },
         paymentMethod: 'cod',
         paymentStatus: 'pending',
         shippingAddress: {
