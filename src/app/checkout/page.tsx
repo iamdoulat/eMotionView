@@ -43,6 +43,7 @@ export default function CheckoutPage() {
     state: "CA",
     zipCode: "12345",
     country: "USA",
+    phone: "",
   });
 
   const shipping = shippingCost;
@@ -457,7 +458,8 @@ export default function CheckoutPage() {
       'city': 'city',
       'zip': 'zipCode',
       'state': 'state',
-      'country': 'country'
+      'country': 'country',
+      'phone': 'phone'
     } as const;
 
     type FormId = keyof typeof keyMap;
@@ -521,6 +523,10 @@ export default function CheckoutPage() {
                         <Label htmlFor="country">Country</Label>
                         <Input id="country" placeholder="USA" defaultValue={shippingAddress.country} onChange={handleShippingChange} />
                       </div>
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="phone">Mobile Number</Label>
+                      <Input id="phone" placeholder="01700000000" defaultValue={shippingAddress.phone} onChange={handleShippingChange} />
                     </div>
                   </CardContent>
                 </Card>

@@ -52,6 +52,7 @@ export type ShippingAddress = {
   state: string;
   zipCode: string;
   country: string;
+  phone?: string;
 }
 
 export type PaymentMethod = 'card' | 'bkash' | 'sslcommerz' | 'cod' | 'stripe' | 'paypal';

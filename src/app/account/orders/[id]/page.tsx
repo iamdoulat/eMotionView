@@ -253,6 +253,7 @@ export default function OrderDetailPage() {
                                         <p style={{ margin: 0 }}>{order.shippingAddress.street}</p>
                                         <p style={{ margin: 0 }}>{order.shippingAddress.city}, {order.shippingAddress.state} {order.shippingAddress.zipCode}</p>
                                         <p style={{ margin: 0 }}>{order.shippingAddress.country}</p>
+                                        {order.shippingAddress.phone && <p style={{ margin: 0 }}>Mobile: {order.shippingAddress.phone}</p>}
                                     </>
                                 ) : (
                                     <>
@@ -391,6 +392,12 @@ export default function OrderDetailPage() {
                                             {order.shippingAddress.street}<br />
                                             {order.shippingAddress.city}, {order.shippingAddress.state} {order.shippingAddress.zipCode}<br />
                                             {order.shippingAddress.country}
+                                            {order.shippingAddress.phone && (
+                                                <>
+                                                    <br />
+                                                    {order.shippingAddress.phone}
+                                                </>
+                                            )}
                                         </>
                                     ) : (
                                         <>
