@@ -73,8 +73,12 @@ export default function OrderDetailPage() {
                         setFormattedInvoiceDate(new Date(foundOrder.date).toLocaleDateString());
 
                         // Generate QR code with order details
+                        // Generate QR code with order details
                         const totalQty = foundOrder.items.reduce((sum, item) => sum + item.quantity, 0);
-                        const qrData = `Order: ${foundOrder.orderNumber}\nCustomer: ${foundOrder.customerName}\nDate: ${new Date(foundOrder.date).toLocaleDateString()}\nQty: ${totalQty}\nTotal: $${foundOrder.total.toFixed(2)}`;
+                        const paymentMethodLabel = foundOrder.paymentMethod === 'cod' ? 'COD' : foundOrder.paymentMethod === 'bkash' ? 'bKash' : foundOrder.paymentMethod?.toUpperCase() || 'N/A';
+                        const shippingMethodLabel = foundOrder.shippingMethod?.title || 'Standard Shipping';
+
+                        const qrData = `Order: ${foundOrder.orderNumber}\nCustomer: ${foundOrder.customerName}\nDate: ${new Date(foundOrder.date).toLocaleDateString()}\nQty: ${totalQty}\nTotal: $${foundOrder.total.toFixed(2)}\nPayment: ${paymentMethodLabel}\nShipping: ${shippingMethodLabel}`;
 
                         QRCode.toDataURL(qrData, { width: 112, margin: 1 })
                             .then(url => setQrCodeUrl(url))
@@ -240,21 +244,31 @@ export default function OrderDetailPage() {
                             </div>
                         </div>
 
-                        <div style={{ marginBottom: '2rem' }}>
-                            <h3 style={{ fontWeight: 'bold', borderBottom: '1px solid #eee', paddingBottom: '0.5rem', marginBottom: '0.5rem' }}>Customer Address</h3>
-                            <p style={{ margin: 0 }}>{order.customerName}</p>
-                            {order.shippingAddress ? (
-                                <>
-                                    <p style={{ margin: 0 }}>{order.shippingAddress.street}</p>
-                                    <p style={{ margin: 0 }}>{order.shippingAddress.city}, {order.shippingAddress.state} {order.shippingAddress.zipCode}</p>
-                                    <p style={{ margin: 0 }}>{order.shippingAddress.country}</p>
-                                </>
-                            ) : (
-                                <>
-                                    <p style={{ margin: 0 }}>123 Main Street</p>
-                                    <p style={{ margin: 0 }}>Anytown, USA 12345</p>
-                                </>
-                            )}
+                        <div style={{ marginBottom: '2rem', display: 'flex', justifyContent: 'space-between' }}>
+                            <div style={{ width: '45%' }}>
+                                <h3 style={{ fontWeight: 'bold', borderBottom: '1px solid #eee', paddingBottom: '0.5rem', marginBottom: '0.5rem' }}>Customer Address</h3>
+                                <p style={{ margin: 0 }}>{order.customerName}</p>
+                                {order.shippingAddress ? (
+                                    <>
+                                        <p style={{ margin: 0 }}>{order.shippingAddress.street}</p>
+                                        <p style={{ margin: 0 }}>{order.shippingAddress.city}, {order.shippingAddress.state} {order.shippingAddress.zipCode}</p>
+                                        <p style={{ margin: 0 }}>{order.shippingAddress.country}</p>
+                                    </>
+                                ) : (
+                                    <>
+                                        <p style={{ margin: 0 }}>123 Main Street</p>
+                                        <p style={{ margin: 0 }}>Anytown, USA 12345</p>
+                                    </>
+                                )}
+                            </div>
+                            <div style={{ width: '45%' }}>
+                                <h3 style={{ fontWeight: 'bold', borderBottom: '1px solid #eee', paddingBottom: '0.5rem', marginBottom: '0.5rem' }}>Payment Information</h3>
+                                <p style={{ margin: '0.25rem 0' }}><strong>Payment Method:</strong> {order.paymentMethod === 'cod' ? 'COD' : order.paymentMethod === 'bkash' ? 'bKash' : order.paymentMethod?.toUpperCase() || 'N/A'}</p>
+                                {order.paymentStatus && (
+                                    <p style={{ margin: '0.25rem 0', textTransform: 'capitalize' }}><strong>Payment Status:</strong> {order.paymentStatus}</p>
+                                )}
+                                <p style={{ margin: '0.25rem 0' }}><strong>Shipping Method:</strong> {order.shippingMethod?.title || 'Standard Shipping'}</p>
+                            </div>
                         </div>
 
                         <table style={{ width: '100%', borderCollapse: 'collapse', marginBottom: '2rem' }}>
