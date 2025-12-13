@@ -38,8 +38,19 @@ export function useShipping(subtotal: number = 0) {
 
                     setMethods(availableMethods);
 
-                    // Auto-select first available method if none selected
-                    if (availableMethods.length > 0 && !selectedMethod) {
+                    const freeShippingMethod = availableMethods.find(m =>
+                        m.type === 'free_shipping' &&
+                        subtotal >= (m.minOrderAmount || 0) &&
+                        m.isEnabled
+                    );
+
+                    if (freeShippingMethod) {
+                        // Auto-select Free Shipping if available and eligible
+                        if (selectedMethod?.id !== freeShippingMethod.id) {
+                            setSelectedMethod(freeShippingMethod);
+                        }
+                    } else if (availableMethods.length > 0 && !selectedMethod) {
+                        // Otherwise select first available method if none selected
                         setSelectedMethod(availableMethods[0]);
                     }
                 } else {
