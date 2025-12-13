@@ -3,7 +3,6 @@
 import Image from 'next/image';
 import { notFound } from 'next/navigation';
 import { Breadcrumb } from '@/components/breadcrumb';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Table, TableBody, TableCell, TableRow } from "@/components/ui/table"
 import Link from 'next/link';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -101,17 +100,19 @@ export default async function ProductDetailPage({ params }: { params: { id: stri
         </div>
 
         <div className="mt-12">
-          <Tabs defaultValue="specification" className="w-full">
-            <div className="border-b-2">
-              <TabsList className="grid grid-cols-2 sm:flex sm:flex-wrap bg-transparent p-0 h-auto justify-start w-full">
-                <TabsTrigger value="specification" className="data-[state=active]:border-b-2 data-[state=active]:border-primary data-[state=active]:text-foreground data-[state=active]:shadow-none rounded-none bg-transparent text-lg font-semibold py-3">Specification</TabsTrigger>
-                <TabsTrigger value="description" className="data-[state=active]:border-b-2 data-[state=active]:border-primary data-[state=active]:text-foreground data-[state=active]:shadow-none rounded-none bg-transparent text-lg font-semibold py-3">Description</TabsTrigger>
-                <TabsTrigger value="reviews" id="reviews" className="data-[state=active]:border-b-2 data-[state=active]:border-primary data-[state=active]:text-foreground data-[state=active]:shadow-none rounded-none bg-transparent text-lg font-semibold py-3">Reviews</TabsTrigger>
-                <TabsTrigger value="questions" className="data-[state=active]:border-b-2 data-[state=active]:border-primary data-[state=active]:text-foreground data-[state=active]:shadow-none rounded-none bg-transparent text-lg font-semibold py-3">Questions</TabsTrigger>
-                <TabsTrigger value="video" className="data-[state=active]:border-b-2 data-[state=active]:border-primary data-[state=active]:text-foreground data-[state=active]:shadow-none rounded-none bg-transparent text-lg font-semibold py-3">Video</TabsTrigger>
-              </TabsList>
+          <div className="flex flex-col gap-12">
+            <div className="sticky top-0 z-40 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 border-b w-full">
+              <nav className="flex items-center gap-6 overflow-x-auto py-4 text-sm font-medium">
+                <a href="#specification" className="transition-colors hover:text-foreground/80 text-foreground/60">Specification</a>
+                <a href="#description" className="transition-colors hover:text-foreground/80 text-foreground/60">Description</a>
+                <a href="#questions" className="transition-colors hover:text-foreground/80 text-foreground/60">Questions</a>
+                <a href="#video" className="transition-colors hover:text-foreground/80 text-foreground/60">Video</a>
+                <a href="#reviews" className="transition-colors hover:text-foreground/80 text-foreground/60">Reviews</a>
+              </nav>
             </div>
-            <TabsContent value="specification" className="mt-6">
+
+            <section id="specification" className="scroll-mt-20">
+              <h2 className="text-2xl font-bold mb-6">Specification</h2>
               <Card>
                 <CardHeader>
                   <CardTitle>General Information</CardTitle>
@@ -129,8 +130,10 @@ export default async function ProductDetailPage({ params }: { params: { id: stri
                   </Table>
                 </CardContent>
               </Card>
-            </TabsContent>
-            <TabsContent value="description" className="mt-6">
+            </section>
+
+            <section id="description" className="scroll-mt-20">
+              <h2 className="text-2xl font-bold mb-6">Description</h2>
               <Card>
                 <CardContent className="pt-6">
                   <div
@@ -139,11 +142,10 @@ export default async function ProductDetailPage({ params }: { params: { id: stri
                   />
                 </CardContent>
               </Card>
-            </TabsContent>
-            <TabsContent value="reviews" className="mt-6">
-              <Reviews productId={product.id} reviews={approvedReviews} averageRating={averageRating} />
-            </TabsContent>
-            <TabsContent value="questions" className="mt-6">
+            </section>
+
+            <section id="questions" className="scroll-mt-20">
+              <h2 className="text-2xl font-bold mb-6">Questions</h2>
               <Card>
                 <CardHeader>
                   <CardTitle>Questions & Answers</CardTitle>
@@ -152,8 +154,10 @@ export default async function ProductDetailPage({ params }: { params: { id: stri
                   <p className="text-muted-foreground">No questions have been asked yet. Be the first!</p>
                 </CardContent>
               </Card>
-            </TabsContent>
-            <TabsContent value="video" className="mt-6">
+            </section>
+
+            <section id="video" className="scroll-mt-20">
+              <h2 className="text-2xl font-bold mb-6">Video</h2>
               <Card>
                 <CardHeader>
                   <CardTitle>Product Video</CardTitle>
@@ -171,8 +175,13 @@ export default async function ProductDetailPage({ params }: { params: { id: stri
                   </div>
                 </CardContent>
               </Card>
-            </TabsContent>
-          </Tabs>
+            </section>
+
+            <section id="reviews" className="scroll-mt-20">
+              <h2 className="text-2xl font-bold mb-6">Reviews</h2>
+              <Reviews productId={product.id} reviews={approvedReviews} averageRating={averageRating} />
+            </section>
+          </div>
         </div>
       </div>
     </div>
