@@ -98,6 +98,14 @@ export default function PaymentsPage() {
         switch (method) {
             case 'bkash':
                 return <Badge className="bg-pink-600 hover:bg-pink-700">Bkash</Badge>;
+            case 'sslcommerz':
+                return <Badge className="bg-blue-600 hover:bg-blue-700">SSLCommerz</Badge>;
+            case 'cod':
+                return <Badge className="bg-green-600 hover:bg-green-700">COD</Badge>;
+            case 'stripe':
+                return <Badge className="bg-purple-600 hover:bg-purple-700">Stripe</Badge>;
+            case 'paypal':
+                return <Badge className="bg-blue-500 hover:bg-blue-600">PayPal</Badge>;
             case 'card':
                 return <Badge variant="secondary">Card</Badge>;
             default:
@@ -113,7 +121,10 @@ export default function PaymentsPage() {
             order.paymentMethod || 'N/A',
             order.total.toFixed(2),
             order.paymentStatus || 'N/A',
-            order.paymentDetails?.bkash?.trxID || 'N/A',
+            order.paymentDetails?.bkash?.trxID ||
+            order.paymentDetails?.sslcommerz?.tran_id ||
+            order.paymentDetails?.bkash?.transactionID ||
+            order.paymentDetails?.bkash?.paymentID || 'N/A',
             new Date(order.date).toLocaleDateString(),
         ]);
 
@@ -201,7 +212,10 @@ export default function PaymentsPage() {
                                         <TableCell>${order.total.toFixed(2)}</TableCell>
                                         <TableCell>{getPaymentStatusBadge(order.paymentStatus)}</TableCell>
                                         <TableCell className="font-mono text-sm">
-                                            {order.paymentDetails?.bkash?.trxID || 'N/A'}
+                                            {order.paymentDetails?.bkash?.trxID ||
+                                                order.paymentDetails?.sslcommerz?.tran_id ||
+                                                order.paymentDetails?.bkash?.transactionID ||
+                                                order.paymentDetails?.bkash?.paymentID || 'N/A'}
                                         </TableCell>
                                         <TableCell>{new Date(order.date).toLocaleDateString()}</TableCell>
                                         <TableCell>

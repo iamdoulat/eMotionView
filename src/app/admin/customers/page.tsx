@@ -27,25 +27,26 @@ export default function AdminCustomersPage() {
   const [isSaving, setIsSaving] = useState(false);
   const [customerToEdit, setCustomerToEdit] = useState<User | null>(null);
   const [customerToDelete, setCustomerToDelete] = useState<User | null>(null);
+  const [customerToView, setCustomerToView] = useState<User | null>(null);
   const { toast } = useToast();
 
   useEffect(() => {
     const fetchCustomers = async () => {
-        setIsLoading(true);
-        try {
-            const customersSnapshot = await getDocs(collection(db, 'customers'));
-            const customerList = customersSnapshot.docs.map(doc => docToJSON(doc) as User);
-            setCustomers(customerList);
-        } catch (error) {
-            console.error("Failed to fetch customers:", error);
-            toast({
-                variant: 'destructive',
-                title: 'Error Fetching Customers',
-                description: 'Could not load customer data. Please ensure you are logged in as an admin and have deployed the latest Firestore security rules.',
-            });
-        } finally {
-            setIsLoading(false);
-        }
+      setIsLoading(true);
+      try {
+        const customersSnapshot = await getDocs(collection(db, 'customers'));
+        const customerList = customersSnapshot.docs.map(doc => docToJSON(doc) as User);
+        setCustomers(customerList);
+      } catch (error) {
+        console.error("Failed to fetch customers:", error);
+        toast({
+          variant: 'destructive',
+          title: 'Error Fetching Customers',
+          description: 'Could not load customer data. Please ensure you are logged in as an admin and have deployed the latest Firestore security rules.',
+        });
+      } finally {
+        setIsLoading(false);
+      }
     }
     fetchCustomers();
   }, [toast]);
@@ -54,30 +55,30 @@ export default function AdminCustomersPage() {
     if (!customerToEdit) return;
     setIsSaving(true);
     try {
-        const docRef = doc(db, 'customers', customerToEdit.id);
-        await setDoc(docRef, customerToEdit, { merge: true });
-        setCustomers(customers.map(u => u.id === customerToEdit.id ? customerToEdit : u));
-        toast({ title: "Success", description: "Customer updated successfully." });
-        setCustomerToEdit(null);
+      const docRef = doc(db, 'customers', customerToEdit.id);
+      await setDoc(docRef, customerToEdit, { merge: true });
+      setCustomers(customers.map(u => u.id === customerToEdit.id ? customerToEdit : u));
+      toast({ title: "Success", description: "Customer updated successfully." });
+      setCustomerToEdit(null);
     } catch (error) {
-        console.error("Error updating customer: ", error);
-        toast({ variant: 'destructive', title: "Error", description: "Could not update customer." });
+      console.error("Error updating customer: ", error);
+      toast({ variant: 'destructive', title: "Error", description: "Could not update customer." });
     } finally {
-        setIsSaving(false);
+      setIsSaving(false);
     }
   };
 
   const handleDeleteUser = async () => {
     if (!customerToDelete) return;
     try {
-        await deleteDoc(doc(db, 'customers', customerToDelete.id));
-        setCustomers(customers.filter(u => u.id !== customerToDelete.id));
-        toast({ title: "Success", description: "Customer deleted successfully." });
+      await deleteDoc(doc(db, 'customers', customerToDelete.id));
+      setCustomers(customers.filter(u => u.id !== customerToDelete.id));
+      toast({ title: "Success", description: "Customer deleted successfully." });
     } catch (error) {
-        console.error("Error deleting customer: ", error);
-        toast({ variant: 'destructive', title: "Error", description: "Could not delete customer." });
+      console.error("Error deleting customer: ", error);
+      toast({ variant: 'destructive', title: "Error", description: "Could not delete customer." });
     } finally {
-        setCustomerToDelete(null);
+      setCustomerToDelete(null);
     }
   };
 
@@ -93,6 +94,7 @@ export default function AdminCustomersPage() {
             <TableHeader>
               <TableRow>
                 <TableHead>Customer</TableHead>
+                <TableHead>Mobile</TableHead>
                 <TableHead>Points</TableHead>
                 <TableHead>Status</TableHead>
                 <TableHead className="hidden md:table-cell">Registered</TableHead>
@@ -105,16 +107,16 @@ export default function AdminCustomersPage() {
             <TableBody>
               {isLoading ? (
                 <TableRow>
-                    <TableCell colSpan={6} className="h-24 text-center">
-                        <Loader2 className="h-6 w-6 animate-spin mx-auto" />
-                    </TableCell>
+                  <TableCell colSpan={6} className="h-24 text-center">
+                    <Loader2 className="h-6 w-6 animate-spin mx-auto" />
+                  </TableCell>
                 </TableRow>
               ) : customers.length > 0 ? customers.map((user) => (
                 <TableRow key={user.id}>
                   <TableCell>
                     <div className="flex items-center gap-4">
                       <Avatar className="h-9 w-9">
-                        <AvatarImage src={user.avatar} alt={user.name} data-ai-hint="person face"/>
+                        <AvatarImage src={user.avatar} alt={user.name} data-ai-hint="person face" />
                         <AvatarFallback>{user.name.split(' ').map(n => n[0]).join('')}</AvatarFallback>
                       </Avatar>
                       <div className="grid gap-1">
@@ -123,7 +125,10 @@ export default function AdminCustomersPage() {
                       </div>
                     </div>
                   </TableCell>
-                   <TableCell>
+                  <TableCell>
+                    {user.mobileNumber || 'N/A'}
+                  </TableCell>
+                  <TableCell>
                     {user.points?.toLocaleString() || 0}
                   </TableCell>
                   <TableCell>
@@ -143,35 +148,89 @@ export default function AdminCustomersPage() {
                       </DropdownMenuTrigger>
                       <DropdownMenuContent align="end">
                         <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                        <DropdownMenuItem>
-                            <View className="mr-2 h-4 w-4" />
-                            View Details
+                        <DropdownMenuItem onClick={() => setCustomerToView(user)}>
+                          <View className="mr-2 h-4 w-4" />
+                          View Details
                         </DropdownMenuItem>
                         <DropdownMenuItem onClick={() => setCustomerToEdit(user)}>
-                            <Edit className="mr-2 h-4 w-4" />
-                            Edit
+                          <Edit className="mr-2 h-4 w-4" />
+                          Edit
                         </DropdownMenuItem>
                         <DropdownMenuSeparator />
                         <DropdownMenuItem className="text-destructive" onClick={() => setCustomerToDelete(user)}>
-                            <Trash2 className="mr-2 h-4 w-4" />
-                            Delete
+                          <Trash2 className="mr-2 h-4 w-4" />
+                          Delete
                         </DropdownMenuItem>
                       </DropdownMenuContent>
                     </DropdownMenu>
                   </TableCell>
                 </TableRow>
               )) : (
-                 <TableRow>
-                    <TableCell colSpan={6} className="h-24 text-center">
-                        No customers found.
-                    </TableCell>
+                <TableRow>
+                  <TableCell colSpan={6} className="h-24 text-center">
+                    No customers found.
+                  </TableCell>
                 </TableRow>
               )}
             </TableBody>
           </Table>
         </CardContent>
       </Card>
-      
+
+      <Dialog open={!!customerToView} onOpenChange={(open) => !open && setCustomerToView(null)}>
+        <DialogContent className="sm:max-w-lg">
+          <DialogHeader>
+            <DialogTitle>Customer Details</DialogTitle>
+          </DialogHeader>
+          {customerToView && (
+            <div className="grid gap-4 py-4">
+              <div className="flex items-center gap-4">
+                <Avatar className="h-16 w-16">
+                  <AvatarImage src={customerToView.avatar} alt={customerToView.name} />
+                  <AvatarFallback>{customerToView.name.split(' ').map(n => n[0]).join('')}</AvatarFallback>
+                </Avatar>
+                <div>
+                  <h3 className="font-semibold text-lg">{customerToView.name}</h3>
+                  <p className="text-sm text-muted-foreground">{customerToView.email}</p>
+                  <Badge variant={customerToView.status === 'Active' ? 'default' : 'secondary'} className="mt-1">
+                    {customerToView.status}
+                  </Badge>
+                </div>
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <Label className="text-xs text-muted-foreground">Mobile Number</Label>
+                  <p className="text-sm font-medium">{customerToView.mobileNumber || 'N/A'}</p>
+                </div>
+                <div>
+                  <Label className="text-xs text-muted-foreground">Points</Label>
+                  <p className="text-sm font-medium">{customerToView.points || 0}</p>
+                </div>
+                <div>
+                  <Label className="text-xs text-muted-foreground">Role</Label>
+                  <p className="text-sm font-medium">{customerToView.role}</p>
+                </div>
+                <div>
+                  <Label className="text-xs text-muted-foreground">User ID</Label>
+                  <p className="text-sm font-mono text-muted-foreground truncate" title={customerToView.id}>{customerToView.id}</p>
+                </div>
+                <div>
+                  <Label className="text-xs text-muted-foreground">Registered</Label>
+                  <p className="text-sm font-medium">{new Date(customerToView.registeredDate).toLocaleDateString()}</p>
+                </div>
+                <div>
+                  <Label className="text-xs text-muted-foreground">Last Login</Label>
+                  <p className="text-sm font-medium">{format(new Date(customerToView.lastLogin), "PPP p")}</p>
+                </div>
+              </div>
+            </div>
+          )}
+          <DialogFooter>
+            <Button onClick={() => setCustomerToView(null)}>Close</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
       <Dialog open={!!customerToEdit} onOpenChange={(open) => !open && setCustomerToEdit(null)}>
         <DialogContent>
           <DialogHeader>
@@ -181,26 +240,26 @@ export default function AdminCustomersPage() {
             <div className="space-y-4 py-4">
               <div className="space-y-2">
                 <Label htmlFor="name">Full Name</Label>
-                <Input id="name" value={customerToEdit.name} onChange={(e) => setCustomerToEdit({...customerToEdit, name: e.target.value})} disabled={isSaving}/>
+                <Input id="name" value={customerToEdit.name} onChange={(e) => setCustomerToEdit({ ...customerToEdit, name: e.target.value })} disabled={isSaving} />
               </div>
               <div className="space-y-2">
                 <Label htmlFor="email">Email</Label>
-                <Input id="email" type="email" value={customerToEdit.email} onChange={(e) => setCustomerToEdit({...customerToEdit, email: e.target.value})} disabled={isSaving}/>
+                <Input id="email" type="email" value={customerToEdit.email} onChange={(e) => setCustomerToEdit({ ...customerToEdit, email: e.target.value })} disabled={isSaving} />
               </div>
-               <div className="space-y-2">
+              <div className="space-y-2">
                 <Label htmlFor="status">Status</Label>
-                 <Select
-                    value={customerToEdit.status}
-                    onValueChange={(value: 'Active' | 'Inactive') => setCustomerToEdit({ ...customerToEdit, status: value })}
-                    disabled={isSaving}
+                <Select
+                  value={customerToEdit.status}
+                  onValueChange={(value: 'Active' | 'Inactive') => setCustomerToEdit({ ...customerToEdit, status: value })}
+                  disabled={isSaving}
                 >
-                    <SelectTrigger id="status">
-                        <SelectValue placeholder="Select status" />
-                    </SelectTrigger>
-                    <SelectContent>
-                        <SelectItem value="Active">Active</SelectItem>
-                        <SelectItem value="Inactive">Inactive</SelectItem>
-                    </SelectContent>
+                  <SelectTrigger id="status">
+                    <SelectValue placeholder="Select status" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="Active">Active</SelectItem>
+                    <SelectItem value="Inactive">Inactive</SelectItem>
+                  </SelectContent>
                 </Select>
               </div>
               <div className="space-y-2">
@@ -212,13 +271,13 @@ export default function AdminCustomersPage() {
           <DialogFooter>
             <Button variant="ghost" onClick={() => setCustomerToEdit(null)} disabled={isSaving}>Cancel</Button>
             <Button onClick={handleSaveChanges} disabled={isSaving}>
-                {isSaving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                Save Changes
+              {isSaving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+              Save Changes
             </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
-      
+
       <AlertDialog open={!!customerToDelete} onOpenChange={(open) => !open && setCustomerToDelete(null)}>
         <AlertDialogContent>
           <AlertDialogHeader>
