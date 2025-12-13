@@ -68,6 +68,8 @@ export default function CheckoutPage() {
         if (bkashSnap.exists()) {
           const settings = bkashSnap.data() as BkashSettings;
           setBkashEnabled(settings.isEnabled ?? false);
+        } else {
+          setBkashEnabled(true); // Default to enabled if not configured
         }
 
         // Check SSLCommerz
@@ -76,6 +78,8 @@ export default function CheckoutPage() {
         if (sslSnap.exists()) {
           const settings = sslSnap.data() as SSLCommerzSettings;
           setSslCommerzEnabled(settings.isEnabled ?? false);
+        } else {
+          setSslCommerzEnabled(true); // Default to enabled if not configured
         }
 
         // Check COD
@@ -84,6 +88,8 @@ export default function CheckoutPage() {
         if (codSnap.exists()) {
           const settings = codSnap.data() as CODSettings;
           setCodEnabled(settings.isEnabled ?? true);
+        } else {
+          setCodEnabled(true); // Default to enabled if not configured
         }
 
         // Check Stripe
@@ -92,6 +98,8 @@ export default function CheckoutPage() {
         if (stripeSnap.exists()) {
           const settings = stripeSnap.data() as StripeSettings;
           setStripeEnabled(settings.isEnabled ?? false);
+        } else {
+          setStripeEnabled(true); // Default to enabled if not configured
         }
 
         // Check PayPal
@@ -100,9 +108,17 @@ export default function CheckoutPage() {
         if (paypalSnap.exists()) {
           const settings = paypalSnap.data() as PayPalSettings;
           setPaypalEnabled(settings.isEnabled ?? false);
+        } else {
+          setPaypalEnabled(true); // Default to enabled if not configured
         }
       } catch (error) {
         console.error('Error checking payment settings:', error);
+        // On error, enable all methods as fallback
+        setBkashEnabled(true);
+        setSslCommerzEnabled(true);
+        setCodEnabled(true);
+        setStripeEnabled(true);
+        setPaypalEnabled(true);
       }
     };
 
