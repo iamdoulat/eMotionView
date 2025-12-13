@@ -15,7 +15,8 @@ import { Skeleton } from "@/components/ui/skeleton";
 
 export default function ProfilePage() {
     const [user, setUser] = useState<User | null>(null);
-    const [name, setName] = useState('');
+    const [firstName, setFirstName] = useState('');
+    const [lastName, setLastName] = useState('');
     const [email, setEmail] = useState('');
     const [mobile, setMobile] = useState('');
     const [street, setStreet] = useState('');
@@ -49,9 +50,18 @@ export default function ProfilePage() {
                 if (userDocSnap.exists()) {
                     setUserCollection(collectionName as 'customers' | 'users');
                     const userData = userDocSnap.data();
-                    setName(userData.name || '');
-                    setEmail(userData.email || '');
-                    setName(userData.name || '');
+
+                    // Split Name
+                    const fullName = userData.name || '';
+                    const firstSpace = fullName.indexOf(' ');
+                    if (firstSpace > 0) {
+                        setFirstName(fullName.substring(0, firstSpace));
+                        setLastName(fullName.substring(firstSpace + 1));
+                    } else {
+                        setFirstName(fullName);
+                        setLastName('');
+                    }
+
                     setEmail(userData.email || '');
                     setMobile(userData.mobileNumber || '');
                     if (userData.shippingAddress) {
@@ -79,8 +89,12 @@ export default function ProfilePage() {
             toast({ variant: 'destructive', title: 'Error', description: 'Could not find user data to update. Please try again.' });
             return;
         }
-        if (!name || name.trim() === '') {
-            toast({ variant: 'destructive', title: 'Validation Error', description: 'Full Name is required.' });
+        if (!firstName || firstName.trim() === '') {
+            toast({ variant: 'destructive', title: 'Validation Error', description: 'First Name is required.' });
+            return;
+        }
+        if (!lastName || lastName.trim() === '') {
+            toast({ variant: 'destructive', title: 'Validation Error', description: 'Last Name is required.' });
             return;
         }
         if (!email || email.trim() === '') {
@@ -95,7 +109,7 @@ export default function ProfilePage() {
         try {
             const userDocRef = doc(db, userCollection, user.uid);
             await setDoc(userDocRef, {
-                name: name,
+                name: `${firstName} ${lastName}`.trim(),
                 email: email, // Note: This doesn't change Firebase Auth email for login
                 mobileNumber: mobile,
                 shippingAddress: {
@@ -174,10 +188,17 @@ export default function ProfilePage() {
                     <CardDescription>Update your personal details here.</CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-4">
-                    <div className="space-y-2">
-                        <Label htmlFor="name">Full Name <span className="text-red-500">*</span></Label>
-                        <Input id="name" value={name} onChange={(e) => setName(e.target.value)} disabled={isSaving} required />
+                    <div className="grid grid-cols-2 gap-4">
+                        <div className="space-y-2">
+                            <Label htmlFor="firstName">First Name <span className="text-red-500">*</span></Label>
+                            <Input id="firstName" value={firstName} onChange={(e) => setFirstName(e.target.value)} disabled={isSaving} required />
+                        </div>
+                        <div className="space-y-2">
+                            <Label htmlFor="lastName">Last Name <span className="text-red-500">*</span></Label>
+                            <Input id="lastName" value={lastName} onChange={(e) => setLastName(e.target.value)} disabled={isSaving} required />
+                        </div>
                     </div>
+
                     <div className="space-y-2">
                         <Label htmlFor="email">Email <span className="text-red-500">*</span></Label>
                         <Input id="email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} disabled={isSaving} required />

@@ -157,7 +157,8 @@ export default function SignUpPage() {
             description = 'Pop-up was blocked. Please enable pop-ups and try again.';
             break;
           default:
-            description = 'Google sign-up failed. Please try again later.';
+            console.error("Google Sign-In Error:", error);
+            description = `Google sign-in failed. (${(error as any).code || (error as any).message})`;
             break;
         }
       }
