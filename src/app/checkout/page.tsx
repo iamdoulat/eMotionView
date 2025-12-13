@@ -18,7 +18,7 @@ import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { onAuthStateChanged, type User } from 'firebase/auth';
 import { auth, db } from '@/lib/firebase';
 import { useToast } from '@/hooks/use-toast';
-import { doc, setDoc, collection, getDoc } from 'firebase/firestore';
+import { doc, setDoc, collection, getDoc, onSnapshot } from 'firebase/firestore';
 
 export default function CheckoutPage() {
   const router = useRouter();
@@ -60,69 +60,103 @@ export default function CheckoutPage() {
   }, [router]);
 
   useEffect(() => {
-    const checkPaymentSettings = async () => {
-      try {
-        // Check Bkash
-        const bkashRef = doc(db, 'admin_settings', 'bkash_payment');
-        const bkashSnap = await getDoc(bkashRef);
-        if (bkashSnap.exists()) {
-          const settings = bkashSnap.data() as BkashSettings;
+    // Set up real-time listeners for all payment method settings
+    const unsubscribers: (() => void)[] = [];
+
+    // Bkash listener
+    const bkashUnsub = onSnapshot(
+      doc(db, 'admin_settings', 'bkash_payment'),
+      (snapshot) => {
+        if (snapshot.exists()) {
+          const settings = snapshot.data() as BkashSettings;
           setBkashEnabled(settings.isEnabled ?? false);
         } else {
-          setBkashEnabled(true); // Default to enabled if not configured
+          setBkashEnabled(true);
         }
+      },
+      (error) => {
+        console.error('Error listening to Bkash settings:', error);
+        setBkashEnabled(true);
+      }
+    );
+    unsubscribers.push(bkashUnsub);
 
-        // Check SSLCommerz
-        const sslRef = doc(db, 'admin_settings', 'sslcommerz_payment');
-        const sslSnap = await getDoc(sslRef);
-        if (sslSnap.exists()) {
-          const settings = sslSnap.data() as SSLCommerzSettings;
+    // SSLCommerz listener
+    const sslUnsub = onSnapshot(
+      doc(db, 'admin_settings', 'sslcommerz_payment'),
+      (snapshot) => {
+        if (snapshot.exists()) {
+          const settings = snapshot.data() as SSLCommerzSettings;
           setSslCommerzEnabled(settings.isEnabled ?? false);
         } else {
-          setSslCommerzEnabled(true); // Default to enabled if not configured
+          setSslCommerzEnabled(true);
         }
+      },
+      (error) => {
+        console.error('Error listening to SSL settings:', error);
+        setSslCommerzEnabled(true);
+      }
+    );
+    unsubscribers.push(sslUnsub);
 
-        // Check COD
-        const codRef = doc(db, 'admin_settings', 'cod_payment');
-        const codSnap = await getDoc(codRef);
-        if (codSnap.exists()) {
-          const settings = codSnap.data() as CODSettings;
+    // COD listener
+    const codUnsub = onSnapshot(
+      doc(db, 'admin_settings', 'cod_payment'),
+      (snapshot) => {
+        if (snapshot.exists()) {
+          const settings = snapshot.data() as CODSettings;
           setCodEnabled(settings.isEnabled ?? true);
         } else {
-          setCodEnabled(true); // Default to enabled if not configured
+          setCodEnabled(true);
         }
+      },
+      (error) => {
+        console.error('Error listening to COD settings:', error);
+        setCodEnabled(true);
+      }
+    );
+    unsubscribers.push(codUnsub);
 
-        // Check Stripe
-        const stripeRef = doc(db, 'admin_settings', 'stripe_payment');
-        const stripeSnap = await getDoc(stripeRef);
-        if (stripeSnap.exists()) {
-          const settings = stripeSnap.data() as StripeSettings;
+    // Stripe listener
+    const stripeUnsub = onSnapshot(
+      doc(db, 'admin_settings', 'stripe_payment'),
+      (snapshot) => {
+        if (snapshot.exists()) {
+          const settings = snapshot.data() as StripeSettings;
           setStripeEnabled(settings.isEnabled ?? false);
         } else {
-          setStripeEnabled(true); // Default to enabled if not configured
+          setStripeEnabled(true);
         }
+      },
+      (error) => {
+        console.error('Error listening to Stripe settings:', error);
+        setStripeEnabled(true);
+      }
+    );
+    unsubscribers.push(stripeUnsub);
 
-        // Check PayPal
-        const paypalRef = doc(db, 'admin_settings', 'paypal_payment');
-        const paypalSnap = await getDoc(paypalRef);
-        if (paypalSnap.exists()) {
-          const settings = paypalSnap.data() as PayPalSettings;
+    // PayPal listener
+    const paypalUnsub = onSnapshot(
+      doc(db, 'admin_settings', 'paypal_payment'),
+      (snapshot) => {
+        if (snapshot.exists()) {
+          const settings = snapshot.data() as PayPalSettings;
           setPaypalEnabled(settings.isEnabled ?? false);
         } else {
-          setPaypalEnabled(true); // Default to enabled if not configured
+          setPaypalEnabled(true);
         }
-      } catch (error) {
-        console.error('Error checking payment settings:', error);
-        // On error, enable all methods as fallback
-        setBkashEnabled(true);
-        setSslCommerzEnabled(true);
-        setCodEnabled(true);
-        setStripeEnabled(true);
+      },
+      (error) => {
+        console.error('Error listening to PayPal settings:', error);
         setPaypalEnabled(true);
       }
-    };
+    );
+    unsubscribers.push(paypalUnsub);
 
-    checkPaymentSettings();
+    // Cleanup all listeners on unmount
+    return () => {
+      unsubscribers.forEach(unsub => unsub());
+    };
   }, []);
 
   useEffect(() => {
