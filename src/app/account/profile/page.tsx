@@ -18,6 +18,11 @@ export default function ProfilePage() {
     const [name, setName] = useState('');
     const [email, setEmail] = useState('');
     const [mobile, setMobile] = useState('');
+    const [street, setStreet] = useState('');
+    const [city, setCity] = useState('');
+    const [state, setState] = useState('');
+    const [zipCode, setZipCode] = useState('');
+    const [country, setCountry] = useState('');
     const [userCollection, setUserCollection] = useState<'customers' | 'users' | null>(null);
 
     const [isLoading, setIsLoading] = useState(true);
@@ -46,7 +51,16 @@ export default function ProfilePage() {
                     const userData = userDocSnap.data();
                     setName(userData.name || '');
                     setEmail(userData.email || '');
+                    setName(userData.name || '');
+                    setEmail(userData.email || '');
                     setMobile(userData.mobileNumber || '');
+                    if (userData.shippingAddress) {
+                        setStreet(userData.shippingAddress.street || '');
+                        setCity(userData.shippingAddress.city || '');
+                        setState(userData.shippingAddress.state || '');
+                        setZipCode(userData.shippingAddress.zipCode || '');
+                        setCountry(userData.shippingAddress.country || '');
+                    }
                 } else {
                     // User exists in Auth but not in Firestore collections, maybe a new signup didn't complete
                     setUserCollection(null);
@@ -84,6 +98,13 @@ export default function ProfilePage() {
                 name: name,
                 email: email, // Note: This doesn't change Firebase Auth email for login
                 mobileNumber: mobile,
+                shippingAddress: {
+                    street,
+                    city,
+                    state,
+                    zipCode,
+                    country
+                }
             }, { merge: true });
             toast({ title: 'Success', description: 'Profile updated successfully.' });
         } catch (error) {
@@ -170,6 +191,45 @@ export default function ProfilePage() {
                     <Button onClick={handleSave} disabled={isSaving}>
                         {isSaving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                         Save Changes
+                    </Button>
+                </CardFooter>
+            </Card>
+
+            <Card className="mt-8">
+                <CardHeader>
+                    <CardTitle>Shipping Address</CardTitle>
+                    <CardDescription>Manage your default shipping address.</CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                    <div className="space-y-2">
+                        <Label htmlFor="street">Street Address</Label>
+                        <Input id="street" value={street} onChange={(e) => setStreet(e.target.value)} disabled={isSaving} placeholder="123 Main St" />
+                    </div>
+                    <div className="grid grid-cols-2 gap-4">
+                        <div className="space-y-2">
+                            <Label htmlFor="city">City</Label>
+                            <Input id="city" value={city} onChange={(e) => setCity(e.target.value)} disabled={isSaving} />
+                        </div>
+                        <div className="space-y-2">
+                            <Label htmlFor="state">State / Province</Label>
+                            <Input id="state" value={state} onChange={(e) => setState(e.target.value)} disabled={isSaving} />
+                        </div>
+                    </div>
+                    <div className="grid grid-cols-2 gap-4">
+                        <div className="space-y-2">
+                            <Label htmlFor="zipCode">Zip Code</Label>
+                            <Input id="zipCode" value={zipCode} onChange={(e) => setZipCode(e.target.value)} disabled={isSaving} />
+                        </div>
+                        <div className="space-y-2">
+                            <Label htmlFor="country">Country</Label>
+                            <Input id="country" value={country} onChange={(e) => setCountry(e.target.value)} disabled={isSaving} />
+                        </div>
+                    </div>
+                </CardContent>
+                <CardFooter>
+                    <Button onClick={handleSave} disabled={isSaving}>
+                        {isSaving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                        Save Address
                     </Button>
                 </CardFooter>
             </Card>

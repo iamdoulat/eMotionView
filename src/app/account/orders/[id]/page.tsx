@@ -305,6 +305,7 @@ export default function OrderDetailPage() {
                                             <img
                                                 src={item.image || 'https://placehold.co/48x48.png'}
                                                 alt=""
+                                                crossOrigin="anonymous"
                                                 style={{ width: '48px', height: '48px', objectFit: 'cover', borderRadius: '4px' }}
                                             />
                                         </td>
