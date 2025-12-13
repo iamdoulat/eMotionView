@@ -36,13 +36,13 @@ export default function CheckoutPage() {
   const [paypalEnabled, setPaypalEnabled] = useState(false);
 
   const [shippingAddress, setShippingAddress] = useState({
-    firstName: "John",
-    lastName: "Doe",
-    address: "123 Main St",
-    city: "Anytown",
-    state: "CA",
-    zipCode: "12345",
-    country: "USA",
+    firstName: "",
+    lastName: "",
+    address: "",
+    city: "",
+    state: "",
+    zipCode: "",
+    country: "",
     phone: "",
   });
 
@@ -68,14 +68,14 @@ export default function CheckoutPage() {
 
             setShippingAddress(prev => ({
               ...prev,
-              firstName: prev.firstName || shipData.firstName || rootFirst,
-              lastName: prev.lastName || shipData.lastName || rootLast,
-              phone: prev.phone || shipData.mobileNumber || data.mobileNumber || '',
-              address: prev.address || shipData.street || '',
-              city: prev.city || shipData.city || '',
-              state: prev.state || shipData.state || '',
-              zipCode: prev.zipCode || shipData.zipCode || '',
-              country: prev.country || shipData.country || ''
+              firstName: shipData.firstName || rootFirst || prev.firstName,
+              lastName: shipData.lastName || rootLast || prev.lastName,
+              phone: shipData.mobileNumber || data.mobileNumber || prev.phone,
+              address: shipData.street || prev.address,
+              city: shipData.city || prev.city,
+              state: shipData.state || prev.state,
+              zipCode: shipData.zipCode || prev.zipCode,
+              country: shipData.country || prev.country
             }));
           }
         } catch (err) {
@@ -541,40 +541,40 @@ export default function CheckoutPage() {
                     <div className="grid grid-cols-2 gap-4">
                       <div className="space-y-2">
                         <Label htmlFor="first-name">First Name</Label>
-                        <Input id="first-name" placeholder="John" defaultValue={shippingAddress.firstName} onChange={handleShippingChange} />
+                        <Input id="first-name" placeholder="John" value={shippingAddress.firstName} onChange={handleShippingChange} />
                       </div>
                       <div className="space-y-2">
                         <Label htmlFor="last-name">Last Name</Label>
-                        <Input id="last-name" placeholder="Doe" defaultValue={shippingAddress.lastName} onChange={handleShippingChange} />
+                        <Input id="last-name" placeholder="Doe" value={shippingAddress.lastName} onChange={handleShippingChange} />
                       </div>
                     </div>
                     <div className="space-y-2">
                       <Label htmlFor="address">Address</Label>
-                      <Input id="address" placeholder="123 Main St" defaultValue={shippingAddress.address} onChange={handleShippingChange} />
+                      <Input id="address" placeholder="123 Main St" value={shippingAddress.address} onChange={handleShippingChange} />
                     </div>
                     <div className="grid grid-cols-3 gap-4">
                       <div className="space-y-2 col-span-2">
                         <Label htmlFor="city">City</Label>
-                        <Input id="city" placeholder="Anytown" defaultValue={shippingAddress.city} onChange={handleShippingChange} />
+                        <Input id="city" placeholder="Anytown" value={shippingAddress.city} onChange={handleShippingChange} />
                       </div>
                       <div className="space-y-2">
                         <Label htmlFor="zip">ZIP Code</Label>
-                        <Input id="zip" placeholder="12345" defaultValue={shippingAddress.zipCode} onChange={handleShippingChange} />
+                        <Input id="zip" placeholder="12345" value={shippingAddress.zipCode} onChange={handleShippingChange} />
                       </div>
                     </div>
                     <div className="grid grid-cols-2 gap-4">
                       <div className="space-y-2">
                         <Label htmlFor="state">State</Label>
-                        <Input id="state" placeholder="CA" defaultValue={shippingAddress.state} onChange={handleShippingChange} />
+                        <Input id="state" placeholder="CA" value={shippingAddress.state} onChange={handleShippingChange} />
                       </div>
                       <div className="space-y-2">
                         <Label htmlFor="country">Country</Label>
-                        <Input id="country" placeholder="USA" defaultValue={shippingAddress.country} onChange={handleShippingChange} />
+                        <Input id="country" placeholder="USA" value={shippingAddress.country} onChange={handleShippingChange} />
                       </div>
                     </div>
                     <div className="space-y-2">
                       <Label htmlFor="phone">Mobile Number</Label>
-                      <Input id="phone" placeholder="01700000000" defaultValue={shippingAddress.phone} onChange={handleShippingChange} />
+                      <Input id="phone" placeholder="01700000000" value={shippingAddress.phone} onChange={handleShippingChange} />
                     </div>
                   </CardContent>
                 </Card>
