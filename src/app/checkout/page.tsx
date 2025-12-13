@@ -391,6 +391,7 @@ export default function CheckoutPage() {
           state: shippingAddress.state,
           zipCode: shippingAddress.zipCode,
           country: shippingAddress.country,
+          phone: shippingAddress.phone || 'N/A',
         },
         items: cart.map(item => ({
           productId: item.id,
