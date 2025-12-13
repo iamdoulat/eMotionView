@@ -58,22 +58,24 @@ export default function CheckoutPage() {
           if (customerDoc.exists()) {
             const data = customerDoc.data();
 
-            // Parse Name
+            const shipData = data.shippingAddress || {};
+
+            // Logic to split root name if shipData unavailable
             const fullName = data.name || '';
             const splitName = fullName.split(' ');
-            const firstName = splitName[0] || '';
-            const lastName = splitName.slice(1).join(' ') || '';
+            const rootFirst = splitName[0] || '';
+            const rootLast = splitName.slice(1).join(' ') || '';
 
             setShippingAddress(prev => ({
               ...prev,
-              firstName: prev.firstName || firstName,
-              lastName: prev.lastName || lastName,
-              phone: prev.phone || data.mobileNumber || '',
-              address: prev.address || data.shippingAddress?.street || '',
-              city: prev.city || data.shippingAddress?.city || '',
-              state: prev.state || data.shippingAddress?.state || '',
-              zipCode: prev.zipCode || data.shippingAddress?.zipCode || '',
-              country: prev.country || data.shippingAddress?.country || ''
+              firstName: prev.firstName || shipData.firstName || rootFirst,
+              lastName: prev.lastName || shipData.lastName || rootLast,
+              phone: prev.phone || shipData.mobileNumber || data.mobileNumber || '',
+              address: prev.address || shipData.street || '',
+              city: prev.city || shipData.city || '',
+              state: prev.state || shipData.state || '',
+              zipCode: prev.zipCode || shipData.zipCode || '',
+              country: prev.country || shipData.country || ''
             }));
           }
         } catch (err) {
@@ -204,21 +206,24 @@ export default function CheckoutPage() {
     }
 
     // Update customer profile with latest checkout info (Phone, Address, Name)
-    const customerRef = doc(db, 'customers', user.uid);
-    setDoc(customerRef, {
-      name: `${shippingAddress.firstName} ${shippingAddress.lastName}`.trim(),
-      mobileNumber: shippingAddress.phone,
-      shippingAddress: {
-        street: shippingAddress.address,
-        city: shippingAddress.city,
-        state: shippingAddress.state,
-        zipCode: shippingAddress.zipCode,
-        country: shippingAddress.country
-      }
-    }, { merge: true })
-      .catch(err => console.error("Failed to sync profile from checkout:", err));
-
-
+    if (user) {
+      const customerRef = doc(db, 'customers', user.uid);
+      setDoc(customerRef, {
+        name: `${shippingAddress.firstName} ${shippingAddress.lastName}`.trim(),
+        mobileNumber: shippingAddress.phone,
+        shippingAddress: {
+          firstName: shippingAddress.firstName,
+          lastName: shippingAddress.lastName,
+          mobileNumber: shippingAddress.phone,
+          street: shippingAddress.address,
+          city: shippingAddress.city,
+          state: shippingAddress.state,
+          zipCode: shippingAddress.zipCode,
+          country: shippingAddress.country
+        }
+      }, { merge: true })
+        .catch(err => console.error("Failed to sync profile from checkout:", err));
+    }
     if (paymentMethod === 'bkash') {
       await handleBkashPayment();
     } else if (paymentMethod === 'sslcommerz') {

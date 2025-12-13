@@ -24,6 +24,11 @@ export default function ProfilePage() {
     const [state, setState] = useState('');
     const [zipCode, setZipCode] = useState('');
     const [country, setCountry] = useState('');
+    // Shipping Contact Info (Separate from personal)
+    const [shipFirstName, setShipFirstName] = useState('');
+    const [shipLastName, setShipLastName] = useState('');
+    const [shipMobile, setShipMobile] = useState('');
+
     const [userCollection, setUserCollection] = useState<'customers' | 'users' | null>(null);
 
     const [isLoading, setIsLoading] = useState(true);
@@ -70,6 +75,16 @@ export default function ProfilePage() {
                         setState(userData.shippingAddress.state || '');
                         setZipCode(userData.shippingAddress.zipCode || '');
                         setCountry(userData.shippingAddress.country || '');
+
+                        // Load Shipping Contact or fallback to parsing Profile Name
+                        setShipFirstName(userData.shippingAddress.firstName || (firstSpace > 0 ? fullName.substring(0, firstSpace) : fullName));
+                        setShipLastName(userData.shippingAddress.lastName || (firstSpace > 0 ? fullName.substring(firstSpace + 1) : ''));
+                        setShipMobile(userData.shippingAddress.mobileNumber || userData.mobileNumber || '');
+                    } else {
+                        // Default to Profile info
+                        setShipFirstName(firstSpace > 0 ? fullName.substring(0, firstSpace) : fullName);
+                        setShipLastName(firstSpace > 0 ? fullName.substring(firstSpace + 1) : '');
+                        setShipMobile(userData.mobileNumber || '');
                     }
                 } else {
                     // User exists in Auth but not in Firestore collections, maybe a new signup didn't complete
@@ -105,14 +120,30 @@ export default function ProfilePage() {
             toast({ variant: 'destructive', title: 'Validation Error', description: 'Mobile Number is required.' });
             return;
         }
+        if (!shipFirstName || shipFirstName.trim() === '') {
+            toast({ variant: 'destructive', title: 'Validation Error', description: 'Shipping First Name is required.' });
+            return;
+        }
+        if (!shipLastName || shipLastName.trim() === '') {
+            toast({ variant: 'destructive', title: 'Validation Error', description: 'Shipping Last Name is required.' });
+            return;
+        }
+        if (!shipMobile || shipMobile.trim() === '') {
+            toast({ variant: 'destructive', title: 'Validation Error', description: 'Shipping Mobile Number is required.' });
+            return;
+        }
+
         setIsSaving(true);
         try {
             const userDocRef = doc(db, userCollection, user.uid);
             await setDoc(userDocRef, {
                 name: `${firstName} ${lastName}`.trim(),
-                email: email, // Note: This doesn't change Firebase Auth email for login
+                email: email,
                 mobileNumber: mobile,
                 shippingAddress: {
+                    firstName: shipFirstName,
+                    lastName: shipLastName,
+                    mobileNumber: shipMobile,
                     street,
                     city,
                     state,
@@ -222,6 +253,17 @@ export default function ProfilePage() {
                     <CardDescription>Manage your default shipping address.</CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-4">
+                    <div className="grid grid-cols-2 gap-4">
+                        <div className="space-y-2">
+                            <Label htmlFor="shipFirstName">First Name</Label>
+                            <Input id="shipFirstName" value={shipFirstName} onChange={(e) => setShipFirstName(e.target.value)} disabled={isSaving} placeholder="First Name" />
+                        </div>
+                        <div className="space-y-2">
+                            <Label htmlFor="shipLastName">Last Name</Label>
+                            <Input id="shipLastName" value={shipLastName} onChange={(e) => setShipLastName(e.target.value)} disabled={isSaving} placeholder="Last Name" />
+                        </div>
+                    </div>
+
                     <div className="space-y-2">
                         <Label htmlFor="street">Street Address</Label>
                         <Input id="street" value={street} onChange={(e) => setStreet(e.target.value)} disabled={isSaving} placeholder="123 Main St" />
@@ -232,19 +274,24 @@ export default function ProfilePage() {
                             <Input id="city" value={city} onChange={(e) => setCity(e.target.value)} disabled={isSaving} />
                         </div>
                         <div className="space-y-2">
-                            <Label htmlFor="state">State / Province</Label>
-                            <Input id="state" value={state} onChange={(e) => setState(e.target.value)} disabled={isSaving} />
+                            <Label htmlFor="zipCode">Zip Code</Label>
+                            <Input id="zipCode" value={zipCode} onChange={(e) => setZipCode(e.target.value)} disabled={isSaving} />
                         </div>
                     </div>
                     <div className="grid grid-cols-2 gap-4">
                         <div className="space-y-2">
-                            <Label htmlFor="zipCode">Zip Code</Label>
-                            <Input id="zipCode" value={zipCode} onChange={(e) => setZipCode(e.target.value)} disabled={isSaving} />
+                            <Label htmlFor="state">State / Province</Label>
+                            <Input id="state" value={state} onChange={(e) => setState(e.target.value)} disabled={isSaving} />
                         </div>
                         <div className="space-y-2">
                             <Label htmlFor="country">Country</Label>
                             <Input id="country" value={country} onChange={(e) => setCountry(e.target.value)} disabled={isSaving} />
                         </div>
+                    </div>
+
+                    <div className="space-y-2">
+                        <Label htmlFor="shipMobile">Mobile Number <span className="text-red-500">*</span></Label>
+                        <Input id="shipMobile" value={shipMobile} onChange={(e) => setShipMobile(e.target.value)} disabled={isSaving} placeholder="017..." required />
                     </div>
                 </CardContent>
                 <CardFooter>
