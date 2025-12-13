@@ -230,7 +230,7 @@ export default function OrderDetailPage() {
     return (
         <div>
             {/* Hidden Invoice structure for PDF generation */}
-            <div style={{ position: 'absolute', left: '-9999px', top: 'auto', width: '210mm', padding: '20mm', background: 'white', color: 'black', fontFamily: 'sans-serif' }} ref={pdfRef}>
+            <div style={{ position: 'absolute', left: '-9999px', top: 'auto', width: '210mm', padding: '10px', background: 'white', color: 'black', fontFamily: 'sans-serif' }} ref={pdfRef}>
                 {order && (
                     <div>
                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', borderBottom: '2px solid #333', paddingBottom: '1.5rem', marginBottom: '1.5rem' }}>
