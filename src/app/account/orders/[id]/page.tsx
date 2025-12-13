@@ -68,6 +68,22 @@ export default function OrderDetailPage() {
                         console.error("Order does not belong to current user");
                         setOrder(null);
                     } else {
+                        // Inherit phone from customer profile if missing in order
+                        if (foundOrder.shippingAddress && !foundOrder.shippingAddress.phone && foundOrder.userId) {
+                            try {
+                                const customerRef = doc(db, 'customers', foundOrder.userId);
+                                const customerSnap = await getDoc(customerRef);
+                                if (customerSnap.exists()) {
+                                    const customerData = customerSnap.data();
+                                    if (customerData.mobileNumber) {
+                                        foundOrder.shippingAddress.phone = customerData.mobileNumber;
+                                    }
+                                }
+                            } catch (err) {
+                                console.error("Error fetching customer profile for phone:", err);
+                            }
+                        }
+
                         setOrder(foundOrder);
                         setFormattedDate(new Date(foundOrder.date).toLocaleDateString());
                         setFormattedInvoiceDate(new Date(foundOrder.date).toLocaleDateString());

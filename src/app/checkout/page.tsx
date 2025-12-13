@@ -191,6 +191,18 @@ export default function CheckoutPage() {
       return;
     }
 
+    // Update customer profile with phone number if provided
+    if (shippingAddress.phone) {
+      try {
+        const customerRef = doc(db, 'customers', user.uid);
+        // Fire and forget - don't block order placement for this
+        setDoc(customerRef, { mobileNumber: shippingAddress.phone }, { merge: true })
+          .catch(err => console.error("Failed to update profile phone:", err));
+      } catch (err) {
+        console.error("Error preparing profile update:", err);
+      }
+    }
+
     if (paymentMethod === 'bkash') {
       await handleBkashPayment();
     } else if (paymentMethod === 'sslcommerz') {
