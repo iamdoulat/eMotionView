@@ -50,9 +50,23 @@ export default function CheckoutPage() {
   const total = subtotal + shipping;
 
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
+    const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
       if (currentUser) {
         setUser(currentUser);
+        try {
+          const customerDoc = await getDoc(doc(db, 'customers', currentUser.uid));
+          if (customerDoc.exists()) {
+            const data = customerDoc.data();
+            if (data.mobileNumber) {
+              setShippingAddress(prev => ({
+                ...prev,
+                phone: prev.phone || data.mobileNumber
+              }));
+            }
+          }
+        } catch (err) {
+          console.error("Error fetching customer profile:", err);
+        }
       } else {
         router.replace('/sign-in');
       }
@@ -202,7 +216,7 @@ export default function CheckoutPage() {
       const customerData = {
         name: shippingAddress.firstName + ' ' + shippingAddress.lastName,
         email: user?.email || '',
-        phone: '01700000000', // Placeholder as we don't collect phone yet
+        phone: shippingAddress.phone || 'N/A',
         uid: user?.uid,
       };
 

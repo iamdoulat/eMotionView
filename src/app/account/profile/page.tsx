@@ -28,7 +28,7 @@ export default function ProfilePage() {
         const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
             if (currentUser) {
                 setUser(currentUser);
-                
+
                 // Try fetching from 'customers' first
                 const customerDocRef = doc(db, "customers", currentUser.uid);
                 let userDocSnap = await getDoc(customerDocRef);
@@ -65,6 +65,10 @@ export default function ProfilePage() {
             toast({ variant: 'destructive', title: 'Error', description: 'Could not find user data to update. Please try again.' });
             return;
         }
+        if (!mobile || mobile.trim() === '') {
+            toast({ variant: 'destructive', title: 'Validation Error', description: 'Mobile Number is required.' });
+            return;
+        }
         setIsSaving(true);
         try {
             const userDocRef = doc(db, userCollection, user.uid);
@@ -81,7 +85,7 @@ export default function ProfilePage() {
             setIsSaving(false);
         }
     };
-    
+
     if (isLoading) {
         return (
             <div>
@@ -109,17 +113,17 @@ export default function ProfilePage() {
                         <Skeleton className="h-10 w-28" />
                     </CardFooter>
                 </Card>
-                 <Card className="mt-8">
+                <Card className="mt-8">
                     <CardHeader>
                         <Skeleton className="h-6 w-1/4" />
                         <Skeleton className="h-4 w-full mt-2" />
                     </CardHeader>
                     <CardContent className="space-y-4 pt-6">
-                       <div className="space-y-2">
+                        <div className="space-y-2">
                             <Skeleton className="h-4 w-32" />
                             <Skeleton className="h-10 w-full" />
                         </div>
-                         <div className="space-y-2">
+                        <div className="space-y-2">
                             <Skeleton className="h-4 w-32" />
                             <Skeleton className="h-10 w-full" />
                         </div>
@@ -132,55 +136,55 @@ export default function ProfilePage() {
         );
     }
 
-  return (
-    <div>
-        <h1 className="font-headline text-3xl font-bold text-foreground mb-6">Profile Settings</h1>
-        <Card>
-            <CardHeader>
-                <CardTitle>Personal Information</CardTitle>
-                <CardDescription>Update your personal details here.</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-                <div className="space-y-2">
-                    <Label htmlFor="name">Full Name</Label>
-                    <Input id="name" value={name} onChange={(e) => setName(e.target.value)} disabled={isSaving}/>
-                </div>
-                <div className="space-y-2">
-                    <Label htmlFor="email">Email</Label>
-                    <Input id="email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} disabled={isSaving}/>
-                </div>
-                <div className="space-y-2">
-                    <Label htmlFor="mobile">Mobile Number</Label>
-                    <Input id="mobile" type="tel" value={mobile} onChange={(e) => setMobile(e.target.value)} disabled={isSaving}/>
-                </div>
-            </CardContent>
-            <CardFooter>
-                <Button onClick={handleSave} disabled={isSaving}>
-                    {isSaving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                    Save Changes
-                </Button>
-            </CardFooter>
-        </Card>
+    return (
+        <div>
+            <h1 className="font-headline text-3xl font-bold text-foreground mb-6">Profile Settings</h1>
+            <Card>
+                <CardHeader>
+                    <CardTitle>Personal Information</CardTitle>
+                    <CardDescription>Update your personal details here.</CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                    <div className="space-y-2">
+                        <Label htmlFor="name">Full Name</Label>
+                        <Input id="name" value={name} onChange={(e) => setName(e.target.value)} disabled={isSaving} />
+                    </div>
+                    <div className="space-y-2">
+                        <Label htmlFor="email">Email</Label>
+                        <Input id="email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} disabled={isSaving} />
+                    </div>
+                    <div className="space-y-2">
+                        <Label htmlFor="mobile">Mobile Number <span className="text-red-500">*</span></Label>
+                        <Input id="mobile" type="tel" value={mobile} onChange={(e) => setMobile(e.target.value)} disabled={isSaving} required />
+                    </div>
+                </CardContent>
+                <CardFooter>
+                    <Button onClick={handleSave} disabled={isSaving}>
+                        {isSaving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                        Save Changes
+                    </Button>
+                </CardFooter>
+            </Card>
 
-         <Card className="mt-8">
-            <CardHeader>
-                <CardTitle>Password</CardTitle>
-                <CardDescription>Change your password. It's a good idea to use a strong password that you're not using elsewhere.</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-                <div className="space-y-2">
-                    <Label htmlFor="current-password">Current Password</Label>
-                    <Input id="current-password" type="password" />
-                </div>
-                <div className="space-y-2">
-                    <Label htmlFor="new-password">New Password</Label>
-                    <Input id="new-password" type="password" />
-                </div>
-            </CardContent>
-            <CardFooter>
-                <Button>Update Password</Button>
-            </CardFooter>
-        </Card>
-    </div>
-  );
+            <Card className="mt-8">
+                <CardHeader>
+                    <CardTitle>Password</CardTitle>
+                    <CardDescription>Change your password. It's a good idea to use a strong password that you're not using elsewhere.</CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                    <div className="space-y-2">
+                        <Label htmlFor="current-password">Current Password</Label>
+                        <Input id="current-password" type="password" />
+                    </div>
+                    <div className="space-y-2">
+                        <Label htmlFor="new-password">New Password</Label>
+                        <Input id="new-password" type="password" />
+                    </div>
+                </CardContent>
+                <CardFooter>
+                    <Button>Update Password</Button>
+                </CardFooter>
+            </Card>
+        </div>
+    );
 }
