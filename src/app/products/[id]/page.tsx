@@ -49,10 +49,10 @@ export default async function ProductDetailPage({ params }: { params: { id: stri
   const approvedReviews = reviewsSnapshot.docs.map(docToJSON) as Review[];
 
   const reviewCount = approvedReviews.length;
-  const averageRating = reviewCount > 0 
+  const averageRating = reviewCount > 0
     ? approvedReviews.reduce((acc, review) => acc + review.rating, 0) / reviewCount
     : 0;
-  
+
   // Pass the calculated rating to the client component
   const productWithCalculatedRating = {
     ...product,
@@ -62,7 +62,7 @@ export default async function ProductDetailPage({ params }: { params: { id: stri
 
   const categoriesSnapshot = await getDocs(collection(db, 'categories'));
   const allCategories = categoriesSnapshot.docs.map(docToJSON) as Category[];
-  
+
   const brandsSnapshot = await getDocs(collection(db, 'brands'));
   const allBrands = brandsSnapshot.docs.map(docToJSON) as Brand[];
   const productBrand = allBrands.find(b => b.name === product.brand);
@@ -79,37 +79,37 @@ export default async function ProductDetailPage({ params }: { params: { id: stri
             { label: product.name, href: `/products/${product.permalink}` },
           ]}
         />
-        
+
         <div className="mt-6 grid grid-cols-1 lg:grid-cols-12 gap-8">
           <div className="lg:col-span-9">
-            <ProductDetailsClient product={productWithCalculatedRating} brand={productBrand}/>
+            <ProductDetailsClient product={productWithCalculatedRating} brand={productBrand} />
           </div>
-          
+
           {/* Right Ad */}
           <div className="lg:col-span-3 hidden lg:block">
             <Link href="#">
-               <Image
-                  src="https://placehold.co/300x700.png"
-                  alt="Advertisement"
-                  width={300}
-                  height={700}
-                  className="w-full h-auto object-cover rounded-lg"
-                  data-ai-hint="product advertisement"
-                />
+              <Image
+                src="https://placehold.co/300x700.png"
+                alt="Advertisement"
+                width={300}
+                height={700}
+                className="w-full h-auto object-cover rounded-lg"
+                data-ai-hint="product advertisement"
+              />
             </Link>
           </div>
         </div>
-        
+
         <div className="mt-12">
           <Tabs defaultValue="specification" className="w-full">
             <div className="border-b-2">
-                <TabsList className="grid grid-cols-2 sm:flex sm:flex-wrap bg-transparent p-0 h-auto justify-start w-full">
-                    <TabsTrigger value="specification" className="data-[state=active]:border-b-2 data-[state=active]:border-primary data-[state=active]:text-foreground data-[state=active]:shadow-none rounded-none bg-transparent text-lg font-semibold py-3">Specification</TabsTrigger>
-                    <TabsTrigger value="description" className="data-[state=active]:border-b-2 data-[state=active]:border-primary data-[state=active]:text-foreground data-[state=active]:shadow-none rounded-none bg-transparent text-lg font-semibold py-3">Description</TabsTrigger>
-                    <TabsTrigger value="reviews" id="reviews" className="data-[state=active]:border-b-2 data-[state=active]:border-primary data-[state=active]:text-foreground data-[state=active]:shadow-none rounded-none bg-transparent text-lg font-semibold py-3">Reviews</TabsTrigger>
-                    <TabsTrigger value="questions" className="data-[state=active]:border-b-2 data-[state=active]:border-primary data-[state=active]:text-foreground data-[state=active]:shadow-none rounded-none bg-transparent text-lg font-semibold py-3">Questions</TabsTrigger>
-                    <TabsTrigger value="video" className="data-[state=active]:border-b-2 data-[state=active]:border-primary data-[state=active]:text-foreground data-[state=active]:shadow-none rounded-none bg-transparent text-lg font-semibold py-3">Video</TabsTrigger>
-                </TabsList>
+              <TabsList className="grid grid-cols-2 sm:flex sm:flex-wrap bg-transparent p-0 h-auto justify-start w-full">
+                <TabsTrigger value="specification" className="data-[state=active]:border-b-2 data-[state=active]:border-primary data-[state=active]:text-foreground data-[state=active]:shadow-none rounded-none bg-transparent text-lg font-semibold py-3">Specification</TabsTrigger>
+                <TabsTrigger value="description" className="data-[state=active]:border-b-2 data-[state=active]:border-primary data-[state=active]:text-foreground data-[state=active]:shadow-none rounded-none bg-transparent text-lg font-semibold py-3">Description</TabsTrigger>
+                <TabsTrigger value="reviews" id="reviews" className="data-[state=active]:border-b-2 data-[state=active]:border-primary data-[state=active]:text-foreground data-[state=active]:shadow-none rounded-none bg-transparent text-lg font-semibold py-3">Reviews</TabsTrigger>
+                <TabsTrigger value="questions" className="data-[state=active]:border-b-2 data-[state=active]:border-primary data-[state=active]:text-foreground data-[state=active]:shadow-none rounded-none bg-transparent text-lg font-semibold py-3">Questions</TabsTrigger>
+                <TabsTrigger value="video" className="data-[state=active]:border-b-2 data-[state=active]:border-primary data-[state=active]:text-foreground data-[state=active]:shadow-none rounded-none bg-transparent text-lg font-semibold py-3">Video</TabsTrigger>
+              </TabsList>
             </div>
             <TabsContent value="specification" className="mt-6">
               <Card>
@@ -122,7 +122,7 @@ export default async function ProductDetailPage({ params }: { params: { id: stri
                       {Object.entries(product.specifications).map(([key, value]) => (
                         <TableRow key={key}>
                           <TableCell className="font-medium w-1/3">{key}</TableCell>
-                          <TableCell>{value}</TableCell>
+                          <TableCell dangerouslySetInnerHTML={{ __html: value }} />
                         </TableRow>
                       ))}
                     </TableBody>
@@ -131,7 +131,7 @@ export default async function ProductDetailPage({ params }: { params: { id: stri
               </Card>
             </TabsContent>
             <TabsContent value="description" className="mt-6">
-               <Card>
+              <Card>
                 <CardContent className="pt-6">
                   <div
                     className="prose prose-sm sm:prose-base dark:prose-invert max-w-none"

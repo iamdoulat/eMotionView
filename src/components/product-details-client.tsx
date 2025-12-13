@@ -108,18 +108,23 @@ export function ProductDetailsClient({ product, brand }: { product: Product, bra
       <div className="flex flex-col">
         <h1 className="font-headline text-2xl font-bold text-foreground">{product.name}</h1>
 
-        <div className="text-sm text-muted-foreground mt-2">
-          Brand: {brand && brand.permalink ? (
-            <Link href={`/brand/${brand.permalink}`} className="text-primary hover:underline font-medium">{product.brand}</Link>
-          ) : (
-            <span className="font-medium text-foreground">{product.brand}</span>
+        <div className="flex flex-wrap items-center gap-6 mt-2 text-sm text-muted-foreground">
+          <div>
+            Brand: {brand && brand.permalink ? (
+              <Link href={`/brand/${brand.permalink}`} className="text-primary hover:underline font-medium">{product.brand}</Link>
+            ) : (
+              <span className="font-medium text-foreground">{product.brand}</span>
+            )}
+          </div>
+          {product.sku && (
+            <div className="flex items-center gap-2">
+              <span className="hidden sm:inline w-px h-4 bg-border"></span>
+              <span>
+                SKU: <span className="font-medium text-foreground">{product.sku}</span>
+              </span>
+            </div>
           )}
         </div>
-        {product.sku && (
-          <div className="text-sm text-muted-foreground mt-1">
-            SKU: <span className="font-medium text-foreground">{product.sku}</span>
-          </div>
-        )}
 
         <ul className="mt-4 space-y-2 text-sm text-foreground">
           {product.features.map((feature, index) => (
