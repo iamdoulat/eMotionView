@@ -24,8 +24,17 @@ export function useShipping(subtotal: number = 0) {
                 if (snapshot.exists()) {
                     const data = snapshot.data() as ShippingSettings;
 
-                    // Show all methods regardless of enabled status
-                    let availableMethods = data.methods || [];
+                    // Filter to only show enabled methods
+                    let availableMethods = (data.methods || []).filter(m => m.isEnabled);
+
+                    // For free shipping, check if minimum order amount is met
+                    availableMethods = availableMethods.filter(method => {
+                        if (method.type === 'free_shipping') {
+                            // Only show if minimum order amount is met
+                            return subtotal >= (method.minOrderAmount || 0);
+                        }
+                        return true; // Show all other enabled methods
+                    });
 
                     setMethods(availableMethods);
 
