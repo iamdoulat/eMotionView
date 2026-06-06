@@ -110,10 +110,14 @@ function arrayRemove(...values: any[]): { _arrayRemove: any[] } {
 
 async function getDoc(ref: DocRef): Promise<any> {
   if (isServer) {
-    const { findOne } = await getMongo();
-    const doc = await findOne(ref._collection, { _id: ref._id });
-    if (doc) return { exists: () => true, data: () => doc, id: doc._id.toString(), ...doc };
-    return { exists: () => false, data: () => ({}), id: ref._id };
+    try {
+      const { findOne } = await getMongo();
+      const doc = await findOne(ref._collection, { _id: ref._id });
+      if (doc) return { exists: () => true, data: () => doc, id: doc._id.toString(), ...doc };
+      return { exists: () => false, data: () => ({}), id: ref._id };
+    } catch (error) {
+      return { exists: () => false, data: () => ({}), id: ref._id };
+    }
   }
   try {
     const data = await apiGet(ref._collection, ref._id);
@@ -125,16 +129,20 @@ async function getDoc(ref: DocRef): Promise<any> {
 
 async function getDocs(ref: CollectionRef | QueryObj): Promise<any> {
   if (isServer) {
-    const { findMany } = await getMongo();
-    if ('_name' in ref && !('filters' in ref)) {
-      const docs = await findMany(ref._name);
+    try {
+      const { findMany } = await getMongo();
+      if ('_name' in ref && !('filters' in ref)) {
+        const docs = await findMany(ref._name);
+        return { docs: docs.map((d: any) => ({ ...d, id: d._id.toString() })), empty: docs.length === 0, size: docs.length };
+      }
+      const q = ref as QueryObj;
+      const filter = convertFilterToMongo(q.filters);
+      const sort = q.sorts.length > 0 ? convertSortToMongo(q.sorts) as any : undefined;
+      const docs = await findMany(q._collection, filter, sort, q.limitCount);
       return { docs: docs.map((d: any) => ({ ...d, id: d._id.toString() })), empty: docs.length === 0, size: docs.length };
+    } catch (error) {
+      return { docs: [], empty: true, size: 0 };
     }
-    const q = ref as QueryObj;
-    const filter = convertFilterToMongo(q.filters);
-    const sort = q.sorts.length > 0 ? convertSortToMongo(q.sorts) as any : undefined;
-    const docs = await findMany(q._collection, filter, sort, q.limitCount);
-    return { docs: docs.map((d: any) => ({ ...d, id: d._id.toString() })), empty: docs.length === 0, size: docs.length };
   }
   const collectionName = '_name' in ref ? ref._name : (ref as QueryObj)._collection;
   try {
@@ -303,9 +311,13 @@ function docToJSON(doc: any): any {
 
 async function getDocByField(collectionName: string, field: string, value: any): Promise<any> {
   if (isServer) {
-    const { findMany, toPlainObject } = await getMongo();
-    const docs = await findMany(collectionName, { [field]: value } as any);
-    return docs.length > 0 ? toPlainObject(docs[0]) : null;
+    try {
+      const { findMany, toPlainObject } = await getMongo();
+      const docs = await findMany(collectionName, { [field]: value } as any);
+      return docs.length > 0 ? toPlainObject(docs[0]) : null;
+    } catch (error) {
+      return null;
+    }
   }
   const docs = await apiGet(collectionName);
   const found = Array.isArray(docs) ? docs.find((d: any) => d[field] === value) : null;
