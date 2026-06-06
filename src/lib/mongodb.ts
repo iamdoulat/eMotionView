@@ -41,31 +41,39 @@ async function loadDbConfigFromDb(): Promise<MongoConfig | null> {
   return null;
 }
 
+let cachedClientPromise: Promise<MongoClient> | null = null;
+
 export async function getMongoClient(): Promise<MongoClient> {
   if (cachedClient) return cachedClient;
 
-  const initialConfig = getEnvConfig();
-  const client = new MongoClient(initialConfig.uri, {
-    serverSelectionTimeoutMS: 5000,
-  });
-  await client.connect();
-  cachedClient = client;
+  if (!cachedClientPromise) {
+    cachedClientPromise = (async () => {
+      const initialConfig = getEnvConfig();
+      const client = new MongoClient(initialConfig.uri, {
+        serverSelectionTimeoutMS: 2000,
+      });
+      await client.connect();
+      cachedClient = client;
 
-  const dbConfig = await loadDbConfigFromDb();
-  if (dbConfig && (dbConfig.uri !== initialConfig.uri || dbConfig.dbName !== initialConfig.dbName)) {
-    cachedConfig = dbConfig;
-    await client.close();
-    cachedClient = null;
-    const newClient = new MongoClient(dbConfig.uri, {
-      serverSelectionTimeoutMS: 5000,
-    });
-    await newClient.connect();
-    cachedClient = newClient;
-  } else if (dbConfig) {
-    cachedConfig = dbConfig;
+      const dbConfig = await loadDbConfigFromDb();
+      if (dbConfig && (dbConfig.uri !== initialConfig.uri || dbConfig.dbName !== initialConfig.dbName)) {
+        cachedConfig = dbConfig;
+        await client.close();
+        cachedClient = null;
+        const newClient = new MongoClient(dbConfig.uri, {
+          serverSelectionTimeoutMS: 2000,
+        });
+        await newClient.connect();
+        cachedClient = newClient;
+      } else if (dbConfig) {
+        cachedConfig = dbConfig;
+      }
+
+      return cachedClient!;
+    })();
   }
 
-  return cachedClient!;
+  return cachedClientPromise;
 }
 
 export async function getMongoDb(): Promise<Db> {
