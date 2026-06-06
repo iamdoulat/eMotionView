@@ -45,7 +45,9 @@ export async function getMongoClient(): Promise<MongoClient> {
   if (cachedClient) return cachedClient;
 
   const initialConfig = getEnvConfig();
-  const client = new MongoClient(initialConfig.uri);
+  const client = new MongoClient(initialConfig.uri, {
+    serverSelectionTimeoutMS: 5000,
+  });
   await client.connect();
   cachedClient = client;
 
@@ -54,7 +56,9 @@ export async function getMongoClient(): Promise<MongoClient> {
     cachedConfig = dbConfig;
     await client.close();
     cachedClient = null;
-    const newClient = new MongoClient(dbConfig.uri);
+    const newClient = new MongoClient(dbConfig.uri, {
+      serverSelectionTimeoutMS: 5000,
+    });
     await newClient.connect();
     cachedClient = newClient;
   } else if (dbConfig) {
