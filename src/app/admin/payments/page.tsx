@@ -2,8 +2,8 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { collection, query, getDocs, orderBy } from 'firebase/firestore';
-import { db } from '@/lib/firebase';
+import { collection, query, getDocs, orderBy } from '@/lib/db';
+import { db } from '@/lib/db';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';

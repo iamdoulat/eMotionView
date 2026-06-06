@@ -16,8 +16,7 @@ import {
   Mail,
   MapPin
 } from "lucide-react";
-import { doc, getDoc } from 'firebase/firestore';
-import { db } from '@/lib/firebase';
+import { doc, getDoc } from '@/lib/db';
 import { defaultFooterSettings, type FooterSettings } from '@/lib/placeholder-data';
 
 
@@ -31,7 +30,7 @@ const infoItems = [
 export async function Footer() {
   let footerSettings: FooterSettings;
   try {
-    const docRef = doc(db, 'public_content', 'homepage');
+    const docRef = doc({} as any, 'public_content', 'homepage');
     const docSnap = await getDoc(docRef);
     if (docSnap.exists() && docSnap.data()?.footer) {
         footerSettings = { ...defaultFooterSettings, ...docSnap.data().footer };

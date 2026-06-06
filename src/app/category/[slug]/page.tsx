@@ -1,6 +1,6 @@
 import type { Product, Category } from '@/lib/placeholder-data';
-import { collection, getDocs, query, where, limit } from 'firebase/firestore';
-import { db, docToJSON } from '@/lib/firebase';
+import { collection, getDocs, query, where, limit, docToJSON } from '@/lib/db';
+import { db } from '@/lib/db';
 import { enrichProductsWithReviews } from '@/lib/product-utils';
 import { notFound } from 'next/navigation';
 import { Breadcrumb } from '@/components/breadcrumb';

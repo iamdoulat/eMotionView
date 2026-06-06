@@ -9,8 +9,8 @@ import { defaultHeroBanners, defaultHomepageSections } from '@/lib/placeholder-d
 import { Card, CardContent } from '@/components/ui/card';
 import { CategoryMenu } from '@/components/category-menu';
 import { Carousel, CarouselContent, CarouselItem } from '@/components/ui/carousel';
-import { collection, getDocs, limit, query, where, doc, getDoc } from 'firebase/firestore';
-import { db, docToJSON } from '@/lib/firebase';
+import { collection, getDocs, limit, query, where, doc, getDoc, docToJSON } from '@/lib/db';
+import { db } from '@/lib/db';
 import { enrichProductsWithReviews } from '@/lib/product-utils';
 import { cn } from '@/lib/utils';
 import { HomepageCarousel } from '@/components/homepage-carousel';

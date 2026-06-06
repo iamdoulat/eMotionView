@@ -2,15 +2,14 @@ import Link from "next/link";
 import { Card } from "@/components/ui/card";
 import { ChevronRight, LayoutGrid } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { collection, getDocs, limit, query } from "firebase/firestore";
-import { db, docToJSON } from "@/lib/firebase";
+import { collection, getDocs, limit, query, docToJSON } from "@/lib/db";
 import type { Category } from "@/lib/placeholder-data";
 
 
 export async function CategoryMenu() {
     let categories: Category[] = [];
     try {
-        const categoriesSnapshot = await getDocs(query(collection(db, 'categories'), limit(11)));
+        const categoriesSnapshot = await getDocs(query(collection('categories'), limit(11)));
         categories = categoriesSnapshot.docs.map(docToJSON) as Category[];
     } catch (error) {
         console.warn("Could not load categories for menu.", error);

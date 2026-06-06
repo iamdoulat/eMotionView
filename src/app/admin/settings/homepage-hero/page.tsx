@@ -17,9 +17,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Loader2, PlusCircle, Edit, Trash2, GripVertical } from "lucide-react";
-import { db, storage } from '@/lib/firebase';
-import { doc, getDoc, setDoc } from 'firebase/firestore';
-import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
+import { doc, getDoc, setDoc } from '@/lib/db';
+import { uploadFile, getFileUrl } from "@/lib/r2";
 import { useToast } from '@/hooks/use-toast';
 import { Skeleton } from '@/components/ui/skeleton';
 import { defaultHeroBanners, type HeroBanner } from '@/lib/placeholder-data';
@@ -57,7 +56,7 @@ const heroSchema = z.object({
 
 type HeroFormData = z.infer<typeof heroSchema>;
 
-const SETTINGS_DOC_PATH = 'public_content/homepage';
+
 
 function SortableBannerItem({ banner, onEdit, onDelete }: { banner: HeroBanner; onEdit: (banner: HeroBanner) => void; onDelete: (banner: HeroBanner) => void; }) {
     const {
@@ -132,7 +131,7 @@ export default function HomepageHeroSettingsPage() {
       const fetchHeroData = async () => {
           setIsLoading(true);
           try {
-              const docRef = doc(db, SETTINGS_DOC_PATH);
+              const docRef = doc({} as any, 'public_content', 'homepage');
               const docSnap = await getDoc(docRef);
               if (docSnap.exists() && docSnap.data()?.heroBanners) {
                   setBanners(docSnap.data().heroBanners);
@@ -163,7 +162,7 @@ export default function HomepageHeroSettingsPage() {
     const handleSaveChanges = async (allBanners: HeroBanner[]) => {
         setIsSubmitting(true);
         try {
-            const docRef = doc(db, SETTINGS_DOC_PATH);
+            const docRef = doc({} as any, 'public_content', 'homepage');
             await setDoc(docRef, { heroBanners: allBanners }, { merge: true });
             setBanners(allBanners);
             toast({ title: 'Success', description: 'Homepage hero banners updated successfully.' });
@@ -182,9 +181,9 @@ export default function HomepageHeroSettingsPage() {
         try {
             if (data.image instanceof FileList && data.image.length > 0) {
                 const file = data.image[0];
-                const storageRef = ref(storage, `homepage/hero/${Date.now()}-${file.name}`);
-                const uploadResult = await uploadBytes(storageRef, file);
-                imageUrl = await getDownloadURL(uploadResult.ref);
+                const path = `homepage/hero/${Date.now()}-${file.name}`;
+                await uploadFile(path, file, file.type);
+                imageUrl = await getFileUrl(path);
             } else if (!imageUrl && !editingBanner) {
                  toast({ variant: 'destructive', title: 'Error', description: 'An image is required for a new hero banner.' });
                  setIsSubmitting(false);

@@ -18,8 +18,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { MoreHorizontal, Search, FileText, Loader2 } from "lucide-react";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { format } from 'date-fns';
-import { collection, getDocs, doc, setDoc } from 'firebase/firestore';
-import { db, docToJSON } from "@/lib/firebase";
+import { collection, getDocs, doc, setDoc, docToJSON } from '@/lib/db';
+import { db } from '@/lib/db';
 
 type StatusFilter = "all" | Order['status'];
 

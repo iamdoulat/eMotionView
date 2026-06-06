@@ -6,8 +6,8 @@ import { Breadcrumb } from '@/components/breadcrumb';
 import { Table, TableBody, TableCell, TableRow } from "@/components/ui/table"
 import Link from 'next/link';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { collection, query, where, getDocs, limit, doc, getDoc, type DocumentSnapshot } from 'firebase/firestore';
-import { db, docToJSON } from '@/lib/firebase';
+import { collection, query, where, getDocs, limit, doc, getDoc, type DocumentSnapshot, docToJSON } from '@/lib/db';
+import { db } from '@/lib/db';
 import type { Product, Review, Category, Brand } from '@/lib/placeholder-data';
 import { Reviews } from '@/components/reviews';
 import { ProductDetailsClient } from '@/components/product-details-client';

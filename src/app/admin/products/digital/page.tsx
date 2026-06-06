@@ -4,8 +4,8 @@
 
 import { useState, useMemo, useEffect } from "react";
 import type { Product } from "@/lib/placeholder-data";
-import { collection, getDocs, doc, setDoc, deleteDoc, addDoc } from "firebase/firestore";
-import { db, docToJSON } from "@/lib/firebase";
+import { collection, getDocs, doc, setDoc, deleteDoc, addDoc, docToJSON } from "@/lib/db";
+import { db } from '@/lib/db';
 import Image from "next/image";
 import {
   Card,

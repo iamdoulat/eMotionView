@@ -1,12 +1,10 @@
 
-import { collection, getDocs, query, where } from 'firebase/firestore';
-import { db, docToJSON } from './firebase';
+import { collection, getDocs, query, where, docToJSON } from '@/lib/db';
 import type { Product, Review } from './placeholder-data';
 
 // Fetches all approved reviews and maps them by productId
 async function getAllApprovedReviewsByProduct() {
-  const reviewsCollection = collection(db, 'reviews');
-  // Only fetch reviews that have been approved to be publicly visible.
+  const reviewsCollection = collection('reviews');
   const q = query(reviewsCollection, where('status', '==', 'approved'));
   const reviewsSnapshot = await getDocs(q);
   const allApprovedReviews = reviewsSnapshot.docs.map(docToJSON) as Review[];

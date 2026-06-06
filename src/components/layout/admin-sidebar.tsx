@@ -33,6 +33,8 @@ import {
   Activity,
   LogOut,
   Truck,
+  Database,
+  HardDrive,
 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from "../ui/card";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
@@ -75,6 +77,8 @@ const settingsNavItems = [
   { href: "/admin/settings/homepage-hero", label: "Homepage Hero", icon: Image },
   { href: "/admin/settings/homepage", label: "Featured Categories", icon: LayoutTemplate },
   { href: "/admin/settings/footer", label: "Footer Settings", icon: Footprints },
+  { href: "/admin/settings/database", label: "Database", icon: Database },
+  { href: "/admin/settings/storage", label: "Storage", icon: HardDrive },
 ];
 
 export function AdminSidebar() {

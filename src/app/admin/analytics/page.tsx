@@ -5,7 +5,7 @@ import { Bar, BarChart, CartesianGrid, Legend, Line, LineChart, Pie, PieChart, R
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { DollarSign, Users, CreditCard, ShoppingBag, Eye } from "lucide-react";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { products } from "@/lib/placeholder-data";
+import { useState, useEffect } from "react";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 
 const salesData = [
@@ -27,13 +27,18 @@ const categoryData = [
 
 const COLORS = ["#0088FE", "#00C49F", "#FFBB28", "#FF8042"];
 
-const topProducts = products.slice(0, 5).map(p => ({
-  ...p,
-  sales: Math.floor(Math.random() * 500) + 50,
-  revenue: p.price * (Math.floor(Math.random() * 500) + 50)
-}));
-
 export default function AdminAnalyticsPage() {
+  const [topProducts, setTopProducts] = useState<any[]>([]);
+
+  useEffect(() => {
+    fetch('/api/data/products').then(r => r.json()).then((data: any[]) => {
+      setTopProducts(data.slice(0, 5).map((p: any) => ({
+        ...p,
+        sales: Math.floor(Math.random() * 500) + 50,
+        revenue: p.price * (Math.floor(Math.random() * 500) + 50)
+      })));
+    }).catch(() => {});
+  }, []);
   return (
     <div className="space-y-6">
       <h1 className="text-3xl font-bold tracking-tight">Analytics Dashboard</h1>

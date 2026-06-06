@@ -1,7 +1,7 @@
 
 import { RecommendationForm } from '@/components/recommendation-form';
-import { collection, getDocs } from 'firebase/firestore';
-import { db, docToJSON } from '@/lib/firebase';
+import { collection, getDocs, docToJSON } from '@/lib/db';
+import { db } from '@/lib/db';
 import type { Product } from '@/lib/placeholder-data';
 import { enrichProductsWithReviews } from '@/lib/product-utils';
 

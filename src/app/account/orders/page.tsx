@@ -10,8 +10,8 @@ import Link from "next/link";
 import { ArrowRight, Loader2 } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useAuth } from "@/hooks/use-auth";
-import { collection, query, where, getDocs } from 'firebase/firestore';
-import { db, docToJSON } from "@/lib/firebase";
+import { collection, query, where, getDocs, docToJSON } from '@/lib/db';
+import { db } from '@/lib/db';
 
 export default function OrdersPage() {
     const [orders, setOrders] = useState<Order[]>([]);

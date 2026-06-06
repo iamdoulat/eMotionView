@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { doc, getDoc } from 'firebase/firestore';
-import { db } from '@/lib/firebase';
+import { doc, getDoc } from '@/lib/db';
 import type { BkashSettings } from '@/lib/placeholder-data';
 
 export async function POST(request: NextRequest) {
@@ -16,7 +15,7 @@ export async function POST(request: NextRequest) {
         }
 
         // Fetch Bkash settings from Firestore
-        const settingsRef = doc(db, 'admin_settings', 'bkash_payment');
+        const settingsRef = doc({} as any, 'admin_settings', 'bkash_payment');
         const settingsSnap = await getDoc(settingsRef);
 
         if (!settingsSnap.exists()) {

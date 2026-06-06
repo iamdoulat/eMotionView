@@ -15,8 +15,8 @@ import { useToast } from "@/hooks/use-toast";
 import { useCart } from "@/hooks/use-cart";
 import jsPDF from "jspdf";
 import html2canvas from "html2canvas";
-import { doc, getDoc } from "firebase/firestore";
-import { db, docToJSON } from "@/lib/firebase";
+import { doc, getDoc, docToJSON } from "@/lib/db";
+import { db } from '@/lib/db';
 import { useAuth } from "@/hooks/use-auth";
 import QRCode from 'qrcode';
 

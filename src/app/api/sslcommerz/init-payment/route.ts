@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { doc, getDoc } from 'firebase/firestore';
-import { db } from '@/lib/firebase';
+import { doc, getDoc } from '@/lib/db';
 import type { SSLCommerzSettings } from '@/lib/placeholder-data';
 const SSLCommerzPayment = require('sslcommerz-lts');
 
@@ -17,7 +16,7 @@ export async function POST(request: NextRequest) {
         }
 
         // Fetch SSLCommerz settings from Firestore
-        const settingsRef = doc(db, 'admin_settings', 'sslcommerz_payment');
+        const settingsRef = doc({} as any, 'admin_settings', 'sslcommerz_payment');
         const settingsSnap = await getDoc(settingsRef);
 
         if (!settingsSnap.exists()) {

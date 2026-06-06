@@ -11,8 +11,7 @@ import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
-import { doc, getDoc, setDoc } from 'firebase/firestore';
-import { db } from '@/lib/firebase';
+import { doc, getDoc, setDoc } from '@/lib/db';
 import { useAuth } from '@/hooks/use-auth';
 import { Loader2 } from 'lucide-react';
 import type { BkashSettings, SSLCommerzSettings, CODSettings, StripeSettings, PayPalSettings, CurrencySettings, Currency } from '@/lib/placeholder-data';
@@ -145,7 +144,7 @@ export default function PaymentSettingsPage() {
             setIsLoading(true);
             try {
                 // Fetch Bkash Settings
-                const bkashRef = doc(db, 'admin_settings', 'bkash_payment');
+                const bkashRef = doc({} as any, 'admin_settings', 'bkash_payment');
                 const bkashSnap = await getDoc(bkashRef);
                 if (bkashSnap.exists()) {
                     const data = bkashSnap.data() as BkashSettings;
@@ -161,7 +160,7 @@ export default function PaymentSettingsPage() {
                 }
 
                 // Fetch SSLCommerz Settings
-                const sslRef = doc(db, 'admin_settings', 'sslcommerz_payment');
+                const sslRef = doc({} as any, 'admin_settings', 'sslcommerz_payment');
                 const sslSnap = await getDoc(sslRef);
                 if (sslSnap.exists()) {
                     const data = sslSnap.data() as SSLCommerzSettings;
@@ -175,7 +174,7 @@ export default function PaymentSettingsPage() {
                 }
 
                 // Fetch COD Settings
-                const codRef = doc(db, 'admin_settings', 'cod_payment');
+                const codRef = doc({} as any, 'admin_settings', 'cod_payment');
                 const codSnap = await getDoc(codRef);
                 if (codSnap.exists()) {
                     const data = codSnap.data() as CODSettings;
@@ -186,7 +185,7 @@ export default function PaymentSettingsPage() {
                 }
 
                 // Fetch Stripe Settings
-                const stripeRef = doc(db, 'admin_settings', 'stripe_payment');
+                const stripeRef = doc({} as any, 'admin_settings', 'stripe_payment');
                 const stripeSnap = await getDoc(stripeRef);
                 if (stripeSnap.exists()) {
                     const data = stripeSnap.data() as StripeSettings;
@@ -200,7 +199,7 @@ export default function PaymentSettingsPage() {
                 }
 
                 // Fetch PayPal Settings
-                const paypalRef = doc(db, 'admin_settings', 'paypal_payment');
+                const paypalRef = doc({} as any, 'admin_settings', 'paypal_payment');
                 const paypalSnap = await getDoc(paypalRef);
                 if (paypalSnap.exists()) {
                     const data = paypalSnap.data() as PayPalSettings;
@@ -214,7 +213,7 @@ export default function PaymentSettingsPage() {
                 }
 
                 // Fetch Currency Settings
-                const currencyRef = doc(db, 'admin_settings', 'currency');
+                const currencyRef = doc({} as any, 'admin_settings', 'currency');
                 const currencySnap = await getDoc(currencyRef);
                 if (currencySnap.exists()) {
                     const data = currencySnap.data() as CurrencySettings;
@@ -250,7 +249,7 @@ export default function PaymentSettingsPage() {
                 updatedBy: user.uid,
             };
 
-            await setDoc(doc(db, 'admin_settings', 'bkash_payment'), settingsData);
+            await setDoc(doc({} as any, 'admin_settings', 'bkash_payment'), settingsData);
             setBkashSettings(settingsData);
             toast({ title: 'Success', description: 'Bkash settings saved successfully' });
         } catch (error) {
@@ -271,7 +270,7 @@ export default function PaymentSettingsPage() {
                 updatedBy: user.uid,
             };
 
-            await setDoc(doc(db, 'admin_settings', 'sslcommerz_payment'), settingsData);
+            await setDoc(doc({} as any, 'admin_settings', 'sslcommerz_payment'), settingsData);
             setSSLSettings(settingsData);
             toast({ title: 'Success', description: 'SSLCommerz settings saved successfully' });
         } catch (error) {
@@ -292,7 +291,7 @@ export default function PaymentSettingsPage() {
                 updatedBy: user.uid,
             };
 
-            await setDoc(doc(db, 'admin_settings', 'cod_payment'), settingsData);
+            await setDoc(doc({} as any, 'admin_settings', 'cod_payment'), settingsData);
             setCODSettings(settingsData);
             toast({ title: 'Success', description: 'Cash on Delivery settings saved successfully' });
         } catch (error) {
@@ -316,7 +315,7 @@ export default function PaymentSettingsPage() {
                 updatedBy: user.uid,
             };
 
-            await setDoc(doc(db, 'admin_settings', 'stripe_payment'), settingsData);
+            await setDoc(doc({} as any, 'admin_settings', 'stripe_payment'), settingsData);
             setStripeSettings(settingsData);
             toast({ title: 'Success', description: 'Stripe settings saved successfully' });
         } catch (error) {
@@ -340,7 +339,7 @@ export default function PaymentSettingsPage() {
                 updatedBy: user.uid,
             };
 
-            await setDoc(doc(db, 'admin_settings', 'paypal_payment'), settingsData);
+            await setDoc(doc({} as any, 'admin_settings', 'paypal_payment'), settingsData);
             setPayPalSettings(settingsData);
             toast({ title: 'Success', description: 'PayPal settings saved successfully' });
         } catch (error) {
@@ -362,7 +361,7 @@ export default function PaymentSettingsPage() {
                 updatedBy: user.uid,
             };
 
-            await setDoc(doc(db, 'admin_settings', 'currency'), settingsData);
+            await setDoc(doc({} as any, 'admin_settings', 'currency'), settingsData);
             toast({ title: 'Success', description: `Currency changed to ${currency}` });
         } catch (error) {
             console.error('Error saving currency settings:', error);

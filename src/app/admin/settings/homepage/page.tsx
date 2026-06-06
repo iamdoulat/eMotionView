@@ -7,8 +7,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import Image from 'next/image';
 import { useHomepageSettings } from '@/hooks/use-homepage-settings';
-import { collection, getDocs } from 'firebase/firestore';
-import { db, docToJSON } from '@/lib/firebase';
+import { collection, getDocs, docToJSON } from '@/lib/db';
 import type { Category as ProductCategoryType } from '@/lib/placeholder-data';
 
 import {
@@ -75,7 +74,7 @@ export default function HomepageSettingsPage() {
 
     useEffect(() => {
         const fetchAllCategories = async () => {
-            const categoriesSnapshot = await getDocs(collection(db, 'categories'));
+            const categoriesSnapshot = await getDocs(collection('categories'));
             setAllProductCategories(categoriesSnapshot.docs.map(docToJSON) as ProductCategoryType[]);
         };
         fetchAllCategories();

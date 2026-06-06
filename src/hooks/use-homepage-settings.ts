@@ -1,20 +1,21 @@
-
 "use client";
 
 import { useState, useEffect, useCallback } from 'react';
 import { useToast } from '@/hooks/use-toast';
-import { db, storage } from '@/lib/firebase';
-import { doc, getDoc, setDoc } from 'firebase/firestore';
-import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
+import { uploadFile, getFileUrl } from '@/lib/r2';
 import { defaultHomepageSections } from '@/lib/placeholder-data';
 
-const SETTINGS_DOC_PATH = 'public_content/homepage';
+function doc(_db: any, collection: string, docId: string) {
+  return { _collection: collection, _id: docId };
+}
 
 export interface FeaturedCategory {
   id: string;
   name: string;
   image: string;
 }
+
+const API_PATH = '/api/data/public_content%2Fhomepage';
 
 export function useHomepageSettings() {
     const { toast } = useToast();
@@ -25,10 +26,9 @@ export function useHomepageSettings() {
     const fetchCategories = useCallback(async () => {
         setIsLoading(true);
         try {
-            const docRef = doc(db, SETTINGS_DOC_PATH);
-            const docSnap = await getDoc(docRef);
-            if (docSnap.exists()) {
-                const data = docSnap.data();
+            const res = await fetch(`${API_PATH}?id=main`);
+            if (res.ok) {
+                const data = await res.json();
                 const featuredCategoriesSection = data.sections?.find((s: any) => s.type === 'featured-categories');
                 setCategories(featuredCategoriesSection?.content || []);
             } else {
@@ -47,21 +47,32 @@ export function useHomepageSettings() {
         fetchCategories();
     }, [fetchCategories]);
 
+    const getExistingData = async () => {
+        try {
+            const res = await fetch(`${API_PATH}?id=main`);
+            if (res.ok) {
+                return await res.json();
+            }
+        } catch {}
+        return { sections: defaultHomepageSections };
+    };
+
     const saveChanges = async (allCategories: FeaturedCategory[]) => {
         setIsSubmitting(true);
         try {
-            const docRef = doc(db, SETTINGS_DOC_PATH);
-            const docSnap = await getDoc(docRef);
-            const existingData = docSnap.exists() ? docSnap.data() : { sections: defaultHomepageSections };
-            
+            const existingData = await getExistingData();
             const updatedSections = existingData.sections.map((section: any) => {
                 if (section.type === 'featured-categories') {
                     return { ...section, content: allCategories };
                 }
                 return section;
             });
-            
-            await setDoc(docRef, { sections: updatedSections }, { merge: true });
+
+            await fetch(`${API_PATH}/main`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ sections: updatedSections }),
+            });
             setCategories(allCategories);
             toast({ title: 'Success', description: 'Homepage settings updated successfully.' });
         } catch (error) {
@@ -72,6 +83,11 @@ export function useHomepageSettings() {
         }
     };
 
+    const uploadImage = async (file: File, prefix: string): Promise<string> => {
+        const key = `${prefix}/${Date.now()}-${file.name}`;
+        return uploadFile(key, file, file.type);
+    };
+
     const addCategory = async (name: string, imageFile?: File) => {
         if (!imageFile) {
             toast({ variant: 'destructive', title: 'Error', description: 'An image is required.' });
@@ -80,9 +96,7 @@ export function useHomepageSettings() {
 
         setIsSubmitting(true);
         try {
-            const storageRef = ref(storage, `homepage/categories/${Date.now()}-${imageFile.name}`);
-            const uploadResult = await uploadBytes(storageRef, imageFile);
-            const imageUrl = await getDownloadURL(uploadResult.ref);
+            const imageUrl = await uploadImage(imageFile, 'homepage/categories');
 
             const newCategory: FeaturedCategory = {
                 id: `cat-${Date.now()}`,
@@ -104,9 +118,7 @@ export function useHomepageSettings() {
         let imageUrl = existingCategory.image;
         try {
             if (newImageFile) {
-                const storageRef = ref(storage, `homepage/categories/${Date.now()}-${newImageFile.name}`);
-                const uploadResult = await uploadBytes(storageRef, newImageFile);
-                imageUrl = await getDownloadURL(uploadResult.ref);
+                imageUrl = await uploadImage(newImageFile, 'homepage/categories');
             }
 
             const updatedCategory: FeaturedCategory = {
@@ -125,7 +137,7 @@ export function useHomepageSettings() {
             setIsSubmitting(false);
         }
     };
-    
+
     const deleteCategory = async (categoryId: string) => {
         const updatedCategories = categories.filter(c => c.id !== categoryId);
         await saveChanges(updatedCategories);

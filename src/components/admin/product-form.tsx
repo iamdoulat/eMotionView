@@ -6,7 +6,6 @@ import { useForm, useFieldArray, type SubmitHandler } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import type { Product, Category, Brand, Supplier } from "@/lib/placeholder-data";
-import { attributes as initialAttributes } from "@/lib/placeholder-data";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
@@ -21,10 +20,8 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Card } from "@/components/ui/card";
 import { useEffect, useState } from "react";
 import { Switch } from "../ui/switch";
-import { storage, db, docToJSON } from "@/lib/firebase";
-import { ref, uploadBytes, getDownloadURL, deleteObject } from "firebase/storage";
+import { uploadFile, getFileUrl, deleteFile } from "@/lib/r2";
 import { Textarea } from "../ui/textarea";
-import { collection, getDocs } from "firebase/firestore";
 import { Popover, PopoverContent, PopoverTrigger } from "../ui/popover";
 import { cn } from "@/lib/utils";
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandList } from "../ui/command";
@@ -73,17 +70,20 @@ export function ProductForm({ product, onSave, onCancel, isSaving }: ProductForm
     const [dbCategories, setDbCategories] = useState<Category[]>([]);
     const [dbBrands, setDbBrands] = useState<Brand[]>([]);
     const [dbSuppliers, setDbSuppliers] = useState<Supplier[]>([]);
+    const [attributes, setAttributes] = useState<{ name: string; values: string[] }[]>([]);
     
     useEffect(() => {
         const fetchData = async () => {
-            const categoriesSnapshot = await getDocs(collection(db, 'categories'));
-            setDbCategories(categoriesSnapshot.docs.map(doc => docToJSON(doc) as Category));
-
-            const brandsSnapshot = await getDocs(collection(db, 'brands'));
-            setDbBrands(brandsSnapshot.docs.map(doc => docToJSON(doc) as Brand));
-            
-            const suppliersSnapshot = await getDocs(collection(db, 'suppliers'));
-            setDbSuppliers(suppliersSnapshot.docs.map(doc => docToJSON(doc) as Supplier));
+            const [cats, brds, supps, attrs] = await Promise.all([
+                fetch('/api/data/categories').then(r => r.json()),
+                fetch('/api/data/brands').then(r => r.json()),
+                fetch('/api/data/suppliers').then(r => r.json()),
+                fetch('/api/data/attributes').then(r => r.json()),
+            ]);
+            setDbCategories(cats.map((c: any) => ({ id: c._id || c.id, name: c.name, description: c.description, permalink: c.permalink })));
+            setDbBrands(brds.map((b: any) => ({ id: b._id || b.id, name: b.name, logo: b.logo, permalink: b.permalink })));
+            setDbSuppliers(supps.map((s: any) => ({ id: s._id || s.id, name: s.name, contactPerson: s.contactPerson, email: s.email, permalink: s.permalink })));
+            setAttributes(attrs.map((a: any) => ({ name: a.name, values: a.values })));
         };
         fetchData();
     }, []);
@@ -211,21 +211,18 @@ export function ProductForm({ product, onSave, onCancel, isSaving }: ProductForm
     const onSubmit: SubmitHandler<ProductFormData> = async (data) => {
         const uploadedImageUrls = await Promise.all(
             filesToUpload.map(async (file) => {
-                const storageRef = ref(storage, `products/${Date.now()}-${file.name}`);
-                await uploadBytes(storageRef, file);
-                return getDownloadURL(storageRef);
+                const path = `products/${Date.now()}-${file.name}`;
+                await uploadFile(path, file, file.type);
+                return getFileUrl(path);
             })
         );
         
         await Promise.all(
             imagesToRemove.map(async (url) => {
                 try {
-                    const storageRef = ref(storage, url);
-                    await deleteObject(storageRef);
+                    await deleteFile(url);
                 } catch (error: any) {
-                    if (error.code !== 'storage/object-not-found') {
-                        console.error("Error deleting image from storage: ", error);
-                    }
+                    console.error("Error deleting image from storage: ", error);
                 }
             })
         );
@@ -596,7 +593,7 @@ export function ProductForm({ product, onSave, onCancel, isSaving }: ProductForm
                             <div className="space-y-4">
                                 {attributeFields.map((field, index) => {
                                     const attributeName = watch(`productAttributes.${index}.name`);
-                                    const availableValues = initialAttributes.find(a => a.name === attributeName)?.values || [];
+                                    const availableValues = attributes.find(a => a.name === attributeName)?.values || [];
                                     const selectedValues = watch(`productAttributes.${index}.values`) || [];
                                     
                                     return (
@@ -622,7 +619,7 @@ export function ProductForm({ product, onSave, onCancel, isSaving }: ProductForm
                                                                         </SelectTrigger>
                                                                     </FormControl>
                                                                     <SelectContent>
-                                                                        {initialAttributes.map(attr => (
+                                                                        {attributes.map(attr => (
                                                                             <SelectItem key={attr.id} value={attr.name}>{attr.name}</SelectItem>
                                                                         ))}
                                                                     </SelectContent>

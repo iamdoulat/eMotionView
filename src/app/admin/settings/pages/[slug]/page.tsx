@@ -6,8 +6,7 @@ import { useForm, type SubmitHandler } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { useToast } from '@/hooks/use-toast';
-import { db } from '@/lib/firebase';
-import { doc, getDoc, setDoc } from 'firebase/firestore';
+import { doc, getDoc, setDoc } from '@/lib/db';
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -51,7 +50,7 @@ export default function EditPage({ params }: { params: { slug: string } }) {
         const fetchPageContent = async () => {
             setIsLoading(true);
             try {
-                const docRef = doc(db, 'pages', slug);
+                const docRef = doc({} as any, 'pages', slug);
                 const docSnap = await getDoc(docRef);
                 if (docSnap.exists()) {
                     const data = docSnap.data();
@@ -74,7 +73,7 @@ export default function EditPage({ params }: { params: { slug: string } }) {
     
     const onSubmit: SubmitHandler<PageFormData> = async (data) => {
         try {
-            const docRef = doc(db, 'pages', slug);
+            const docRef = doc({} as any, 'pages', slug);
             await setDoc(docRef, data, { merge: true });
             toast({ title: 'Success', description: `"${data.title}" page has been updated.` });
         } catch (error) {

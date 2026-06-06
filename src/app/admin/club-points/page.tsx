@@ -1,9 +1,9 @@
 
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
-import { users as allUsers, User } from "@/lib/placeholder-data";
+import type { User } from "@/lib/placeholder-data";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -17,7 +17,17 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { PlusCircle, MinusCircle, Search } from "lucide-react";
 
 export default function ClubPointsPage() {
-  const [users, setUsers] = useState<User[]>(allUsers);
+  const [users, setUsers] = useState<User[]>([]);
+
+  useEffect(() => {
+    fetch('/api/data/users').then(r => r.json()).then((data: any[]) => {
+      setUsers(data.map((u: any) => ({
+        id: u.uid || u._id, uid: u.uid || u._id, name: u.name, email: u.email,
+        mobileNumber: u.mobileNumber, avatar: u.avatar, registeredDate: u.registeredDate,
+        status: u.status, lastLogin: u.lastLogin, role: u.role, points: u.points || 0
+      })));
+    }).catch(() => {});
+  }, []);
   const [selectedUser, setSelectedUser] = useState<User | null>(null);
   const [pointsToAdjust, setPointsToAdjust] = useState(0);
   const [searchTerm, setSearchTerm] = useState("");

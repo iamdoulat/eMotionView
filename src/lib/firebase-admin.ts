@@ -1,4 +1,3 @@
-
 import * as admin from 'firebase-admin';
 
 const serviceAccountKey = process.env.FIREBASE_SERVICE_ACCOUNT_KEY;
@@ -15,6 +14,5 @@ if (!admin.apps.length && serviceAccountKey) {
 }
 
 const auth = admin.apps.length > 0 ? admin.auth() : ({} as admin.auth.Auth);
-const dbAdmin = admin.apps.length > 0 ? admin.firestore() : ({} as admin.firestore.Firestore);
 
-export { auth, dbAdmin };
+export { auth };

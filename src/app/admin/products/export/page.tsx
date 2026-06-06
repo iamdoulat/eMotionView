@@ -1,8 +1,7 @@
 
 "use client";
 
-import { useState } from "react";
-import { products } from "@/lib/placeholder-data";
+import { useState, useEffect } from "react";
 import Papa from "papaparse";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -13,16 +12,18 @@ export default function BulkExportPage() {
   const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
 
-  const handleExport = () => {
+  const handleExport = async () => {
     setIsLoading(true);
 
     try {
+      const res = await fetch('/api/data/products');
+      const products = await res.json();
       // Flatten complex data structures for better CSV readability
-      const flattenedProducts = products.map(product => ({
+      const flattenedProducts = products.map((product: any) => ({
         ...product,
-        images: product.images.join(', '),
-        features: product.features.join('; '),
-        specifications: JSON.stringify(product.specifications),
+        images: product.images?.join(', ') || '',
+        features: product.features?.join('; ') || '',
+        specifications: JSON.stringify(product.specifications || {}),
         productAttributes: JSON.stringify(product.productAttributes || []),
       }));
 

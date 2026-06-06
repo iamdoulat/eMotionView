@@ -15,6 +15,23 @@ const nextConfig: NextConfig = {
     // This is to fix a build error with genkit, "Module not found: Can't resolve 'node:process'"
     config.externals = [...config.externals, "node:process", "node:stream"];
 
+    if (!isServer) {
+      config.resolve.fallback = {
+        ...config.resolve.fallback,
+        net: false,
+        tls: false,
+        fs: false,
+        'fs/promises': false,
+        child_process: false,
+        dns: false,
+        'timers/promises': false,
+        os: false,
+        path: false,
+        crypto: false,
+      };
+
+    }
+
     return config;
   },
   env: {
@@ -49,6 +66,12 @@ const nextConfig: NextConfig = {
       {
         protocol: 'https',
         hostname: 'firebasestorage.googleapis.com',
+        port: '',
+        pathname: '/**',
+      },
+      {
+        protocol: 'https',
+        hostname: '*.r2.cloudflarestorage.com',
         port: '',
         pathname: '/**',
       },

@@ -66,7 +66,7 @@ export default function CartPage() {
                           width={80}
                           height={80}
                           className="rounded-md object-cover"
-                          data-ai-hint={`${item.category} product`}
+                          data-ai-hint={`${item.categories?.[0] ?? ""} product`}
                         />
                       </TableCell>
                       <TableCell className="font-medium">

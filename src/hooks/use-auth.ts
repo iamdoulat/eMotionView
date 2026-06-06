@@ -1,11 +1,8 @@
-
 "use client";
 
 import { useState, useEffect } from 'react';
 import { onIdTokenChanged, type User as FirebaseUser } from 'firebase/auth';
-import { doc, getDoc } from 'firebase/firestore';
-import { auth, db } from '@/lib/firebase';
-import { FirebaseError } from 'firebase/app';
+import { auth } from '@/lib/firebase';
 import { useHasMounted } from './use-has-mounted';
 
 export type UserRole = 'Admin' | 'Manager' | 'Staff' | 'Customer';
@@ -19,33 +16,29 @@ export function useAuth() {
     const [isLoading, setIsLoading] = useState(true);
     const hasMounted = useHasMounted();
 
+    const fetchUserRole = async (uid: string): Promise<UserRole | undefined> => {
+        try {
+            const res = await fetch(`/api/data/users?id=${encodeURIComponent(uid)}`);
+            if (res.ok) {
+                const data = await res.json();
+                if (data.role) return data.role;
+            }
+            const res2 = await fetch(`/api/data/customers?id=${encodeURIComponent(uid)}`);
+            if (res2.ok) {
+                const data = await res2.json();
+                if (data.role) return data.role;
+            }
+        } catch {}
+        return undefined;
+    };
+
     useEffect(() => {
         if (!hasMounted) return;
 
         const unsubscribe = onIdTokenChanged(auth, async (firebaseUser) => {
             if (firebaseUser) {
-                let userRole: UserRole | undefined;
-                try {
-                    // Try fetching from 'users' collection first (for Admin/Staff)
-                    let userDocSnap = await getDoc(doc(db, "users", firebaseUser.uid));
-                    
-                    if (userDocSnap.exists()) {
-                        userRole = userDocSnap.data().role;
-                    } else {
-                        // If not in 'users', check 'customers'
-                        const customerDocSnap = await getDoc(doc(db, "customers", firebaseUser.uid));
-                        if (customerDocSnap.exists()) {
-                            userRole = customerDocSnap.data().role;
-                        }
-                    }
-                } catch (error) {
-                    if (error instanceof FirebaseError && error.code !== 'permission-denied') {
-                        console.error("Error fetching user data:", error);
-                    }
-                }
-                
-                setUser({ ...firebaseUser, role: userRole });
-
+                const role = await fetchUserRole(firebaseUser.uid);
+                setUser({ ...firebaseUser, role });
             } else {
                 setUser(null);
             }

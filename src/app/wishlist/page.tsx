@@ -51,7 +51,7 @@ export default function WishlistPage() {
                     width={300}
                     height={300}
                     className="w-full h-60 object-cover"
-                    data-ai-hint={`${product.category} product`}
+                    data-ai-hint={`${product.categories?.[0] ?? ""} product`}
                   />
                 </Link>
                  <Button variant="destructive" size="icon" className="absolute top-2 right-2 h-8 w-8" onClick={() => removeFromWishlist(product.id)}>

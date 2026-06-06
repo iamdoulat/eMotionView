@@ -11,8 +11,8 @@ import { Separator } from '@/components/ui/separator';
 import { CheckCircle, Home, Loader2 } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { Skeleton } from '@/components/ui/skeleton';
-import { doc, getDoc } from 'firebase/firestore';
-import { db } from '@/lib/firebase';
+import { doc, getDoc } from '@/lib/db';
+import { db } from '@/lib/db';
 
 export function ThankYouClientPage() {
     const searchParams = useSearchParams();

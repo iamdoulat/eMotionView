@@ -18,8 +18,8 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { MoreHorizontal, PlusCircle, Edit, Trash2, Loader2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-import { collection, getDocs, addDoc, doc, setDoc, deleteDoc } from "firebase/firestore";
-import { db, docToJSON } from "@/lib/firebase";
+import { collection, getDocs, addDoc, doc, setDoc, deleteDoc, docToJSON } from "@/lib/db";
+import { db } from '@/lib/db';
 
 const brandSchema = z.object({
   id: z.string().optional(),
@@ -103,7 +103,7 @@ export default function BrandsPage() {
             toast({ title: "Success", description: "Brand updated successfully." });
         } else {
             const docRef = await addDoc(collection(db, 'brands'), payload);
-            setBrands([...brands, { ...payload, id: docRef.id }]);
+            setBrands([...brands, { id: docRef.id, name: payload.name ?? "", logo: payload.logo ?? "https://placehold.co/100x40.png", permalink: payload.permalink ?? "" }]);
             toast({ title: "Success", description: "New brand created." });
         }
         handleCloseForm();

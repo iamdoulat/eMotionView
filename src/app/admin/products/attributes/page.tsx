@@ -1,11 +1,11 @@
 
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useForm, type SubmitHandler } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { attributes as initialAttributes, type Attribute } from "@/lib/placeholder-data";
+import type { Attribute } from "@/lib/placeholder-data";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
@@ -27,7 +27,13 @@ const attributeSchema = z.object({
 type AttributeFormData = z.infer<typeof attributeSchema>;
 
 export default function AttributesPage() {
-  const [attributes, setAttributes] = useState<Attribute[]>(initialAttributes);
+  const [attributes, setAttributes] = useState<Attribute[]>([]);
+
+  useEffect(() => {
+    fetch('/api/data/attributes').then(r => r.json()).then((data: any[]) => {
+      setAttributes(data.map((a: any) => ({ id: a._id || a.id, name: a.name, values: a.values })));
+    }).catch(() => {});
+  }, []);
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [attributeToEdit, setAttributeToEdit] = useState<Attribute | null>(null);
   const [attributeToDelete, setAttributeToDelete] = useState<Attribute | null>(null);
@@ -47,23 +53,35 @@ export default function AttributesPage() {
     setIsFormOpen(false);
   };
 
-  const handleSaveAttribute: SubmitHandler<AttributeFormData> = (data) => {
+  const handleSaveAttribute: SubmitHandler<AttributeFormData> = async (data) => {
     const attributeData = {
       name: data.name,
       values: data.values.split(',').map(v => v.trim()).filter(Boolean),
     };
 
     if (attributeToEdit) {
+      await fetch(`/api/data/attributes/${attributeToEdit.id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(attributeData),
+      });
       setAttributes(attributes.map(a => a.id === attributeToEdit.id ? { ...a, ...attributeData } : a));
     } else {
-      const newAttribute: Attribute = { ...attributeData, id: `attr-${Date.now()}` };
+      const res = await fetch('/api/data/attributes', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(attributeData),
+      });
+      const result = await res.json();
+      const newAttribute: Attribute = { ...attributeData, id: result.id || `attr-${Date.now()}` };
       setAttributes([...attributes, newAttribute]);
     }
     handleCloseForm();
   };
 
-  const handleDeleteAttribute = () => {
+  const handleDeleteAttribute = async () => {
     if (!attributeToDelete) return;
+    await fetch(`/api/data/attributes/${attributeToDelete.id}`, { method: 'DELETE' });
     setAttributes(attributes.filter(a => a.id !== attributeToDelete.id));
     setAttributeToDelete(null);
   };

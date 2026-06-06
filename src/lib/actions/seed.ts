@@ -1,7 +1,7 @@
-
 'use server';
 
-import { db } from '@/lib/firebase';
+import { collection, getDocs, query, limit, doc, db } from '@/lib/db';
+import { findMany, deleteOne, insertOne } from '@/lib/mongodb';
 import { 
     products, 
     staffUsers,
@@ -11,46 +11,36 @@ import {
     attributes, 
     suppliers 
 } from '@/lib/placeholder-data';
-import { collection, writeBatch, getDocs, query, limit, doc } from 'firebase/firestore';
 
 async function isCollectionEmpty(collectionName: string): Promise<boolean> {
-    const collectionRef = collection(db, collectionName);
-    const q = query(collectionRef, limit(1));
+    const q = query(collection(collectionName), limit(1));
     const snapshot = await getDocs(q);
     return snapshot.empty;
 }
 
 export async function seedDatabase() {
     try {
-        const batch = writeBatch(db);
         let seededCount = 0;
         let messageLog = [];
 
-        // Seed Staff Users into 'users' collection
         if (await isCollectionEmpty('users')) {
-            staffUsers.forEach((user) => {
+            for (const user of staffUsers) {
                 const docRef = doc(db, 'users', user.uid);
-                batch.set(docRef, user);
-            });
+                const { id, ...data } = docRef as any;
+                await insertOne('users', user);
+            }
             seededCount += staffUsers.length;
             messageLog.push(`${staffUsers.length} staff users`);
-        } else {
-            console.log(`Collection 'users' is not empty. Skipping seeding.`);
         }
 
-        // Seed Customer Users into 'customers' collection
         if (await isCollectionEmpty('customers')) {
-            customerUsers.forEach((user) => {
-                const docRef = doc(db, 'customers', user.uid);
-                batch.set(docRef, user);
-            });
+            for (const user of customerUsers) {
+                await insertOne('customers', user);
+            }
             seededCount += customerUsers.length;
             messageLog.push(`${customerUsers.length} customers`);
-        } else {
-            console.log(`Collection 'customers' is not empty. Skipping seeding.`);
         }
 
-        // Seed other collections
         const collectionsToSeed = [
             { name: 'products', data: products },
             { name: 'categories', data: categories },
@@ -61,26 +51,21 @@ export async function seedDatabase() {
 
         for (const { name, data } of collectionsToSeed) {
             if (await isCollectionEmpty(name)) {
-                data.forEach((item) => {
-                    // Use the item's predefined ID if it exists, otherwise generate one
-                    const docRef = item.id ? doc(db, name, item.id) : doc(collection(db, name));
-                    batch.set(docRef, item);
-                });
+                for (const item of data) {
+                    const dataToInsert = { ...(item as any) };
+                    delete dataToInsert.id;
+                    await insertOne(name, dataToInsert);
+                }
                 seededCount += data.length;
                 messageLog.push(`${data.length} ${name}`);
-            } else {
-                console.log(`Collection '${name}' is not empty. Skipping seeding.`);
             }
         }
 
         if (seededCount > 0) {
-            await batch.commit();
-            const message = `Successfully seeded: ${messageLog.join(', ')}. Refresh to see the data.`;
-            console.log(message);
+            const message = `Successfully seeded: ${messageLog.join(', ')}.`;
             return { message };
         } else {
             const message = "All collections already contain data. Nothing to seed.";
-            console.log(message);
             return { message };
         }
     } catch (e: any) {

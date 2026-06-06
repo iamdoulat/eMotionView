@@ -10,8 +10,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { useToast } from '@/hooks/use-toast';
-import { doc, getDoc, setDoc } from 'firebase/firestore';
-import { db } from '@/lib/firebase';
+import { doc, getDoc, setDoc } from '@/lib/db';
 import { useAuth } from '@/hooks/use-auth';
 import { Loader2, Truck, Gift, Store } from 'lucide-react';
 import type { ShippingSettings, ShippingMethod } from '@/lib/placeholder-data';
@@ -65,7 +64,7 @@ export default function ShippingSettingsPage() {
         const fetchSettings = async () => {
             setIsLoading(true);
             try {
-                const settingsRef = doc(db, 'admin_settings', 'shipping');
+                const settingsRef = doc({} as any, 'admin_settings', 'shipping');
                 const settingsSnap = await getDoc(settingsRef);
 
                 if (settingsSnap.exists()) {
@@ -147,7 +146,7 @@ export default function ShippingSettingsPage() {
                 updatedBy: user.uid,
             };
 
-            await setDoc(doc(db, 'admin_settings', 'shipping'), settingsData);
+            await setDoc(doc({} as any, 'admin_settings', 'shipping'), settingsData);
 
             toast({
                 title: 'Success',

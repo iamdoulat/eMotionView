@@ -20,13 +20,11 @@ import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Loader2 } from "lucide-react";
 import { Skeleton } from '@/components/ui/skeleton';
-import { db, storage } from '@/lib/firebase';
-import { doc, getDoc, setDoc } from 'firebase/firestore';
-import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
+import { doc, getDoc, setDoc } from '@/lib/db';
+import { uploadFile, getFileUrl } from '@/lib/r2';
 import { useToast } from '@/hooks/use-toast';
 import { Form, FormControl, FormField, FormItem, FormMessage } from '@/components/ui/form';
 
-const SETTINGS_DOC_PATH = 'settings/general';
 
 const generalSettingsSchema = z.object({
   logo: z.union([z.instanceof(FileList).optional(), z.string().optional()]),
@@ -64,7 +62,7 @@ export default function GeneralSettingsPage() {
     const fetchSettings = async () => {
       setIsLoading(true);
       try {
-        const docRef = doc(db, SETTINGS_DOC_PATH);
+      const docRef = doc({} as any, 'settings', 'general');
         const docSnap = await getDoc(docRef);
         if (docSnap.exists()) {
           const settings = docSnap.data();
@@ -89,14 +87,14 @@ export default function GeneralSettingsPage() {
       
       if (data.logo instanceof FileList && data.logo.length > 0) {
         const file = data.logo[0];
-        const storageRef = ref(storage, `general/${Date.now()}-${file.name}`);
-        await uploadBytes(storageRef, file);
-        finalLogoUrl = await getDownloadURL(storageRef);
+        const path = `general/${Date.now()}-${file.name}`;
+        await uploadFile(path, file, file.type);
+        finalLogoUrl = await getFileUrl(path);
       }
 
       const finalData = { ...data, logo: finalLogoUrl };
 
-      const docRef = doc(db, SETTINGS_DOC_PATH);
+      const docRef = doc({} as any, 'settings', 'general');
       await setDoc(docRef, finalData, { merge: true });
 
       setCurrentLogo(finalLogoUrl);

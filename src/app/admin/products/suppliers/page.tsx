@@ -17,8 +17,8 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { MoreHorizontal, PlusCircle, Edit, Trash2, Loader2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-import { collection, getDocs, addDoc, doc, setDoc, deleteDoc } from "firebase/firestore";
-import { db, docToJSON } from "@/lib/firebase";
+import { collection, getDocs, addDoc, doc, setDoc, deleteDoc, docToJSON } from "@/lib/db";
+import { db } from '@/lib/db';
 
 const supplierSchema = z.object({
   id: z.string().optional(),
@@ -102,7 +102,7 @@ export default function SuppliersPage() {
             toast({ title: "Success", description: "Supplier updated successfully." });
         } else {
             const docRef = await addDoc(collection(db, 'suppliers'), data);
-            setSuppliers([...suppliers, { ...data, id: docRef.id }]);
+            setSuppliers([...suppliers, { id: docRef.id, name: data.name ?? "", contactPerson: data.contactPerson ?? "", email: data.email ?? "", permalink: data.permalink ?? "" }]);
             toast({ title: "Success", description: "New supplier created." });
         }
         handleCloseForm();

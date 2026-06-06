@@ -15,8 +15,8 @@ import { Label } from "@/components/ui/label";
 import { Star, MessageSquare, Trash2, CheckCircle, XCircle, Clock, Loader2 } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
-import { collection, getDocs, doc, updateDoc, deleteDoc } from 'firebase/firestore';
-import { db, docToJSON } from '@/lib/firebase';
+import { collection, getDocs, doc, updateDoc, deleteDoc, docToJSON } from '@/lib/db';
+import { db } from '@/lib/db';
 
 type FilterStatus = "all" | Review['status'];
 

@@ -13,8 +13,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Separator } from '@/components/ui/separator';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/hooks/use-auth';
-import { collection, addDoc } from 'firebase/firestore';
-import { db } from '@/lib/firebase';
+
 
 interface ReviewsProps {
   productId: string;
@@ -66,7 +65,11 @@ export function Reviews({ reviews: approvedReviews, productId }: ReviewsProps) {
         status: 'pending'
       };
 
-      await addDoc(collection(db, 'reviews'), newReview);
+      await fetch('/api/data/reviews', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(newReview),
+      });
       
       setRating(0);
       setTitle('');

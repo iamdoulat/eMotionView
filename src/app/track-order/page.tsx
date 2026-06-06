@@ -1,7 +1,7 @@
 
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -10,7 +10,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Loader2, PackageSearch } from "lucide-react";
-import { orders, type Order } from "@/lib/placeholder-data";
+import type { Order } from "@/lib/placeholder-data";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { Progress } from "@/components/ui/progress";
@@ -40,16 +40,18 @@ export default function TrackOrderPage() {
     setError(null);
     setFoundOrder(null);
 
-    // Simulate API call to find the order
-    setTimeout(() => {
-      const order = orders.find(o => o.orderNumber === values.orderNumber);
-      if (order) {
-        setFoundOrder(order);
-      } else {
-        setError("No order found with that number and email combination.");
-      }
-      setIsLoading(false);
-    }, 1000);
+    fetch(`/api/data/orders?field=orderNumber&value=${encodeURIComponent(values.orderNumber)}`)
+      .then(r => r.json())
+      .then((data: any[]) => {
+        const order = data.find((o: any) => o.orderNumber === values.orderNumber);
+        if (order) {
+          setFoundOrder({ ...order, id: order.orderNumber || order._id });
+        } else {
+          setError("No order found with that number and email combination.");
+        }
+      })
+      .catch(() => setError("Could not search orders. Please try again."))
+      .finally(() => setIsLoading(false));
   }
   
   const getStatusProgress = (status: Order['status']) => {

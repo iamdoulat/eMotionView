@@ -16,9 +16,10 @@ import { Separator } from '@/components/ui/separator';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { onAuthStateChanged, type User } from 'firebase/auth';
-import { auth, db } from '@/lib/firebase';
+import { auth } from '@/lib/firebase';
+import { db } from '@/lib/db';
 import { useToast } from '@/hooks/use-toast';
-import { doc, setDoc, collection, getDoc, onSnapshot } from 'firebase/firestore';
+import { doc, setDoc, collection, getDoc, onSnapshot } from '@/lib/db';
 
 export default function CheckoutPage() {
   const router = useRouter();

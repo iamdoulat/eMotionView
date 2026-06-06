@@ -1,7 +1,7 @@
 
 import type { Product } from '@/lib/placeholder-data';
-import { collection, getDocs } from 'firebase/firestore';
-import { db, docToJSON } from '@/lib/firebase';
+import { collection, getDocs, docToJSON } from '@/lib/db';
+import { db } from '@/lib/db';
 import { enrichProductsWithReviews } from '@/lib/product-utils';
 import { ProductsPageClient } from '@/components/products-page-client';
 

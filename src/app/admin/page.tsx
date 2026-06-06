@@ -15,8 +15,8 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Skeleton } from "@/components/ui/skeleton"
 import { SeedButton } from "@/components/admin/seed-button"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
-import { collection, getDocs, query, where, orderBy, limit, doc, getDoc } from "firebase/firestore"
-import { db, docToJSON } from "@/lib/firebase"
+import { collection, getDocs, query, where, orderBy, limit, doc, getDoc, docToJSON } from "@/lib/db"
+import { db } from "@/lib/db"
 import type { Order, User } from "@/lib/placeholder-data"
 
 const initialData = [

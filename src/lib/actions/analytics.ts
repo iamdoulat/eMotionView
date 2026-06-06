@@ -1,8 +1,7 @@
 
 'use server';
 
-import { db } from '@/lib/firebase';
-import { doc, getDoc, setDoc, increment } from 'firebase/firestore';
+import { doc, getDoc, setDoc, increment } from '@/lib/db';
 
 export async function trackDailyVisitor() {
     try {

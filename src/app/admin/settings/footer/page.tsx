@@ -21,9 +21,8 @@ import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Loader2, PlusCircle, Trash2 } from "lucide-react";
 import { Skeleton } from '@/components/ui/skeleton';
-import { db, storage } from '@/lib/firebase';
-import { doc, getDoc, setDoc } from 'firebase/firestore';
-import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
+import { doc, getDoc, setDoc } from '@/lib/db';
+import { uploadFile, getFileUrl } from '@/lib/r2';
 import { useToast } from '@/hooks/use-toast';
 import { defaultFooterSettings, type FooterSettings } from '@/lib/placeholder-data';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
@@ -33,10 +32,12 @@ const linkSchema = z.object({
   href: z.string().min(1, 'Link is required'),
 });
 
+const urlOrHash = z.string().url().or(z.literal('')).or(z.literal('#'));
+
 const membershipSchema = z.object({
     id: z.string(),
     name: z.string().min(1, 'Name is required'),
-    link: z.string().url().or(z.literal('')),
+    link: urlOrHash,
     image: z.union([z.instanceof(FileList).optional(), z.string().optional()]),
 });
 
@@ -51,18 +52,18 @@ const footerSettingsSchema = z.object({
   logo: z.union([z.instanceof(FileList).optional(), z.string().optional()]),
   description: z.string().min(1, 'Description is required'),
   socialLinks: z.object({
-    facebook: z.string().url().or(z.literal('')),
-    twitter: z.string().url().or(z.literal('')),
-    instagram: z.string().url().or(z.literal('')),
-    linkedin: z.string().url().or(z.literal('')),
-    youtube: z.string().url().or(z.literal('')),
+    facebook: urlOrHash,
+    twitter: urlOrHash,
+    instagram: urlOrHash,
+    linkedin: urlOrHash,
+    youtube: urlOrHash,
   }),
   appStore: z.object({
-    link: z.string().url().or(z.literal('')),
+    link: urlOrHash,
     image: z.union([z.instanceof(FileList).optional(), z.string().optional()]),
   }),
   googlePlay: z.object({
-    link: z.string().url().or(z.literal('')),
+    link: urlOrHash,
     image: z.union([z.instanceof(FileList).optional(), z.string().optional()]),
   }),
   companyLinks: z.array(linkSchema),
@@ -79,7 +80,7 @@ const footerSettingsSchema = z.object({
 
 type FooterSettingsFormData = z.infer<typeof footerSettingsSchema>;
 
-const SETTINGS_DOC_PATH = 'public_content/homepage';
+
 
 export default function FooterSettingsPage() {
   const { toast } = useToast();
@@ -117,7 +118,7 @@ export default function FooterSettingsPage() {
   useEffect(() => {
     const fetchFooterSettings = async () => {
       try {
-        const docRef = doc(db, SETTINGS_DOC_PATH);
+        const docRef = doc({} as any, 'public_content', 'homepage');
         const docSnap = await getDoc(docRef);
         if (docSnap.exists() && docSnap.data()?.footer) {
           const settings = { ...defaultFooterSettings, ...docSnap.data().footer };
@@ -135,10 +136,10 @@ export default function FooterSettingsPage() {
     fetchFooterSettings();
   }, [reset, toast]);
 
-  const uploadImage = async (file: File, path: string): Promise<string> => {
-    const storageRef = ref(storage, `footer/${path}/${Date.now()}-${file.name}`);
-    await uploadBytes(storageRef, file);
-    return getDownloadURL(storageRef);
+    const uploadImage = async (file: File, subpath: string): Promise<string> => {
+    const r2Path = `footer/${subpath}/${Date.now()}-${file.name}`;
+    await uploadFile(r2Path, file, file.type);
+    return getFileUrl(r2Path);
   };
   
   const onSubmit: SubmitHandler<FooterSettingsFormData> = async (data) => {
@@ -183,7 +184,7 @@ export default function FooterSettingsPage() {
           return { ...badge, image: currentSettings.securityBadges[index]?.image || '' };
       }));
 
-      const docRef = doc(db, SETTINGS_DOC_PATH);
+      const docRef = doc({} as any, 'public_content', 'homepage');
       await setDoc(docRef, { footer: finalData }, { merge: true });
       setCurrentSettings(finalData);
       reset(finalData);

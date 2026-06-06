@@ -7,8 +7,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { useToast } from '@/hooks/use-toast';
-import { doc, getDoc, setDoc } from 'firebase/firestore';
-import { db } from '@/lib/firebase';
+import { doc, getDoc, setDoc } from '@/lib/db';
 import { useAuth } from '@/hooks/use-auth';
 import { Loader2, Activity } from 'lucide-react';
 
@@ -44,7 +43,7 @@ export default function TrackingSettingsPage() {
     const fetchSettings = async () => {
         setIsLoading(true);
         try {
-            const settingsRef = doc(db, 'settings', 'tracking');
+            const settingsRef = doc({} as any, 'settings', 'tracking');
             const settingsSnap = await getDoc(settingsRef);
 
             if (settingsSnap.exists()) {
@@ -125,7 +124,7 @@ export default function TrackingSettingsPage() {
 
         setIsSaving(true);
         try {
-            const settingsRef = doc(db, 'settings', 'tracking');
+            const settingsRef = doc({} as any, 'settings', 'tracking');
             await setDoc(settingsRef, {
                 ...settings,
                 updatedAt: new Date().toISOString(),

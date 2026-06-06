@@ -1,60 +1,45 @@
 "use client";
 
 import { useState, useEffect } from 'react';
-import { doc, getDoc, onSnapshot } from 'firebase/firestore';
-import { db } from '@/lib/firebase';
 import type { ShippingSettings, ShippingMethod } from '@/lib/placeholder-data';
 
-/**
- * Custom hook to get available shipping methods based on cart subtotal
- * Subscribes to real-time updates of shipping settings
- */
 export function useShipping(subtotal: number = 0) {
     const [methods, setMethods] = useState<ShippingMethod[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const [selectedMethod, setSelectedMethod] = useState<ShippingMethod | null>(null);
 
     useEffect(() => {
-        const shippingRef = doc(db, 'admin_settings', 'shipping');
+        const fetchShipping = async () => {
+            try {
+                const res = await fetch('/api/data/admin_settings?id=shipping');
+                if (res.ok) {
+                    const data = await res.json();
 
-        // Set up real-time listener for shipping settings changes
-        const unsubscribe = onSnapshot(
-            shippingRef,
-            (snapshot) => {
-                if (snapshot.exists()) {
-                    const data = snapshot.data() as ShippingSettings;
+                    let availableMethods = (data.methods || []).filter((m: ShippingMethod) => m.isEnabled);
 
-                    // Filter to only show enabled methods
-                    let availableMethods = (data.methods || []).filter(m => m.isEnabled);
-
-                    // For free shipping, check if minimum order amount is met
-                    availableMethods = availableMethods.filter(method => {
+                    availableMethods = availableMethods.filter((method: ShippingMethod) => {
                         if (method.type === 'free_shipping') {
-                            // Only show if minimum order amount is met
                             return subtotal >= (method.minOrderAmount || 0);
                         }
-                        return true; // Show all other enabled methods
+                        return true;
                     });
 
                     setMethods(availableMethods);
 
-                    const freeShippingMethod = availableMethods.find(m =>
+                    const freeShippingMethod = availableMethods.find((m: ShippingMethod) =>
                         m.type === 'free_shipping' &&
                         subtotal >= (m.minOrderAmount || 0) &&
                         m.isEnabled
                     );
 
                     if (freeShippingMethod) {
-                        // Auto-select Free Shipping if available and eligible
                         if (selectedMethod?.id !== freeShippingMethod.id) {
                             setSelectedMethod(freeShippingMethod);
                         }
                     } else if (availableMethods.length > 0 && !selectedMethod) {
-                        // Otherwise select first available method if none selected
                         setSelectedMethod(availableMethods[0]);
                     }
                 } else {
-                    // Default shipping method if none configured
                     const defaultMethod: ShippingMethod = {
                         id: 'flat_rate',
                         type: 'flat_rate',
@@ -66,11 +51,7 @@ export function useShipping(subtotal: number = 0) {
                     setMethods([defaultMethod]);
                     setSelectedMethod(defaultMethod);
                 }
-                setIsLoading(false);
-            },
-            (error) => {
-                console.error('Error fetching shipping methods:', error);
-                // Fallback to default method on error
+            } catch {
                 const defaultMethod: ShippingMethod = {
                     id: 'flat_rate',
                     type: 'flat_rate',
@@ -81,13 +62,12 @@ export function useShipping(subtotal: number = 0) {
                 };
                 setMethods([defaultMethod]);
                 setSelectedMethod(defaultMethod);
+            } finally {
                 setIsLoading(false);
             }
-        );
-
-        // Cleanup subscription on unmount
-        return () => unsubscribe();
-    }, [subtotal]); // Re-run when subtotal changes (for free shipping threshold)
+        };
+        fetchShipping();
+    }, [subtotal]);
 
     const selectMethod = (methodId: string) => {
         const method = methods.find(m => m.id === methodId);

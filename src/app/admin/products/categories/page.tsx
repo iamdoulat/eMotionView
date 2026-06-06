@@ -18,8 +18,8 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { MoreHorizontal, PlusCircle, Edit, Trash2, Loader2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-import { collection, getDocs, addDoc, doc, setDoc, deleteDoc } from "firebase/firestore";
-import { db, docToJSON } from "@/lib/firebase";
+import { collection, getDocs, addDoc, doc, setDoc, deleteDoc, docToJSON } from "@/lib/db";
+import { db } from '@/lib/db';
 
 
 const categorySchema = z.object({
@@ -114,7 +114,7 @@ export default function CategoriesPage() {
             // Add new category
             const { id, ...payload } = data;
             const docRef = await addDoc(collection(db, 'categories'), payload);
-            setCategories([...categories, { ...payload, id: docRef.id }]);
+            setCategories([...categories, { id: docRef.id, name: payload.name ?? "", description: payload.description ?? "", permalink: payload.permalink ?? "" }]);
             toast({ title: "Success", description: "New category created successfully." });
         }
         handleCloseForm();

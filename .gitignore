@@ -20,7 +20,9 @@
 # production
 /build
 
-# misc
+# 
+.kiro/
+.vscode/
 .DS_Store
 *.pem
 

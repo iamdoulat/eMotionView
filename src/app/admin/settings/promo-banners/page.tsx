@@ -7,9 +7,8 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import Image from 'next/image';
 import { useToast } from '@/hooks/use-toast';
-import { db, storage } from '@/lib/firebase';
-import { doc, getDoc, setDoc } from 'firebase/firestore';
-import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
+import { doc, getDoc, setDoc } from '@/lib/db';
+import { uploadFile, getFileUrl } from "@/lib/r2";
 import { defaultHomepageSections, type Section } from '@/lib/placeholder-data';
 import {
   Card,
@@ -55,7 +54,7 @@ const bannerSchema = z.object({
 
 type BannerFormData = z.infer<typeof bannerSchema>;
 
-const SETTINGS_DOC_PATH = 'public_content/homepage';
+
 const PROMO_SECTION_TYPE = 'promo-banner-pair';
 
 export default function PromoBannersPage() {
@@ -76,7 +75,7 @@ export default function PromoBannersPage() {
         const fetchBanners = async () => {
             setIsLoading(true);
             try {
-                const docRef = doc(db, SETTINGS_DOC_PATH);
+                const docRef = doc({} as any, 'public_content', 'homepage');
                 const docSnap = await getDoc(docRef);
                 if (docSnap.exists()) {
                     const data = docSnap.data();
@@ -110,7 +109,7 @@ export default function PromoBannersPage() {
     const saveChanges = async (allBanners: PromoBanner[]) => {
         setIsSubmitting(true);
         try {
-            const docRef = doc(db, SETTINGS_DOC_PATH);
+            const docRef = doc({} as any, 'public_content', 'homepage');
             const docSnap = await getDoc(docRef);
             let existingSections = docSnap.exists() && docSnap.data()?.sections ? docSnap.data().sections : defaultHomepageSections;
 
@@ -151,9 +150,9 @@ export default function PromoBannersPage() {
         try {
             const file = data.image instanceof FileList && data.image.length > 0 ? data.image[0] : undefined;
             if (file) {
-                const storageRef = ref(storage, `homepage/promo-banners/${Date.now()}-${file.name}`);
-                const uploadResult = await uploadBytes(storageRef, file);
-                imageUrl = await getDownloadURL(uploadResult.ref);
+                const path = `homepage/promo-banners/${Date.now()}-${file.name}`;
+                await uploadFile(path, file, file.type);
+                imageUrl = await getFileUrl(path);
             } else if (!imageUrl && !editingBanner) {
                  toast({ variant: 'destructive', title: 'Error', description: 'An image is required for a new banner.' });
                  setIsSubmitting(false);

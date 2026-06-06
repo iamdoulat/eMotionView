@@ -17,8 +17,8 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { MoreHorizontal, Trash2, Edit, View, Loader2 } from "lucide-react";
 import { format } from 'date-fns';
-import { collection, getDocs, doc, setDoc, deleteDoc } from "firebase/firestore";
-import { db, docToJSON } from "@/lib/firebase";
+import { collection, getDocs, doc, setDoc, deleteDoc, docToJSON } from "@/lib/db";
+import { db } from '@/lib/db';
 import { useToast } from "@/hooks/use-toast";
 
 export default function AdminCustomersPage() {

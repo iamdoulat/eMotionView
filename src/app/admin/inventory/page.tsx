@@ -1,8 +1,7 @@
 
 "use client";
 
-import { useState, useMemo } from 'react';
-import { products as allProducts } from '@/lib/placeholder-data';
+import { useState, useMemo, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
@@ -30,27 +29,32 @@ function getStockStatus(stock: number): { label: 'In Stock' | 'Low Stock' | 'Out
 export default function AdminInventoryPage() {
   const [filter, setFilter] = useState<StockStatus>('all');
   const [searchTerm, setSearchTerm] = useState('');
+  const [allProducts, setAllProducts] = useState<any[]>([]);
+
+  useEffect(() => {
+    fetch('/api/data/products').then(r => r.json()).then(d => setAllProducts(d)).catch(() => {});
+  }, []);
 
   const filteredProducts = useMemo(() => {
     return allProducts
-      .filter(product => {
+      .filter((product: any) => {
         const stockStatus = getStockStatus(product.stock).label.toLowerCase().replace(' ', '-');
         if (filter === 'all') return true;
         return stockStatus === filter;
       })
-      .filter(product => 
+      .filter((product: any) => 
         product.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
         product.sku.toLowerCase().includes(searchTerm.toLowerCase()) ||
         product.supplier.toLowerCase().includes(searchTerm.toLowerCase())
       );
-  }, [filter, searchTerm]);
+  }, [filter, searchTerm, allProducts]);
 
   const stats = useMemo(() => {
     const totalProducts = allProducts.length;
-    const outOfStock = allProducts.filter(p => p.stock === 0).length;
-    const lowStock = allProducts.filter(p => p.stock > 0 && p.stock < LOW_STOCK_THRESHOLD).length;
+    const outOfStock = allProducts.filter((p: any) => p.stock === 0).length;
+    const lowStock = allProducts.filter((p: any) => p.stock > 0 && p.stock < LOW_STOCK_THRESHOLD).length;
     return { totalProducts, outOfStock, lowStock };
-  }, []);
+  }, [allProducts]);
 
   return (
     <div className="space-y-6">

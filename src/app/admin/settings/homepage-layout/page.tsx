@@ -24,9 +24,8 @@ import { CSS } from '@dnd-kit/utilities';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { GripVertical, Loader2, PlusCircle, Edit, Trash2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
-import { db, storage } from '@/lib/firebase';
-import { collection, doc, getDoc, getDocs, setDoc } from 'firebase/firestore';
-import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
+import { collection, doc, getDoc, getDocs, setDoc } from '@/lib/db';
+import { uploadFile, getFileUrl } from '@/lib/r2';
 import { defaultHomepageSections, type Section, predefinedProductGrids, type Category, type PromoBanner, type SingleBanner } from '@/lib/placeholder-data';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -53,7 +52,7 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Separator } from '@/components/ui/separator';
 
-const SETTINGS_DOC_PATH = 'public_content/homepage';
+
 
 const predefinedSections: Section[] = [
     { id: 'featured-categories-tpl', name: "Featured Categories Carousel", type: 'featured-categories', content: defaultHomepageSections.find(s => s.type === 'featured-categories')?.content || [] },
@@ -110,8 +109,8 @@ export default function HomepageLayoutPage() {
     const fetchData = async () => {
       setIsLoading(true);
       try {
-        const sectionsDocRef = doc(db, SETTINGS_DOC_PATH);
-        const categoriesCollectionRef = collection(db, 'categories');
+        const sectionsDocRef = doc({} as any, 'public_content', 'homepage');
+        const categoriesCollectionRef = collection('categories');
 
         const [sectionsSnap, categoriesSnap] = await Promise.all([
             getDoc(sectionsDocRef),
@@ -147,7 +146,7 @@ export default function HomepageLayoutPage() {
   const handleSave = async (newSections: Section[], successMessage: string) => {
       setIsSaving(true);
       try {
-        const docRef = doc(db, SETTINGS_DOC_PATH);
+        const docRef = doc({} as any, 'public_content', 'homepage');
         await setDoc(docRef, { sections: newSections }, { merge: true });
         setSections(newSections); // Update local state after successful save
         toast({ title: 'Success', description: successMessage });
@@ -211,9 +210,9 @@ export default function HomepageLayoutPage() {
 
     try {
         if (sectionToEdit.type === 'single-banner-large' && newImageFile) {
-            const storageRef = ref(storage, `homepage/banners/${Date.now()}-${newImageFile.name}`);
-            const uploadResult = await uploadBytes(storageRef, newImageFile);
-            const imageUrl = await getDownloadURL(uploadResult.ref);
+            const path = `homepage/banners/${Date.now()}-${newImageFile.name}`;
+            await uploadFile(path, newImageFile, newImageFile.type);
+            const imageUrl = await getFileUrl(path);
             updatedContent = { ...updatedContent, image: imageUrl };
         } else if (sectionToEdit.type === 'promo-banner-pair') {
             const existingBanners = sectionToEdit.content as PromoBanner[];
@@ -222,9 +221,9 @@ export default function HomepageLayoutPage() {
                     const existingBanner = existingBanners[index];
                     let imageUrl = existingBanner?.image || '';
                     if (banner.file) {
-                        const storageRef = ref(storage, `homepage/banners/${Date.now()}-${banner.file.name}`);
-                        const uploadResult = await uploadBytes(storageRef, banner.file);
-                        imageUrl = await getDownloadURL(uploadResult.ref);
+                        const path = `homepage/banners/${Date.now()}-${banner.file.name}`;
+                        await uploadFile(path, banner.file, banner.file.type);
+                        imageUrl = await getFileUrl(path);
                     }
                     return { ...(existingBanner || {}), id: existingBanner?.id || `promo-${index}`, link: banner.link, image: imageUrl };
                 })
