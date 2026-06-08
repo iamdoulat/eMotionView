@@ -46,17 +46,6 @@ async function loadFromMongoDB(): Promise<Record<string, string>> {
 }
 
 export async function GET() {
-    // Try reading .env file first (works in local dev)
-    try {
-        const content = await fs.readFile(ENV_PATH, 'utf-8');
-        const vars = parseEnv(content);
-        return NextResponse.json({ success: true, vars });
-    } catch {
-        // .env file not accessible (e.g., on Vercel with read-only filesystem)
-        // Fall back to process.env + MongoDB settings
-    }
-
-    // Fallback: merge process.env values with MongoDB-stored settings
     const envVars: Record<string, string> = {};
 
     // Load from process.env
@@ -72,7 +61,16 @@ export async function GET() {
         if (process.env[key]) envVars[key] = process.env[key]!;
     }
 
-    // Override with MongoDB-stored settings (these are the user-configured values)
+    // Try reading .env file (works in local dev, but read-only on Vercel)
+    try {
+        const content = await fs.readFile(ENV_PATH, 'utf-8');
+        const fileVars = parseEnv(content);
+        for (const [key, value] of Object.entries(fileVars)) {
+            if (value) envVars[key] = value;
+        }
+    } catch {}
+
+    // Override with MongoDB-stored settings (these are the user-configured values which should take precedence on Vercel)
     try {
         const dbVars = await loadFromMongoDB();
         for (const [key, value] of Object.entries(dbVars)) {

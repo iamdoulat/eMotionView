@@ -297,12 +297,13 @@ function rewriteUrl(item: any): any {
     if (typeof item === 'string' && item.includes('.r2.cloudflarestorage.com')) {
         try {
             const urlObj = new URL(item);
-            const parts = urlObj.pathname.split('/');
-            if (parts.length > 2) {
-                const fileKey = parts.slice(2).join('/');
-                return `/api/r2/proxy?key=${encodeURIComponent(fileKey)}`;
+            let parts = urlObj.pathname.split('/').filter(Boolean);
+            if (urlObj.hostname.split('.').length <= 4) {
+                // Bucket name is in the path, so remove the first part
+                parts.shift();
             }
-            return item;
+            const fileKey = decodeURIComponent(parts.join('/'));
+            return `/api/r2/proxy?key=${encodeURIComponent(fileKey)}`;
         } catch {
             return item;
         }
