@@ -215,17 +215,7 @@ async function deleteDoc(ref: DocRef): Promise<void> {
 async function updateDoc(ref: DocRef, data: any): Promise<void> {
   if (isServer) {
     const { updateOne } = await getMongo();
-    const processedData: Record<string, any> = {};
-    for (const [key, value] of Object.entries(data)) {
-      if (value && typeof value === 'object' && '_arrayUnion' in value) {
-        processedData[key] = { $each: value._arrayUnion };
-      } else if (value && typeof value === 'object' && '_arrayRemove' in value) {
-        processedData[key] = { $each: value._arrayRemove };
-      } else {
-        processedData[key] = value;
-      }
-    }
-    await updateOne(ref._collection, { _id: ref._id }, processedData);
+    await updateOne(ref._collection, { _id: ref._id }, data);
     return;
   }
   await apiPut(ref._collection, ref._id, data);

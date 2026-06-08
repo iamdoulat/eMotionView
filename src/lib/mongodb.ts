@@ -105,7 +105,50 @@ export async function insertOne(collectionName: string, data: any) {
 
 export async function updateOne(collectionName: string, filter: MongoFilter<Document>, data: any, upsert = false) {
   const db = await getMongoDb();
-  const result = await db.collection(collectionName).updateOne(filter, { $set: data }, { upsert });
+  
+  const $set: Record<string, any> = {};
+  const $inc: Record<string, any> = {};
+  const $push: Record<string, any> = {};
+  const $pullAll: Record<string, any> = {};
+  
+  let hasSet = false;
+  let hasInc = false;
+  let hasPush = false;
+  let hasPull = false;
+
+  for (const [key, value] of Object.entries(data)) {
+    if (value && typeof value === 'object' && !Array.isArray(value)) {
+      if ('_increment' in value) {
+        $inc[key] = (value as any)._increment;
+        hasInc = true;
+      } else if ('_arrayUnion' in value) {
+        $push[key] = { $each: (value as any)._arrayUnion };
+        hasPush = true;
+      } else if ('_arrayRemove' in value) {
+        $pullAll[key] = (value as any)._arrayRemove;
+        hasPull = true;
+      } else {
+        $set[key] = value;
+        hasSet = true;
+      }
+    } else {
+      $set[key] = value;
+      hasSet = true;
+    }
+  }
+
+  const updateDoc: any = {};
+  if (hasSet) updateDoc.$set = $set;
+  if (hasInc) updateDoc.$inc = $inc;
+  if (hasPush) updateDoc.$push = $push;
+  if (hasPull) updateDoc.$pullAll = $pullAll;
+
+  if (Object.keys(updateDoc).length === 0) {
+      if (upsert) updateDoc.$setOnInsert = {};
+      else return { modifiedCount: 0 };
+  }
+
+  const result = await db.collection(collectionName).updateOne(filter, updateDoc, { upsert });
   return result;
 }
 

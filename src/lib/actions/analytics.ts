@@ -1,7 +1,7 @@
 
 'use server';
 
-import { doc, getDoc, setDoc, increment } from '@/lib/db';
+import { db, doc, getDoc, setDoc, increment } from '@/lib/db';
 
 export async function trackDailyVisitor() {
     try {
