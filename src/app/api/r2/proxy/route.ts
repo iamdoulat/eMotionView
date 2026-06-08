@@ -23,14 +23,14 @@ export async function GET(req: NextRequest) {
             return NextResponse.json({ success: false, error: 'File not found' }, { status: 404 });
         }
 
-        const bytes = await response.Body.transformToByteArray();
+        const stream = response.Body.transformToWebStream();
 
-        return new NextResponse(bytes, {
+        return new NextResponse(stream, {
             status: 200,
             headers: {
                 'Content-Type': response.ContentType || 'application/octet-stream',
                 'Cache-Control': 'public, max-age=31536000, immutable',
-                'Content-Length': String(bytes.length),
+                ...(response.ContentLength && { 'Content-Length': String(response.ContentLength) }),
             },
         });
     } catch (error: any) {

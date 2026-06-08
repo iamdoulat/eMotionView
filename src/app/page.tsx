@@ -65,7 +65,7 @@ export default async function HomePage() {
 
     const settingsSnap = await getDoc(settingsRef);
     if (settingsSnap.exists()) {
-      settings = settingsSnap.data();
+      settings = docToJSON(settingsSnap);
     }
     allCategories = categoriesSnapshot.docs.map(docToJSON) as Category[];
 
