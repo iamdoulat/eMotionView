@@ -27,7 +27,7 @@ export default function StorageSettingsPage() {
             let sk = '';
             let bu = '';
             let pu = '';
-            // Load from .env first
+            // Load from env/MongoDB settings API
             try {
                 const envRes = await fetch('/api/admin/load-env');
                 const envData = await envRes.json();
@@ -39,16 +39,18 @@ export default function StorageSettingsPage() {
                     if (envData.vars.R2_PUBLIC_URL) pu = envData.vars.R2_PUBLIC_URL;
                 }
             } catch {}
-            // Fallback to MongoDB settings
+            // Also try MongoDB settings as additional fallback
             if (!ep) {
                 try {
                     const res = await fetch('/api/data/settings?id=storage');
-                    const data = await res.json();
-                    if (data.endpoint) ep = data.endpoint;
-                    if (data.accessKey) ak = data.accessKey;
-                    if (data.secretKey) sk = data.secretKey;
-                    if (data.bucket) bu = data.bucket;
-                    if (data.publicUrl) pu = data.publicUrl;
+                    if (res.ok) {
+                        const data = await res.json();
+                        if (data.endpoint) ep = data.endpoint;
+                        if (data.accessKey) ak = data.accessKey;
+                        if (data.secretKey) sk = data.secretKey;
+                        if (data.bucket) bu = data.bucket;
+                        if (data.publicUrl) pu = data.publicUrl;
+                    }
                 } catch {}
             }
             setEndpoint(ep);
@@ -81,16 +83,30 @@ export default function StorageSettingsPage() {
 
     const saveConfig = async () => {
         setIsSaving(true);
-        await fetch('/api/data/settings?id=storage', {
-            method: 'PUT',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ _id: 'storage', endpoint, accessKey, secretKey, bucket, publicUrl }),
-        });
-        await fetch('/api/admin/save-env', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ endpoint, accessKey, secretKey, bucket, publicUrl }),
-        });
+        try {
+            // Save to MongoDB via settings API
+            await fetch('/api/data/settings?id=storage', {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ _id: 'storage', endpoint, accessKey, secretKey, bucket, publicUrl }),
+            });
+            // Save to MongoDB + .env via save-env API (using vars format)
+            await fetch('/api/admin/save-env', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    vars: {
+                        R2_ENDPOINT: endpoint,
+                        R2_ACCESS_KEY: accessKey,
+                        R2_SECRET_KEY: secretKey,
+                        R2_BUCKET: bucket,
+                        R2_PUBLIC_URL: publicUrl,
+                    }
+                }),
+            });
+        } catch (error) {
+            console.error('Failed to save storage config:', error);
+        }
         setIsSaving(false);
     };
 

@@ -20,7 +20,7 @@ export default function DatabaseSettingsPage() {
         (async () => {
             let uri = '';
             let db = '';
-            // Load from .env first
+            // Load from env/MongoDB settings API
             try {
                 const envRes = await fetch('/api/admin/load-env');
                 const envData = await envRes.json();
@@ -29,13 +29,15 @@ export default function DatabaseSettingsPage() {
                     if (envData.vars.MONGODB_DB) db = envData.vars.MONGODB_DB;
                 }
             } catch {}
-            // Fallback to MongoDB settings
+            // Also try MongoDB settings as additional fallback
             if (!uri) {
                 try {
                     const res = await fetch('/api/data/settings?id=database');
-                    const data = await res.json();
-                    if (data.uri) uri = data.uri;
-                    if (data.dbName) db = data.dbName;
+                    if (res.ok) {
+                        const data = await res.json();
+                        if (data.uri) uri = data.uri;
+                        if (data.dbName) db = data.dbName;
+                    }
                 } catch {}
             }
             setMongoUri(uri);

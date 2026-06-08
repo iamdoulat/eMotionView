@@ -58,6 +58,55 @@ function serializeEnv(vars: Map<string, string>, originalContent: string): strin
     return updatedLines.join('\n') + '\n';
 }
 
+// Map of env var keys to their MongoDB settings collection fields
+const STORAGE_ENV_KEYS: Record<string, string> = {
+    'R2_ENDPOINT': 'endpoint',
+    'R2_ACCESS_KEY': 'accessKey',
+    'R2_SECRET_KEY': 'secretKey',
+    'R2_BUCKET': 'bucket',
+    'R2_PUBLIC_URL': 'publicUrl',
+};
+
+const DATABASE_ENV_KEYS: Record<string, string> = {
+    'MONGODB_URI': 'uri',
+    'MONGODB_DB': 'dbName',
+};
+
+async function saveToMongoDB(vars: Record<string, string>): Promise<void> {
+    try {
+        const { getMongoDb } = await import('@/lib/mongodb');
+        const db = await getMongoDb();
+
+        // Check if we have any storage settings to save
+        const storageData: Record<string, any> = {};
+        for (const [envKey, dbField] of Object.entries(STORAGE_ENV_KEYS)) {
+            if (vars[envKey] !== undefined) storageData[dbField] = vars[envKey];
+        }
+        if (Object.keys(storageData).length > 0) {
+            await db.collection('settings').updateOne(
+                { _id: 'storage' } as any,
+                { $set: storageData },
+                { upsert: true }
+            );
+        }
+
+        // Check if we have any database settings to save
+        const dbData: Record<string, any> = {};
+        for (const [envKey, dbField] of Object.entries(DATABASE_ENV_KEYS)) {
+            if (vars[envKey] !== undefined) dbData[dbField] = vars[envKey];
+        }
+        if (Object.keys(dbData).length > 0) {
+            await db.collection('settings').updateOne(
+                { _id: 'database' } as any,
+                { $set: dbData },
+                { upsert: true }
+            );
+        }
+    } catch (error) {
+        console.error('Failed to save settings to MongoDB:', error);
+    }
+}
+
 export async function POST(req: NextRequest) {
     try {
         const body = await req.json();
@@ -70,20 +119,29 @@ export async function POST(req: NextRequest) {
         if (body.bucket) vars['R2_BUCKET'] = body.bucket;
         if (body.publicUrl) vars['R2_PUBLIC_URL'] = body.publicUrl;
 
-        let originalContent = '';
+        // Always save to MongoDB (works on both local and Vercel)
+        await saveToMongoDB(vars);
+
+        // Try to save to .env file (only works in local dev, not on Vercel)
         try {
-            originalContent = await fs.readFile(ENV_PATH, 'utf-8');
+            let originalContent = '';
+            try {
+                originalContent = await fs.readFile(ENV_PATH, 'utf-8');
+            } catch {
+                // File doesn't exist yet, start fresh
+            }
+
+            const existing = parseEnv(originalContent);
+
+            for (const [key, value] of Object.entries(vars)) {
+                if (value) existing.set(key, value as string);
+            }
+
+            await fs.writeFile(ENV_PATH, serializeEnv(existing, originalContent || ''), 'utf-8');
         } catch {
-            // File doesn't exist yet, start fresh
+            // .env file write failed (expected on Vercel with read-only filesystem)
+            // Settings are already saved to MongoDB above, so this is fine
         }
-
-        const existing = parseEnv(originalContent);
-
-        for (const [key, value] of Object.entries(vars)) {
-            if (value) existing.set(key, value as string);
-        }
-
-        await fs.writeFile(ENV_PATH, serializeEnv(existing, originalContent || ''), 'utf-8');
 
         return NextResponse.json({ success: true });
     } catch (error: any) {

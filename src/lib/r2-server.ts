@@ -20,6 +20,12 @@ let cachedClient: S3Client | null = null;
 let cachedConfig: R2Config | null = null;
 let configLoadPromise: Promise<R2Config> | null = null;
 
+export function clearR2Cache() {
+  cachedClient = null;
+  cachedConfig = null;
+  configLoadPromise = null;
+}
+
 async function loadR2ConfigFromDb(): Promise<R2Config | null> {
   try {
     const { getMongoDb } = await import('@/lib/mongodb');
@@ -96,9 +102,8 @@ export async function getFileUrl(key: string): Promise<string> {
   if (config.publicUrl) {
     return `${config.publicUrl.replace(/\/$/, '')}/${key}`;
   }
-  const client = await getR2Client();
-  const command = new GetObjectCommand({ Bucket: config.bucket, Key: key });
-  return getSignedUrl(client, command, { expiresIn: 3600 });
+  // Use proxy route instead of signed URLs so Vercel Image Optimizer can access them
+  return `/api/r2/proxy?key=${encodeURIComponent(key)}`;
 }
 
 export async function getPublicUrl(key: string): Promise<string> {
@@ -106,7 +111,8 @@ export async function getPublicUrl(key: string): Promise<string> {
   if (config.publicUrl) {
     return `${config.publicUrl.replace(/\/$/, '')}/${key}`;
   }
-  return `${config.endpoint}/${config.bucket}/${key}`;
+  // Use proxy route instead of direct R2 URLs for Vercel compatibility
+  return `/api/r2/proxy?key=${encodeURIComponent(key)}`;
 }
 
 export async function deleteFile(key: string): Promise<void> {
@@ -125,6 +131,13 @@ export async function listFiles(prefix: string): Promise<string[]> {
 }
 
 export async function getFileKeyFromUrl(url: string): Promise<string | null> {
+  // Handle proxy URLs
+  if (url.includes('/api/r2/proxy')) {
+    try {
+      const urlObj = new URL(url, 'http://localhost');
+      return urlObj.searchParams.get('key');
+    } catch {}
+  }
   const config = await getR2Config();
   if (config.publicUrl && url.startsWith(config.publicUrl)) {
     return url.replace(config.publicUrl.replace(/\/$/, '') + '/', '');

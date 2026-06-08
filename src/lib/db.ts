@@ -302,6 +302,39 @@ function docToJSON(doc: any): any {
     const value = data[key];
     if (value && typeof value === 'object' && typeof value.toDate === 'function') {
       result[key] = value.toDate().toISOString();
+    } else if (typeof value === 'string' && value.includes('.r2.cloudflarestorage.com')) {
+      // Convert old direct R2 URLs to proxy URLs on the fly
+      try {
+        const urlObj = new URL(value);
+        const parts = urlObj.pathname.split('/');
+        // First part is usually empty, second is bucket name, rest is file key
+        if (parts.length > 2) {
+          const fileKey = parts.slice(2).join('/');
+          result[key] = `/api/r2/proxy?key=${encodeURIComponent(fileKey)}`;
+        } else {
+          result[key] = value;
+        }
+      } catch {
+        result[key] = value;
+      }
+    } else if (Array.isArray(value)) {
+        // Handle arrays of images
+        result[key] = value.map(item => {
+             if (typeof item === 'string' && item.includes('.r2.cloudflarestorage.com')) {
+                try {
+                    const urlObj = new URL(item);
+                    const parts = urlObj.pathname.split('/');
+                    if (parts.length > 2) {
+                        const fileKey = parts.slice(2).join('/');
+                        return `/api/r2/proxy?key=${encodeURIComponent(fileKey)}`;
+                    }
+                    return item;
+                } catch {
+                    return item;
+                }
+             }
+             return item;
+        });
     } else {
       result[key] = value;
     }
