@@ -45,29 +45,19 @@ export function Header({ logoUrl, companyName = "eMotionView" }: HeaderProps) {
   const [isScrolled, setIsScrolled] = useState(false);
   const { user, isLoading: isAuthLoading } = useAuth();
   const router = useRouter();
-  const pathname = usePathname();
-  const isHomePage = pathname === '/';
-  const showCategoryDropdown = !isHomePage || isScrolled;
   const { cartCount, isInitialized: isCartInitialized } = useCart();
 
   // Search state
   const [searchTerm, setSearchTerm] = useState('');
   const [isSearchFocused, setIsSearchFocused] = useState(false);
-  const searchWrapperRef = useRef<HTMLElement>(null);
+  const searchWrapperRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     let ticking = false;
     const handleScroll = () => {
       if (!ticking) {
         window.requestAnimationFrame(() => {
-          const y = window.scrollY;
-          setIsScrolled((prev) => {
-            // Hysteresis prevents flickering when hovering/scrolling near the boundary:
-            // Scroll down past 50px to activate, scroll back up past 15px to deactivate
-            if (!prev && y > 50) return true;
-            if (prev && y < 15) return false;
-            return prev;
-          });
+          setIsScrolled(window.scrollY > 20);
           ticking = false;
         });
         ticking = true;
@@ -265,12 +255,9 @@ export function Header({ logoUrl, companyName = "eMotionView" }: HeaderProps) {
   }
 
   return (
-    <header className="sticky top-0 z-50 w-full bg-background/95 backdrop-blur-sm shadow-md transform-gpu" ref={searchWrapperRef}>
-      {/* Top Bar (Desktop only) - smooth height/opacity collapse with fixed inner container to prevent text reflow */}
-      <div className={cn(
-        "hidden md:block overflow-hidden bg-secondary/50 border-b transition-all duration-300 ease-in-out",
-        isScrolled ? 'max-h-0 opacity-0 -translate-y-2 pointer-events-none border-transparent' : 'max-h-12 opacity-100 translate-y-0 border-border'
-      )}>
+    <div className="w-full" ref={searchWrapperRef}>
+      {/* Top Bar (Desktop only) - scrolls away naturally with the page, zero layout shift */}
+      <div className="hidden md:block bg-secondary/50 border-b border-border">
         <div className="container mx-auto flex h-10 items-center justify-between px-4 text-sm">
           <div className="font-bold text-sm">
             <span>Biggest Smart Gadget & SmartPhone Collection</span>
@@ -295,205 +282,194 @@ export function Header({ logoUrl, companyName = "eMotionView" }: HeaderProps) {
         </div>
       </div>
 
-      {/* ======================================================= */}
-      {/* Main Header - Unified for Mobile and Desktop            */}
-      {/* Uses responsive classes to show/hide/rearrange elements */}
-      {/* ======================================================= */}
-
-      {/* Main Bar - transitions only height on desktop */}
-      <div className={cn(
-        "container mx-auto flex items-center justify-between gap-4 px-4 transition-[height] duration-300 ease-in-out",
-        "h-16 md:h-20", // Base heights for mobile and desktop
-        isScrolled && "md:h-16" // Scrolled height for desktop
+      {/* Main Sticky Header */}
+      <header className={cn(
+        "sticky top-0 z-50 w-full bg-background/95 backdrop-blur-sm border-b transition-shadow duration-200",
+        isScrolled ? "shadow-md border-border" : "shadow-xs border-border/50"
       )}>
-        {/* --- Left Group --- */}
-        <div className="flex flex-shrink-0 items-center gap-2">
-          {/* Mobile Menu Trigger */}
-          <Sheet>
-            <SheetTrigger asChild>
-              <Button variant="ghost" size="icon" className="md:hidden">
-                <Menu className="h-6 w-6" />
-                <span className="sr-only">Toggle Menu</span>
-              </Button>
-            </SheetTrigger>
-            <SheetContent
-              side="left"
-              hideCloseButton
-              className="w-[300px] p-0 flex flex-col"
-            >
-              <SheetHeader className="sr-only">
-                <SheetTitle>Navigation Menu</SheetTitle>
-              </SheetHeader>
-              <div className="bg-primary px-3 py-2.5 flex items-center justify-between gap-2 shrink-0">
-                <SheetClose asChild>
-                  <Link href="/" className="flex items-center gap-2 min-w-0">
-                    <Image src={logoUrl || "/icon.png"} alt={`${companyName} Logo`} width={28} height={28} className="rounded bg-white p-0.5 object-contain shrink-0" data-ai-hint="logo initial" />
-                    <span className="font-bold text-sm text-primary-foreground truncate">{companyName}</span>
-                  </Link>
-                </SheetClose>
-                <div className="flex items-center gap-1.5 shrink-0">
-                  <ThemeToggle />
+        {/* Main Bar */}
+        <div className="container mx-auto flex h-16 md:h-20 items-center justify-between gap-4 px-4">
+          {/* --- Left Group --- */}
+          <div className="flex flex-shrink-0 items-center gap-2">
+            {/* Mobile Menu Trigger */}
+            <Sheet>
+              <SheetTrigger asChild>
+                <Button variant="ghost" size="icon" className="md:hidden">
+                  <Menu className="h-6 w-6" />
+                  <span className="sr-only">Toggle Menu</span>
+                </Button>
+              </SheetTrigger>
+              <SheetContent
+                side="left"
+                hideCloseButton
+                className="w-[300px] p-0 flex flex-col"
+              >
+                <SheetHeader className="sr-only">
+                  <SheetTitle>Navigation Menu</SheetTitle>
+                </SheetHeader>
+                <div className="bg-primary px-3 py-2.5 flex items-center justify-between gap-2 shrink-0">
                   <SheetClose asChild>
-                    <button
-                      type="button"
-                      aria-label="Close menu"
-                      className="flex h-7 w-7 items-center justify-center rounded-full bg-white text-primary hover:bg-white/90 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-white shadow-sm"
-                    >
-                      <X className="h-3.5 w-3.5" />
-                      <span className="sr-only">Close</span>
-                    </button>
+                    <Link href="/" className="flex items-center gap-2 min-w-0">
+                      <Image src={logoUrl || "/icon.png"} alt={`${companyName} Logo`} width={28} height={28} className="rounded bg-white p-0.5 object-contain shrink-0" data-ai-hint="logo initial" />
+                      <span className="font-bold text-sm text-primary-foreground truncate">{companyName}</span>
+                    </Link>
                   </SheetClose>
-                </div>
-              </div>
-
-              <ScrollArea className="flex-1 min-h-0">
-                <div className="px-2 py-2">
-                  <h3 className="px-2 pb-1 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-                    All Categories
-                  </h3>
-                  <div className="space-y-0.5">
-                    {categoryLinks.map(link => (
-                      <SheetClose asChild key={link.name}>
-                        <Link
-                          href={link.href}
-                          className="relative flex items-center justify-between rounded-md px-3 py-1.5 text-sm font-medium text-foreground hover:text-primary transition-colors overflow-hidden group"
-                        >
-                          {/* Gradient background: primary/70 on left → transparent on right */}
-                          <span
-                            aria-hidden="true"
-                            className="absolute inset-0 rounded-md opacity-0 group-hover:opacity-100 transition-opacity duration-200"
-                            style={{ background: 'linear-gradient(to right, hsl(var(--primary)/0.12) 0%, transparent 100%)' }}
-                          />
-                          {/* Always-visible subtle left accent */}
-                          <span
-                            aria-hidden="true"
-                            className="absolute inset-0 rounded-md"
-                            style={{ background: 'linear-gradient(to right, hsl(var(--primary)/0.07) 0%, transparent 70%)' }}
-                          />
-                          <span className="relative truncate">{link.name}</span>
-                          <ChevronRight className="relative h-3.5 w-3.5 text-muted-foreground shrink-0" />
-                        </Link>
-                      </SheetClose>
-                    ))}
+                  <div className="flex items-center gap-1.5 shrink-0">
+                    <ThemeToggle />
+                    <SheetClose asChild>
+                      <button
+                        type="button"
+                        aria-label="Close menu"
+                        className="flex h-7 w-7 items-center justify-center rounded-full bg-white text-primary hover:bg-white/90 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-white shadow-sm"
+                      >
+                        <X className="h-3.5 w-3.5" />
+                        <span className="sr-only">Close</span>
+                      </button>
+                    </SheetClose>
                   </div>
                 </div>
-              </ScrollArea>
 
-              <div className="shrink-0 border-t bg-secondary/40 px-3 py-2.5">
-                <h3 className="px-1 pb-1 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-                  Account
-                </h3>
-                <ClientOnly>
-                  <AccountLinks isMobile={true} />
-                </ClientOnly>
-              </div>
-            </SheetContent>
-          </Sheet>
+                <ScrollArea className="flex-1 min-h-0">
+                  <div className="px-2 py-2">
+                    <h3 className="px-2 pb-1 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                      All Categories
+                    </h3>
+                    <div className="space-y-0.5">
+                      {categoryLinks.map(link => (
+                        <SheetClose asChild key={link.name}>
+                          <Link
+                            href={link.href}
+                            className="relative flex items-center justify-between rounded-md px-3 py-1.5 text-sm font-medium text-foreground hover:text-primary transition-colors overflow-hidden group"
+                          >
+                            {/* Gradient background: primary/70 on left → transparent on right */}
+                            <span
+                              aria-hidden="true"
+                              className="absolute inset-0 rounded-md opacity-0 group-hover:opacity-100 transition-opacity duration-200"
+                              style={{ background: 'linear-gradient(to right, hsl(var(--primary)/0.12) 0%, transparent 100%)' }}
+                            />
+                            {/* Always-visible subtle left accent */}
+                            <span
+                              aria-hidden="true"
+                              className="absolute inset-0 rounded-md"
+                              style={{ background: 'linear-gradient(to right, hsl(var(--primary)/0.07) 0%, transparent 70%)' }}
+                            />
+                            <span className="relative truncate">{link.name}</span>
+                            <ChevronRight className="relative h-3.5 w-3.5 text-muted-foreground shrink-0" />
+                          </Link>
+                        </SheetClose>
+                      ))}
+                    </div>
+                  </div>
+                </ScrollArea>
 
-          {/* Desktop Logo - constant Image dimensions + CSS width transition prevents image re-decoding flicker */}
-          <Link href="/" className="hidden items-center gap-2 md:flex shrink-0">
-            {logoUrl ? (
-              <Image
-                src={logoUrl}
-                alt={`${companyName} Logo`}
-                width={150}
-                height={40}
-                priority
-                className={cn(
-                  "h-auto object-contain transition-all duration-300 ease-in-out",
-                  isScrolled ? "w-[120px]" : "w-[145px]"
-                )}
-                data-ai-hint="logo globe"
-              />
-            ) : (
-              <span className={cn("font-bold font-headline text-foreground transition-all duration-300 ease-in-out", isScrolled ? 'text-xl' : 'text-2xl')}>
-                {companyName}
-              </span>
-            )}
-          </Link>
+                <div className="shrink-0 border-t bg-secondary/40 px-3 py-2.5">
+                  <h3 className="px-1 pb-1 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                    Account
+                  </h3>
+                  <ClientOnly>
+                    <AccountLinks isMobile={true} />
+                  </ClientOnly>
+                </div>
+              </SheetContent>
+            </Sheet>
 
-          {/* Desktop Category Dropdown (appears on scroll or on non-home pages) */}
-          <div className={cn(
-            "hidden lg:flex items-center ml-5 lg:ml-7 shrink-0 transition-opacity duration-300 ease-in-out",
-            showCategoryDropdown ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'
-          )}>
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button className="gap-2 font-semibold bg-primary hover:bg-primary/90 text-primary-foreground shadow-xs">
-                  <LayoutGrid className="mr-1.5 h-4 w-4" />
-                  All Categories
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent className="w-64">
-                {categoryLinks.map((link) => (
-                  <DropdownMenuItem key={link.name} asChild>
-                    <Link href={link.href}>{link.name}</Link>
-                  </DropdownMenuItem>
-                ))}
-              </DropdownMenuContent>
-            </DropdownMenu>
+            {/* Desktop Logo */}
+            <Link href="/" className="hidden items-center gap-2 md:flex shrink-0">
+              {logoUrl ? (
+                <Image
+                  src={logoUrl}
+                  alt={`${companyName} Logo`}
+                  width={145}
+                  height={38}
+                  priority
+                  className="h-auto w-[130px] md:w-[145px] object-contain"
+                  data-ai-hint="logo globe"
+                />
+              ) : (
+                <span className="font-bold font-headline text-xl md:text-2xl text-foreground">
+                  {companyName}
+                </span>
+              )}
+            </Link>
+
+            {/* Desktop Category Dropdown - always visible with gap */}
+            <div className="hidden lg:flex items-center ml-5 lg:ml-7 shrink-0">
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button className="gap-2 font-semibold bg-primary hover:bg-primary/90 text-primary-foreground shadow-xs">
+                    <LayoutGrid className="mr-1.5 h-4 w-4" />
+                    All Categories
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent className="w-64">
+                  {categoryLinks.map((link) => (
+                    <DropdownMenuItem key={link.name} asChild>
+                      <Link href={link.href}>{link.name}</Link>
+                    </DropdownMenuItem>
+                  ))}
+                </DropdownMenuContent>
+              </DropdownMenu>
+            </div>
           </div>
-        </div>
 
-        {/* --- Center Group --- */}
-        <div className="flex flex-1 justify-center items-center md:px-4">
-          {/* Mobile Logo (acts as a spacer on small screens) */}
-          <Link href="/" className="flex items-center gap-2 md:hidden">
-            <span className="font-bold font-headline text-xl text-foreground">{companyName}</span>
-          </Link>
+          {/* --- Center Group --- */}
+          <div className="flex flex-1 justify-center items-center md:px-4">
+            {/* Mobile Logo */}
+            <Link href="/" className="flex items-center gap-2 md:hidden">
+              <span className="font-bold font-headline text-xl text-foreground">{companyName}</span>
+            </Link>
 
-          {/* Desktop Search - scoped max-width transition */}
-          <div className="w-full max-w-2xl hidden md:block">
-            <div className={cn("w-full transition-[max-width] duration-300 ease-in-out", isScrolled ? 'max-w-lg' : 'max-w-2xl')}>
+            {/* Desktop Search */}
+            <div className="w-full max-w-2xl hidden md:block">
               <form className="relative" onSubmit={handleSearchSubmit}>
                 {searchInput}
                 {searchButton}
               </form>
             </div>
           </div>
-        </div>
 
-        {/* --- Right Group --- */}
-        <div className="flex flex-shrink-0 items-center justify-end gap-2.5 md:gap-3">
-          <ClientOnly fallback={
-            <div className={cn("hidden md:inline-flex items-center justify-center", headerActionButtonClass)}>
-              <Heart className="h-5 w-5" />
-            </div>
-          }>
-            <Button
-              variant="ghost"
-              size="icon"
-              asChild
-              className={cn("hidden md:inline-flex", headerActionButtonClass)}
-            >
-              <Link href="/wishlist" aria-label="Wishlist">
+          {/* --- Right Group --- */}
+          <div className="flex flex-shrink-0 items-center justify-end gap-2.5 md:gap-3">
+            <ClientOnly fallback={
+              <div className={cn("hidden md:inline-flex items-center justify-center", headerActionButtonClass)}>
                 <Heart className="h-5 w-5" />
-                <span className="sr-only">Wishlist</span>
-              </Link>
-            </Button>
-          </ClientOnly>
+              </div>
+            }>
+              <Button
+                variant="ghost"
+                size="icon"
+                asChild
+                className={cn("hidden md:inline-flex", headerActionButtonClass)}
+              >
+                <Link href="/wishlist" aria-label="Wishlist">
+                  <Heart className="h-5 w-5" />
+                  <span className="sr-only">Wishlist</span>
+                </Link>
+              </Button>
+            </ClientOnly>
 
-          <CartButton />
+            <CartButton />
 
-          <ClientOnly fallback={
-            <div className={cn("hidden md:inline-flex items-center justify-center", headerActionButtonClass)}>
-              <User className="h-5 w-5" />
-            </div>
-          }>
-            <div className="hidden md:inline-flex items-center">
-              <AccountLinks inHeader={true} />
-            </div>
-          </ClientOnly>
+            <ClientOnly fallback={
+              <div className={cn("hidden md:inline-flex items-center justify-center", headerActionButtonClass)}>
+                <User className="h-5 w-5" />
+              </div>
+            }>
+              <div className="hidden md:inline-flex items-center">
+                <AccountLinks inHeader={true} />
+              </div>
+            </ClientOnly>
+          </div>
         </div>
-      </div>
 
-      {/* Mobile Search Bar */}
-      <div className="container mx-auto px-4 py-3 border-t relative md:hidden">
-        <form className="relative" onSubmit={handleSearchSubmit}>
-          {searchInput}
-          {searchButton}
-        </form>
-      </div>
-    </header>
-  )
+        {/* Mobile Search Bar */}
+        <div className="container mx-auto px-4 py-3 border-t relative md:hidden">
+          <form className="relative" onSubmit={handleSearchSubmit}>
+            {searchInput}
+            {searchButton}
+          </form>
+        </div>
+      </header>
+    </div>
+  );
 }
