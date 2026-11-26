@@ -24,6 +24,9 @@ const SECRET_PAYMENT_FIELDS = new Set([
   'storePassword',
   'secretKey',
   'secret',
+  'googleClientSecret',
+  'facebookAppSecret',
+  'captchaSecretKey',
 ]);
 
 function rewriteR2Value(item: any): any {
@@ -53,12 +56,15 @@ function rewriteR2Value(item: any): any {
 
 function sanitizeDoc(collection: string, doc: any, isAdmin: boolean) {
   const rewritten = rewriteR2Value(doc);
-  if (isAdmin || collection !== 'admin_settings') return rewritten;
-  const clean: Record<string, any> = {};
-  for (const [k, v] of Object.entries(rewritten)) {
-    if (!SECRET_PAYMENT_FIELDS.has(k)) clean[k] = v;
+  if (isAdmin) return rewritten;
+  if (collection === 'admin_settings' || (collection === 'settings' && doc?._id === 'general')) {
+    const clean: Record<string, any> = {};
+    for (const [k, v] of Object.entries(rewritten)) {
+      if (!SECRET_PAYMENT_FIELDS.has(k)) clean[k] = v;
+    }
+    return clean;
   }
-  return clean;
+  return rewritten;
 }
 
 export async function GET(req: NextRequest, { params }: { params: Promise<{ collection: string; id: string }> }) {

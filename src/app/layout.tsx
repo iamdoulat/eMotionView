@@ -26,22 +26,58 @@ const spaceGrotesk = Space_Grotesk({
 });
 
 
-export const metadata: Metadata = {
-  title: 'eMotionView',
-  description: 'AI-Powered Product Recommendations',
-  manifest: '/manifest.json',
-  icons: {
-    icon: [
-      { url: '/favicon.ico', sizes: 'any' },
-      { url: '/icon.png', type: 'image/png', sizes: '32x32' },
-      { url: '/icon-192.png', type: 'image/png', sizes: '192x192' },
-      { url: '/icon-512.png', type: 'image/png', sizes: '512x512' },
-    ],
-    apple: [
-      { url: '/apple-icon.png', sizes: '180x180', type: 'image/png' },
-    ],
-  },
-};
+export async function generateMetadata(): Promise<Metadata> {
+  let generalSettings: any = {};
+  try {
+    const snap = await getDoc(doc(db, 'settings/general'));
+    if (snap.exists()) {
+      generalSettings = snap.data();
+    }
+  } catch {}
+
+  const siteTitle = generalSettings.browserTitle || generalSettings.storeName || generalSettings.companyName || 'eMotionView';
+  const siteDesc = generalSettings.seoDescription || generalSettings.storeDescription || 'AI-Powered Product Recommendations';
+  const keywords = generalSettings.seoKeywords
+    ? generalSettings.seoKeywords.split(',').map((k: string) => k.trim()).filter(Boolean)
+    : undefined;
+  const faviconUrl = generalSettings.favicon || '/favicon.ico';
+  const ogImg = generalSettings.ogImage;
+  const robots = generalSettings.robotsIndex === false
+    ? { index: false, follow: false }
+    : { index: true, follow: true };
+  let metadataBase: URL | undefined = undefined;
+  if (generalSettings.canonicalUrl) {
+    try {
+      metadataBase = new URL(generalSettings.canonicalUrl);
+    } catch {}
+  }
+
+  return {
+    metadataBase,
+    title: {
+      default: siteTitle,
+      template: `%s ${generalSettings.titleSeparator || '|'} ${generalSettings.storeName || 'eMotionView'}`,
+    },
+    description: siteDesc,
+    keywords,
+    robots,
+    manifest: '/manifest.json',
+    icons: {
+      icon: [
+        { url: faviconUrl, sizes: 'any' },
+        { url: '/icon.png', type: 'image/png', sizes: '32x32' },
+        { url: '/icon-192.png', type: 'image/png', sizes: '192x192' },
+        { url: '/icon-512.png', type: 'image/png', sizes: '512x512' },
+      ],
+      apple: [{ url: '/apple-icon.png', sizes: '180x180', type: 'image/png' }],
+    },
+    openGraph: {
+      title: siteTitle,
+      description: siteDesc,
+      ...(ogImg ? { images: [{ url: ogImg }] } : {}),
+    },
+  };
+}
 
 export const viewport: Viewport = {
   themeColor: "#4B0082",
@@ -50,6 +86,8 @@ export const viewport: Viewport = {
 const defaultSettings = {
   logo: 'https://placehold.co/150x50.png',
   companyName: 'eMotionView',
+  storeName: 'eMotionView',
+  favicon: '/favicon.ico',
 };
 
 const defaultTrackingSettings = {
@@ -106,10 +144,13 @@ export default async function RootLayout({
         {trackingSettings.fbPixelEnabled && trackingSettings.fbPixelId && (
           <FacebookPixel pixelId={trackingSettings.fbPixelId} />
         )}
+        {settings.favicon && (
+          <link rel="icon" href={settings.favicon} sizes="any" />
+        )}
       </head>
       <body className="font-body antialiased min-h-screen flex flex-col" suppressHydrationWarning>
         <DataLayerProvider>
-          <Header logoUrl={settings.logo} companyName={settings.companyName} />
+          <Header logoUrl={settings.logo} companyName={(settings as any).storeName || settings.companyName} />
           <main className="flex-1 pb-6 md:pb-0">
             <VisitorTracker>{children}</VisitorTracker>
           </main>
