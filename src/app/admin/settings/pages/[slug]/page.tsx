@@ -1,7 +1,7 @@
 
 "use client";
 
-import { useEffect, useState } from 'react';
+import { use, useEffect, useState } from 'react';
 import { useForm, type SubmitHandler } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -33,8 +33,8 @@ const staticPages: Record<string, { title: string }> = {
     'contact-us': { title: 'Contact Us' },
 };
 
-export default function EditPage({ params }: { params: { slug: string } }) {
-    const { slug } = params;
+export default function EditPage({ params }: { params: Promise<{ slug: string }> }) {
+    const { slug } = use(params);
     const { toast } = useToast();
     const [isLoading, setIsLoading] = useState(true);
     const pageDetails = staticPages[slug];

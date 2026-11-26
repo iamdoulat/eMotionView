@@ -8,7 +8,7 @@ import type { Product } from '@/lib/placeholder-data';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardFooter } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Star, ShoppingCart, CheckCircle, Plus, Minus, Heart } from 'lucide-react';
+import { Star, ShoppingCart, CheckCircle, Plus, Minus, Heart, Eye } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { useCart } from '@/hooks/use-cart';
 import { useToast } from '@/hooks/use-toast';
@@ -16,6 +16,7 @@ import { useState } from 'react';
 import { Input } from './ui/input';
 import { Label } from './ui/label';
 import { useWishlist } from '@/hooks/use-wishlist';
+import { useCurrency } from '@/hooks/use-currency';
 import { cn } from '@/lib/utils';
 
 interface ProductCardProps {
@@ -25,9 +26,12 @@ interface ProductCardProps {
 export function ProductCard({ product }: ProductCardProps) {
   const { addToCart } = useCart();
   const { addToWishlist, removeFromWishlist, isInWishlist } = useWishlist();
+  const { formatPrice } = useCurrency();
   const { toast } = useToast();
+  const productUrl = `/products/${product.permalink || product.id}`;
+  const primaryImage = product.images?.[0] || 'https://placehold.co/600x600.png';
   const [dialogQuantity, setDialogQuantity] = useState(1);
-  const [selectedImage, setSelectedImage] = useState(product.images[0]);
+  const [selectedImage, setSelectedImage] = useState(primaryImage);
   const [selectedAttributes, setSelectedAttributes] = useState<Record<string, string>>({});
   const isStockManaged = product.manageStock ?? true;
   const canPurchase = !isStockManaged || product.stock > 0;
@@ -85,51 +89,72 @@ export function ProductCard({ product }: ProductCardProps) {
     <Dialog onOpenChange={(open) => {
       if (open) {
         setDialogQuantity(1);
-        setSelectedImage(product.images[0]);
+        setSelectedImage(primaryImage);
         setSelectedAttributes({});
       }
     }}>
       <Card className="group overflow-hidden rounded-lg shadow-sm hover:shadow-lg transition-shadow duration-300 flex flex-col h-full bg-background">
-        <CardHeader className="p-0 relative border-b">
-          <DialogTrigger asChild>
-            <div className="block aspect-square bg-secondary/30 cursor-pointer overflow-hidden">
+        <CardHeader className="p-0 border-b bg-card">
+          <div className="flex items-center justify-between gap-2 px-2.5 pt-2.5 pb-1">
+            <div className="min-h-[22px] flex items-center">
+              {Boolean(product.discountPercentage && product.discountPercentage > 0) && (
+                <Badge className="bg-blue-600 hover:bg-blue-700 text-white border-none text-xs px-2 py-0.5">
+                  {product.discountPercentage}%
+                </Badge>
+              )}
+            </div>
+            <div className="flex items-center gap-1.5">
+              <Button
+                size="icon"
+                variant="ghost"
+                className={cn(
+                  "h-7 w-7 rounded-full border transition-colors",
+                  isWished
+                    ? "border-destructive/40 bg-destructive/10 text-destructive"
+                    : "border-transparent bg-transparent hover:border-border/70 hover:bg-secondary text-muted-foreground hover:text-destructive"
+                )}
+                onClick={handleWishlistClick}
+                aria-label={isWished ? 'Remove from wishlist' : 'Add to wishlist'}
+              >
+                <Heart className={cn("h-3.5 w-3.5", isWished && "fill-destructive text-destructive")} />
+              </Button>
+              <DialogTrigger asChild>
+                <Button
+                  size="icon"
+                  variant="ghost"
+                  className="h-7 w-7 rounded-full border border-transparent bg-transparent hover:border-border/70 hover:bg-secondary text-muted-foreground hover:text-primary transition-colors"
+                  aria-label="Quick view"
+                >
+                  <Eye className="h-3.5 w-3.5" />
+                </Button>
+              </DialogTrigger>
+            </div>
+          </div>
+          <Link href={productUrl} className="block px-2.5 pb-2.5">
+            <div className="aspect-square rounded-md bg-secondary/20 overflow-hidden">
               <Image
-                src={product.images[0]}
+                src={primaryImage}
                 alt={product.name}
                 width={300}
                 height={300}
-                className="w-full h-full object-contain p-4 group-hover:scale-125 transition-transform duration-300"
+                className="w-full h-full object-contain p-3 group-hover:scale-105 transition-transform duration-300"
                 data-ai-hint={`${(product.categories || []).join(' ')} product`}
               />
             </div>
-          </DialogTrigger>
-          {product.discountPercentage && (
-            <Badge className="absolute top-3 left-3 bg-blue-600 hover:bg-blue-700 text-primary-foreground border-none">
-              {product.discountPercentage}%
-            </Badge>
-          )}
-          <Button
-            size="icon"
-            variant="ghost"
-            className="absolute top-2 right-2 z-10 h-8 w-8 text-muted-foreground hover:text-destructive rounded-full bg-background/50 hover:bg-background"
-            onClick={handleWishlistClick}
-            aria-label={isWished ? 'Remove from wishlist' : 'Add to wishlist'}
-          >
-            <Heart className={cn("h-5 w-5", isWished && "fill-destructive text-destructive")} />
-          </Button>
+          </Link>
         </CardHeader>
         <CardContent className="p-3 flex-grow flex flex-col">
           <h3 className="text-sm font-medium h-10 line-clamp-2">
-            <Link href={`/products/${product.permalink || product.id}`} className="hover:text-primary">
+            <Link href={productUrl} className="hover:text-primary">
               {product.name}
             </Link>
           </h3>
 
           <div className="mt-auto">
-            <div className="flex items-baseline gap-2 mt-2">
-              <p className="text-lg font-bold text-primary">৳{product.price.toLocaleString()}</p>
-              {product.originalPrice && (
-                <p className="text-sm text-muted-foreground line-through">৳{product.originalPrice.toLocaleString()}</p>
+            <div className="flex items-baseline gap-2 mt-2 flex-wrap">
+              <p className="text-base sm:text-lg font-bold text-primary">{formatPrice(product.price)}</p>
+              {Boolean(product.originalPrice && product.originalPrice > product.price) && (
+                <p className="text-xs sm:text-sm text-muted-foreground line-through">{formatPrice(product.originalPrice!)}</p>
               )}
             </div>
             <div className="flex items-center justify-between mt-1">
@@ -141,8 +166,14 @@ export function ProductCard({ product }: ProductCardProps) {
                 </div>
                 <span className="text-xs text-muted-foreground">({product.reviewCount || 0})</span>
               </div>
-              <Button size="icon" variant="ghost" className="w-8 h-8 text-blue-600 hover:text-primary rounded-full hover:bg-primary/10" onClick={handleQuickAddToCart} disabled={!canPurchase}>
-                <ShoppingCart className="h-5 w-5" />
+              <Button
+                size="icon"
+                className="h-8 w-8 rounded-full bg-primary text-primary-foreground hover:bg-primary/90 shadow-sm shrink-0"
+                onClick={handleQuickAddToCart}
+                disabled={!canPurchase}
+                aria-label="Add to cart"
+              >
+                <ShoppingCart className="h-4 w-4" />
               </Button>
             </div>
           </div>
@@ -202,7 +233,7 @@ export function ProductCard({ product }: ProductCardProps) {
               </div>
             )}
 
-            <p className="text-3xl font-bold text-primary">৳{product.price.toLocaleString()}</p>
+            <p className="text-3xl font-bold text-primary">{formatPrice(product.price)}</p>
 
             <p className={`text-sm font-medium mt-2 ${isStockManaged
               ? (product.stock > 0 ? 'text-green-600' : 'text-red-600')

@@ -20,9 +20,9 @@ export default async function RecommendationsPage() {
           Describe your needs, interests, or a scenario, and let our AI find the perfect products for you from our catalog.
         </p>
       </header>
-      <main>
+      <div>
         <RecommendationForm allProducts={products} />
-      </main>
+      </div>
     </div>
   );
 }

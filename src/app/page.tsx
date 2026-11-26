@@ -49,11 +49,11 @@ export default async function HomePage() {
   allProducts = await enrichProductsWithReviews(allProducts);
   
   const mainNavLinks = [
-    { href: "#", label: "Campaign" },
+    { href: "/products", label: "Campaign" },
     { href: "/products", label: "Trending" },
-    { href: "#", label: "Brands" },
-    { href: "#", label: "Outlets" },
-    { href: "#", label: "Support" },
+    { href: "/products", label: "Brands" },
+    { href: "/recommendations", label: "AI Finder" },
+    { href: "/track-order", label: "Support" },
   ];
 
   // Fetch homepage settings from Firestore, with a fallback for public users
@@ -117,28 +117,55 @@ export default async function HomePage() {
         switch (section.type) {
             case 'featured-categories':
                 const categoryItems = section.content || [];
+                const legacyCategoryMap: Record<string, string> = {
+                    'smart watches': 'wearables',
+                    'headphones': 'audio',
+                    'android smart tvs': 'smart-home',
+                    'charger & cables': 'accessories',
+                    'powerbanks': 'accessories',
+                };
+                const mappedCategories = categoryItems
+                    .map((category: any) => {
+                        const key = (category.name || '').toLowerCase();
+                        const categoryData = allCategories.find(
+                            c => c.name.toLowerCase() === key || c.permalink === legacyCategoryMap[key]
+                        );
+                        if (!categoryData?.permalink) return null;
+                        return {
+                            id: category.id,
+                            name: category.name,
+                            image: category.image || 'https://placehold.co/128x128.png',
+                            permalink: categoryData.permalink,
+                        };
+                    })
+                    .filter(Boolean);
+                const resolvedCategories = mappedCategories.length > 0
+                    ? mappedCategories
+                    : allCategories.map(c => ({
+                        id: c.id,
+                        name: c.name,
+                        image: 'https://placehold.co/128x128.png',
+                        permalink: c.permalink,
+                    }));
+                if (resolvedCategories.length === 0) return null;
                 return (
                     <section key={section.id} className="container mx-auto px-4 py-8">
                         <div className="text-center mb-6">
-                            <h2 className="font-headline text-3xl font-bold tracking-tight text-foreground">Explore Popular Categories</h2>
-                             <p className="text-muted-foreground mt-2">Find your preferred item in the highlighted product selection.</p>
+                            <h2 className="font-headline text-2xl md:text-3xl font-bold tracking-tight text-foreground">Explore Popular Categories</h2>
+                             <p className="text-muted-foreground mt-2 text-sm md:text-base">Find your preferred item in the highlighted product selection.</p>
                         </div>
                         <Carousel opts={{ align: "start", dragFree: true }} className="w-full">
                             <CarouselContent className="-ml-2 md:-ml-4">
-                            {categoryItems.map((category: any) => {
-                                const categoryData = allCategories.find(c => c.name === category.name);
-                                const permalink = categoryData?.permalink;
-                                if (!permalink) return null;
-                                return (
+                            {resolvedCategories.map((category: any) => (
                                 <CarouselItem key={category.id} className="basis-1/3 sm:basis-1/4 md:basis-1/6 lg:basis-auto pl-2 md:pl-4">
-                                <Link href={`/category/${permalink}`} className="group text-center block w-full md:w-[130px]">
-                                    <div className="w-24 h-24 md:w-32 md:h-32 mx-auto rounded-full bg-secondary/50 flex items-center justify-center overflow-hidden border-2 border-transparent group-hover:border-primary transition-all duration-300 group-hover:shadow-lg">
+                                <Link href={`/category/${category.permalink}`} className="group text-center block w-full md:w-[130px]">
+                                    <div className="w-20 h-20 sm:w-24 sm:h-24 md:w-32 md:h-32 mx-auto rounded-full bg-secondary/50 flex items-center justify-center overflow-hidden border-2 border-transparent group-hover:border-primary transition-all duration-300 group-hover:shadow-lg">
                                         <Image src={category.image} alt={category.name} width={128} height={128} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-300" data-ai-hint="category icon" />
                                     </div>
-                                    <h3 className="mt-4 font-semibold text-sm text-foreground group-hover:text-primary transition-colors truncate">{category.name}</h3>
+                                    <h3 className="mt-3 md:mt-4 font-semibold text-xs sm:text-sm text-foreground group-hover:text-primary transition-colors truncate">{category.name}</h3>
                                 </Link>
                                 </CarouselItem>
-                            )})}
+                            ))}
                             </CarouselContent>
                         </Carousel>
                     </section>
@@ -156,21 +183,16 @@ export default async function HomePage() {
                 if (!permalink) return null;
 
                 return (
-                    <section key={section.id} className="container mx-auto px-4 py-4">
-                        <div className="flex justify-between items-center mb-8 border-b pb-4">
-                            <h2 className="font-headline text-2xl font-bold tracking-tight text-foreground">{section.name}</h2>
-                            <Button asChild variant="link" className="text-primary">
-                                <Link href={permalink}>See all</Link>
+                    <section key={section.id} className="container mx-auto px-4 py-2 md:py-4">
+                        <div className="flex justify-between items-center mb-3 md:mb-6 border-b pb-2 md:pb-4">
+                            <h2 className="font-headline text-base md:text-2xl font-bold tracking-tight text-foreground">{section.name}</h2>
+                            <Button asChild variant="outline" size="sm" className="h-7 px-3 text-xs rounded-full border-primary text-primary hover:bg-primary hover:text-primary-foreground transition-colors">
+                                <Link href={permalink}>See All</Link>
                             </Button>
                         </div>
-                        <div className="grid grid-cols-2 gap-x-4 gap-y-8 md:grid-cols-4 lg:grid-cols-6 xl:gap-x-6">
-                            {products.slice(0, 4).map((product) => (
-                                <div key={product.id} className="block md:hidden">
-                                    <ProductCard product={product} />
-                                </div>
-                            ))}
-                            {products.slice(0, 6).map((product) => (
-                                <div key={product.id} className="hidden md:block">
+                        <div className="grid grid-cols-2 gap-x-3 gap-y-6 sm:gap-x-4 md:grid-cols-4 lg:grid-cols-6 xl:gap-x-6">
+                            {products.slice(0, 6).map((product, index) => (
+                                <div key={product.id} className={index >= 4 ? "hidden md:block" : ""}>
                                     <ProductCard product={product} />
                                 </div>
                             ))}

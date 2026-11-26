@@ -8,8 +8,14 @@ async function getMongo() {
 
 const API = '/api/data';
 
-async function apiGet(collection: string, id?: string): Promise<any> {
-  const url = id ? `${API}/${encodeURIComponent(collection)}/${encodeURIComponent(id)}` : `${API}/${encodeURIComponent(collection)}`;
+async function apiGet(collection: string, id?: string, queryParams?: Record<string, string>): Promise<any> {
+  let url = id
+    ? `${API}/${encodeURIComponent(collection)}/${encodeURIComponent(id)}`
+    : `${API}/${encodeURIComponent(collection)}`;
+  if (!id && queryParams && Object.keys(queryParams).length > 0) {
+    const qs = new URLSearchParams(queryParams).toString();
+    url += `?${qs}`;
+  }
   const res = await fetch(url);
   if (!res.ok) throw new Error(`API GET ${collection} failed: ${res.status}`);
   return res.json();
@@ -36,7 +42,19 @@ async function apiDelete(collection: string, id: string): Promise<void> {
 }
 
 export type CollectionRef = { _name: string };
-export type DocRef = { _collection: string; _id: string };
+export type DocRef = { _collection: string; _id: string; id: string };
+export type DocumentSnapshot = {
+  exists: () => boolean;
+  data: () => Record<string, any>;
+  id: string;
+  [key: string]: any;
+};
+export type QuerySnapshot = {
+  docs: DocumentSnapshot[];
+  empty: boolean;
+  size: number;
+  forEach: (callback: (doc: DocumentSnapshot) => void) => void;
+};
 export type QueryFilter = { field: string; op: string; value: any };
 export type QuerySort = { field: string; dir: 'asc' | 'desc' };
 export type QueryObj = {
@@ -48,6 +66,13 @@ export type QueryObj = {
 
 const db = { _isMock: true };
 
+function generateId(): string {
+  if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function') {
+    return crypto.randomUUID();
+  }
+  return `${Date.now().toString(36)}${Math.random().toString(36).slice(2, 10)}`;
+}
+
 function collection(dbOrName: any, name?: string): CollectionRef {
   const collectionName = name || (typeof dbOrName === 'string' ? dbOrName : dbOrName?._name);
   if (!collectionName) throw new Error('Collection name is required');
@@ -55,19 +80,25 @@ function collection(dbOrName: any, name?: string): CollectionRef {
 }
 
 function doc(database: any, collectionName: string, docId: string): DocRef;
-function doc(collectionRef: CollectionRef, docId: string): DocRef;
-function doc(databaseOrRef: any, collectionNameOrId: string, docId?: string): DocRef {
-  if (docId !== undefined) {
-    return { _collection: collectionNameOrId, _id: docId };
+function doc(collectionRef: CollectionRef, docId?: string): DocRef;
+function doc(database: any, path: string): DocRef;
+function doc(databaseOrRef: any, collectionNameOrId?: string, docId?: string): DocRef {
+  if (docId !== undefined && collectionNameOrId !== undefined) {
+    return { _collection: collectionNameOrId, _id: docId, id: docId };
   }
-  if (typeof databaseOrRef === 'object' && databaseOrRef._name) {
-    return { _collection: databaseOrRef._name, _id: collectionNameOrId };
+  if (typeof databaseOrRef === 'object' && databaseOrRef !== null && '_name' in databaseOrRef && databaseOrRef._name) {
+    const resolvedId = collectionNameOrId || generateId();
+    return { _collection: databaseOrRef._name, _id: resolvedId, id: resolvedId };
   }
-  const slashIdx = collectionNameOrId.indexOf('/');
+  const pathOrCollection = collectionNameOrId || '';
+  const slashIdx = pathOrCollection.indexOf('/');
   if (slashIdx !== -1) {
-    return { _collection: collectionNameOrId.slice(0, slashIdx), _id: collectionNameOrId.slice(slashIdx + 1) };
+    const col = pathOrCollection.slice(0, slashIdx);
+    const resolvedId = pathOrCollection.slice(slashIdx + 1);
+    return { _collection: col, _id: resolvedId, id: resolvedId };
   }
-  return { _collection: collectionNameOrId, _id: '' };
+  const resolvedId = generateId();
+  return { _collection: pathOrCollection, _id: resolvedId, id: resolvedId };
 }
 
 function query(collectionRef: CollectionRef, ...conditions: (QueryFilter | QuerySort | number)[]): QueryObj {
@@ -108,7 +139,27 @@ function arrayRemove(...values: any[]): { _arrayRemove: any[] } {
   return { _arrayRemove: values };
 }
 
-async function getDoc(ref: DocRef): Promise<any> {
+function toDocumentSnapshot(d: any): DocumentSnapshot {
+  const id = d._id?.toString() || d.id || '';
+  return {
+    ...d,
+    id,
+    exists: () => true,
+    data: () => d,
+  };
+}
+
+function toQuerySnapshot(rawDocs: any[]): QuerySnapshot {
+  const docs = rawDocs.map(toDocumentSnapshot);
+  return {
+    docs,
+    empty: docs.length === 0,
+    size: docs.length,
+    forEach: (callback) => docs.forEach(callback),
+  };
+}
+
+async function getDoc(ref: DocRef): Promise<DocumentSnapshot> {
   if (isServer) {
     try {
       const { findOne } = await getMongo();
@@ -127,30 +178,41 @@ async function getDoc(ref: DocRef): Promise<any> {
   }
 }
 
-async function getDocs(ref: CollectionRef | QueryObj): Promise<any> {
+async function getDocs(ref: CollectionRef | QueryObj): Promise<QuerySnapshot> {
   if (isServer) {
     try {
       const { findMany } = await getMongo();
       if ('_name' in ref && !('filters' in ref)) {
         const docs = await findMany(ref._name);
-        return { docs: docs.map((d: any) => ({ ...d, id: d._id.toString() })), empty: docs.length === 0, size: docs.length };
+        return toQuerySnapshot(docs);
       }
       const q = ref as QueryObj;
       const filter = convertFilterToMongo(q.filters);
       const sort = q.sorts.length > 0 ? convertSortToMongo(q.sorts) as any : undefined;
       const docs = await findMany(q._collection, filter, sort, q.limitCount);
-      return { docs: docs.map((d: any) => ({ ...d, id: d._id.toString() })), empty: docs.length === 0, size: docs.length };
+      return toQuerySnapshot(docs);
     } catch (error) {
-      return { docs: [], empty: true, size: 0 };
+      return toQuerySnapshot([]);
     }
   }
-  const collectionName = '_name' in ref ? ref._name : (ref as QueryObj)._collection;
+  const isCollectionOnly = '_name' in ref && !('filters' in ref);
+  const collectionName = isCollectionOnly ? ref._name : (ref as QueryObj)._collection;
+  const queryParams: Record<string, string> = {};
+  if (!isCollectionOnly) {
+    const q = ref as QueryObj;
+    if (q.filters.length > 0) queryParams.filters = JSON.stringify(q.filters);
+    if (q.sorts.length > 0) {
+      queryParams.sort = q.sorts[0].field;
+      queryParams.dir = q.sorts[0].dir;
+    }
+    if (q.limitCount !== undefined) queryParams.limit = String(q.limitCount);
+  }
   try {
-    const data = await apiGet(collectionName);
+    const data = await apiGet(collectionName, undefined, queryParams);
     const docs = Array.isArray(data) ? data : [];
-    return { docs: docs.map((d: any) => ({ ...d, id: d._id || d.id })), empty: docs.length === 0, size: docs.length };
+    return toQuerySnapshot(docs);
   } catch {
-    return { docs: [], empty: true, size: 0 };
+    return toQuerySnapshot([]);
   }
 }
 

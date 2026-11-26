@@ -1,4 +1,4 @@
-
+import { Suspense } from 'react';
 import type { Product } from '@/lib/placeholder-data';
 import { collection, getDocs, docToJSON } from '@/lib/db';
 import { db } from '@/lib/db';
@@ -11,6 +11,8 @@ export default async function ProductsPage() {
   products = await enrichProductsWithReviews(products);
 
   return (
-    <ProductsPageClient initialProducts={products} />
+    <Suspense fallback={<div className="container mx-auto px-4 py-8">Loading products...</div>}>
+      <ProductsPageClient initialProducts={products} />
+    </Suspense>
   );
 }

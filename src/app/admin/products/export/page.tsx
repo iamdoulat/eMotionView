@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useState, useEffect } from "react";
@@ -10,19 +9,31 @@ import { useToast } from "@/hooks/use-toast";
 
 export default function BulkExportPage() {
   const [isLoading, setIsLoading] = useState(false);
+  const [products, setProducts] = useState<any[]>([]);
   const { toast } = useToast();
+
+  useEffect(() => {
+    fetch('/api/data/products')
+      .then(r => r.json())
+      .then(data => {
+        if (Array.isArray(data)) setProducts(data);
+      })
+      .catch(() => {});
+  }, []);
 
   const handleExport = async () => {
     setIsLoading(true);
 
     try {
       const res = await fetch('/api/data/products');
-      const products = await res.json();
-      // Flatten complex data structures for better CSV readability
-      const flattenedProducts = products.map((product: any) => ({
+      const fetchedProducts = await res.json();
+      const list = Array.isArray(fetchedProducts) ? fetchedProducts : [];
+      setProducts(list);
+
+      const flattenedProducts = list.map((product: any) => ({
         ...product,
-        images: product.images?.join(', ') || '',
-        features: product.features?.join('; ') || '',
+        images: Array.isArray(product.images) ? product.images.join(', ') : '',
+        features: Array.isArray(product.features) ? product.features.join('; ') : '',
         specifications: JSON.stringify(product.specifications || {}),
         productAttributes: JSON.stringify(product.productAttributes || []),
       }));
@@ -36,12 +47,12 @@ export default function BulkExportPage() {
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
-      
+      URL.revokeObjectURL(url);
+
       toast({
         title: "Export Successful",
-        description: "Your product data has been downloaded.",
+        description: `Exported ${list.length} products.`,
       });
-
     } catch (error) {
       console.error("Export failed:", error);
       toast({
@@ -62,8 +73,8 @@ export default function BulkExportPage() {
       </CardHeader>
       <CardContent>
         <p className="text-sm text-muted-foreground">
-            Click the button below to download a CSV file containing all <strong>{products.length}</strong> products in your catalog.
-            This file can be used for backups, analysis, or for re-importing after making bulk changes.
+          Click the button below to download a CSV file containing all <strong>{products.length}</strong> products in your catalog.
+          This file can be used for backups, analysis, or for re-importing after making bulk changes.
         </p>
       </CardContent>
       <CardFooter>

@@ -7,6 +7,7 @@ import { useState } from 'react';
 import type { Product, Brand } from '@/lib/placeholder-data';
 import { useCart } from '@/hooks/use-cart';
 import { useWishlist } from '@/hooks/use-wishlist';
+import { useCurrency } from '@/hooks/use-currency';
 import { useToast } from '@/hooks/use-toast';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -20,6 +21,7 @@ export function ProductDetailsClient({ product, brand }: { product: Product, bra
   const { toast } = useToast();
   const { addToCart } = useCart();
   const { addToWishlist, removeFromWishlist, isInWishlist } = useWishlist();
+  const { formatPrice } = useCurrency();
   const router = useRouter();
 
   const [selectedImage, setSelectedImage] = useState(product.images[0]);
@@ -48,10 +50,6 @@ export function ProductDetailsClient({ product, brand }: { product: Product, bra
 
   const handleWishlistClick = () => {
     isWished ? removeFromWishlist(product.id) : addToWishlist(product);
-    toast({
-      title: isWished ? 'Removed from Wishlist' : 'Added to Wishlist',
-      description: product.name,
-    });
   }
 
   const handleAttributeSelect = (attributeName: string, value: string) => {
@@ -142,11 +140,11 @@ export function ProductDetailsClient({ product, brand }: { product: Product, bra
         </ul>
 
         <div className="mt-4 flex flex-wrap items-center gap-x-4 gap-y-2">
-          <p className="text-3xl font-bold text-primary">৳{product.price.toFixed(2)}</p>
-          {product.originalPrice && (
-            <p className="text-xl text-muted-foreground line-through">৳{product.originalPrice.toFixed(2)}</p>
+          <p className="text-3xl font-bold text-primary">{formatPrice(product.price)}</p>
+          {Boolean(product.originalPrice && product.originalPrice > product.price) && (
+            <p className="text-xl text-muted-foreground line-through">{formatPrice(product.originalPrice!)}</p>
           )}
-          {product.discountPercentage && (
+          {Boolean(product.discountPercentage && product.discountPercentage > 0) && (
             <Badge variant="destructive">{product.discountPercentage}% OFF</Badge>
           )}
           <div className="flex items-center gap-2">

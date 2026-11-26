@@ -101,12 +101,12 @@ export default function CheckoutPage() {
           const settings = snapshot.data() as BkashSettings;
           setBkashEnabled(settings.isEnabled ?? false);
         } else {
-          setBkashEnabled(true);
+          setBkashEnabled(false);
         }
       },
       (error) => {
         console.error('Error listening to Bkash settings:', error);
-        setBkashEnabled(true);
+        setBkashEnabled(false);
       }
     );
     unsubscribers.push(bkashUnsub);
@@ -119,12 +119,12 @@ export default function CheckoutPage() {
           const settings = snapshot.data() as SSLCommerzSettings;
           setSslCommerzEnabled(settings.isEnabled ?? false);
         } else {
-          setSslCommerzEnabled(true);
+          setSslCommerzEnabled(false);
         }
       },
       (error) => {
         console.error('Error listening to SSL settings:', error);
-        setSslCommerzEnabled(true);
+        setSslCommerzEnabled(false);
       }
     );
     unsubscribers.push(sslUnsub);
@@ -155,12 +155,12 @@ export default function CheckoutPage() {
           const settings = snapshot.data() as StripeSettings;
           setStripeEnabled(settings.isEnabled ?? false);
         } else {
-          setStripeEnabled(true);
+          setStripeEnabled(false);
         }
       },
       (error) => {
         console.error('Error listening to Stripe settings:', error);
-        setStripeEnabled(true);
+        setStripeEnabled(false);
       }
     );
     unsubscribers.push(stripeUnsub);
@@ -173,12 +173,12 @@ export default function CheckoutPage() {
           const settings = snapshot.data() as PayPalSettings;
           setPaypalEnabled(settings.isEnabled ?? false);
         } else {
-          setPaypalEnabled(true);
+          setPaypalEnabled(false);
         }
       },
       (error) => {
         console.error('Error listening to PayPal settings:', error);
-        setPaypalEnabled(true);
+        setPaypalEnabled(false);
       }
     );
     unsubscribers.push(paypalUnsub);

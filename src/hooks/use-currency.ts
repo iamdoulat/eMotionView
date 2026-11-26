@@ -5,7 +5,7 @@ import type { Currency, CurrencySettings } from '@/lib/placeholder-data';
 import { formatPrice, getCurrencySymbol } from '@/lib/currency';
 
 export function useCurrency() {
-    const [currency, setCurrency] = useState<Currency>('USD');
+    const [currency, setCurrency] = useState<Currency>('BDT');
     const [isLoading, setIsLoading] = useState(true);
 
     useEffect(() => {
@@ -14,10 +14,10 @@ export function useCurrency() {
                 const res = await fetch('/api/data/admin_settings?id=currency');
                 if (res.ok) {
                     const data = await res.json();
-                    setCurrency(data.currency || 'USD');
+                    setCurrency(data.currency || 'BDT');
                 }
             } catch {
-                setCurrency('USD');
+                setCurrency('BDT');
             } finally {
                 setIsLoading(false);
             }

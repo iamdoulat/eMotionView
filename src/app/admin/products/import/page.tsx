@@ -70,20 +70,80 @@ export default function BulkImportPage() {
     });
   };
   
-  const handleImport = () => {
-      // This is a simulation. In a real app, you would send `parsedData` to your API endpoint.
-      setIsLoading(true);
-      setTimeout(() => {
-          setIsLoading(false);
-          toast({
-              title: "Import Successful",
-              description: `${parsedData.length} products have been queued for import.`,
-          });
-          // Reset state after import
-          setFile(null);
-          setParsedData([]);
-          setHeaders([]);
-      }, 1500);
+  const handleImport = async () => {
+    if (parsedData.length === 0) return;
+    setIsLoading(true);
+    let imported = 0;
+    let failed = 0;
+
+    try {
+      for (const row of parsedData) {
+        if (!row.name) {
+          failed++;
+          continue;
+        }
+        const permalink = (row.permalink || row.name)
+          .toLowerCase()
+          .trim()
+          .replace(/&/g, 'and')
+          .replace(/[^a-z0-9\s-]/g, '')
+          .replace(/\s+/g, '-')
+          .replace(/-+/g, '-');
+
+        let specifications: Record<string, string> = {};
+        if (row.specifications) {
+          try {
+            specifications = JSON.parse(row.specifications);
+          } catch {}
+        }
+
+        const payload = {
+          name: row.name,
+          permalink,
+          description: row.description || '',
+          price: Number(row.price) || 0,
+          originalPrice: row.originalPrice ? Number(row.originalPrice) : undefined,
+          categories: row.categories ? row.categories.split(',').map(s => s.trim()).filter(Boolean) : ['Accessories'],
+          brand: row.brand || 'Generic',
+          sku: row.sku || `SKU-${Date.now()}`,
+          stock: Number(row.stock) || 0,
+          manageStock: row.manageStock !== 'false',
+          supplier: row.supplier || 'Default Supplier',
+          warranty: row.warranty || '',
+          productType: row.productType === 'Digital' ? 'Digital' : 'Physical',
+          images: row.images ? row.images.split(',').map(s => s.trim()).filter(Boolean) : ['https://placehold.co/600x600.png'],
+          features: row.features ? row.features.split(';').map(s => s.trim()).filter(Boolean) : [],
+          specifications,
+          rating: 0,
+          reviewCount: 0,
+          createdAt: new Date().toISOString(),
+        };
+
+        const res = await fetch('/api/data/products', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload),
+        });
+        if (res.ok) imported++;
+        else failed++;
+      }
+
+      toast({
+        title: "Import Complete",
+        description: `${imported} products imported${failed > 0 ? `, ${failed} failed` : ''}.`,
+      });
+      setFile(null);
+      setParsedData([]);
+      setHeaders([]);
+    } catch (err) {
+      toast({
+        variant: 'destructive',
+        title: 'Import Failed',
+        description: 'An error occurred while saving imported products.',
+      });
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (

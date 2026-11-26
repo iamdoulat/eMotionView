@@ -17,13 +17,13 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
     if (!isLoading) {
         if (!user) {
              router.replace('/sign-in');
-        } else if (role && !ADMIN_ROLES.includes(role)) {
-             router.replace('/account'); // Redirect customers to their account page
+        } else if (!role || !ADMIN_ROLES.includes(role)) {
+             router.replace('/account'); // Redirect non-staff users to their account page
         }
     }
   }, [user, role, isLoading, router]);
 
-  if (isLoading || !user || (role && !ADMIN_ROLES.includes(role))) {
+  if (isLoading || !user || !role || !ADMIN_ROLES.includes(role)) {
     return (
       <div className="flex h-screen w-full items-center justify-center">
         <Loader2 className="h-8 w-8 animate-spin" />
@@ -37,9 +37,9 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
         <div className="lg:col-span-1">
           <AdminSidebar />
         </div>
-        <main className="lg:col-span-4">
+        <div className="lg:col-span-4 min-w-0">
           {children}
-        </main>
+        </div>
       </div>
     </div>
   );

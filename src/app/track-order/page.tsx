@@ -40,17 +40,20 @@ export default function TrackOrderPage() {
     setError(null);
     setFoundOrder(null);
 
-    fetch(`/api/data/orders?field=orderNumber&value=${encodeURIComponent(values.orderNumber)}`)
-      .then(r => r.json())
-      .then((data: any[]) => {
-        const order = data.find((o: any) => o.orderNumber === values.orderNumber);
-        if (order) {
-          setFoundOrder({ ...order, id: order.orderNumber || order._id });
-        } else {
-          setError("No order found with that number and email combination.");
+    fetch('/api/orders/track', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ orderNumber: values.orderNumber, email: values.email }),
+    })
+      .then(async (r) => {
+        const data = await r.json();
+        if (!r.ok) {
+          setError(data.error || 'No order found with that number and email combination.');
+          return;
         }
+        setFoundOrder(data as Order);
       })
-      .catch(() => setError("Could not search orders. Please try again."))
+      .catch(() => setError('Could not search orders. Please try again.'))
       .finally(() => setIsLoading(false));
   }
   

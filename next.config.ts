@@ -12,7 +12,7 @@ const nextConfig: NextConfig = {
   webpack(config, { isServer }) {
     config.experiments = { ...config.experiments, asyncWebAssembly: true };
     
-    // This is to fix a build error with genkit, "Module not found: Can't resolve 'node:process'"
+    // Fix build errors with genkit and optional MongoDB peer deps
     config.externals = [...config.externals, "node:process", "node:stream"];
 
     if (!isServer) {
@@ -29,7 +29,6 @@ const nextConfig: NextConfig = {
         path: false,
         crypto: false,
       };
-
     }
 
     return config;

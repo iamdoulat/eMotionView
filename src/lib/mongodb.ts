@@ -12,6 +12,22 @@ let cachedClient: MongoClient | null = null;
 let cachedDb: Db | null = null;
 let cachedConfig: MongoConfig | null = null;
 let dbConfigLoaded = false;
+let indexesEnsured = false;
+
+async function ensureIndexes(db: Db): Promise<void> {
+  if (indexesEnsured) return;
+  indexesEnsured = true;
+  try {
+    await Promise.all([
+      db.collection('products').createIndex({ permalink: 1 }),
+      db.collection('orders').createIndex({ userId: 1 }),
+      db.collection('orders').createIndex({ orderNumber: 1 }),
+      db.collection('reviews').createIndex({ productId: 1, status: 1 }),
+    ]);
+  } catch (err) {
+    console.warn('Could not ensure MongoDB indexes:', err);
+  }
+}
 
 function getEnvConfig(): MongoConfig {
   return {
@@ -81,6 +97,7 @@ export async function getMongoDb(): Promise<Db> {
   const client = await getMongoClient();
   const config = cachedConfig || getEnvConfig();
   cachedDb = client.db(config.dbName);
+  void ensureIndexes(cachedDb);
   return cachedDb;
 }
 

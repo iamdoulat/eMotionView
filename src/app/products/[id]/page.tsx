@@ -12,8 +12,8 @@ import type { Product, Review, Category, Brand } from '@/lib/placeholder-data';
 import { Reviews } from '@/components/reviews';
 import { ProductDetailsClient } from '@/components/product-details-client';
 
-export default async function ProductDetailPage({ params }: { params: { id: string } }) {
-  const slug = params.id;
+export default async function ProductDetailPage({ params }: { params: Promise<{ id: string }> }) {
+  const { id: slug } = await params;
   const productsCollection = collection(db, 'products');
   let productSnap: DocumentSnapshot | undefined = undefined;
 

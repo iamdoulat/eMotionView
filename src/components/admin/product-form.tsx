@@ -70,7 +70,7 @@ export function ProductForm({ product, onSave, onCancel, isSaving }: ProductForm
     const [dbCategories, setDbCategories] = useState<Category[]>([]);
     const [dbBrands, setDbBrands] = useState<Brand[]>([]);
     const [dbSuppliers, setDbSuppliers] = useState<Supplier[]>([]);
-    const [attributes, setAttributes] = useState<{ name: string; values: string[] }[]>([]);
+    const [attributes, setAttributes] = useState<{ id: string; name: string; values: string[] }[]>([]);
     
     useEffect(() => {
         const fetchData = async () => {
@@ -83,7 +83,7 @@ export function ProductForm({ product, onSave, onCancel, isSaving }: ProductForm
             setDbCategories(cats.map((c: any) => ({ id: c._id || c.id, name: c.name, description: c.description, permalink: c.permalink })));
             setDbBrands(brds.map((b: any) => ({ id: b._id || b.id, name: b.name, logo: b.logo, permalink: b.permalink })));
             setDbSuppliers(supps.map((s: any) => ({ id: s._id || s.id, name: s.name, contactPerson: s.contactPerson, email: s.email, permalink: s.permalink })));
-            setAttributes(attrs.map((a: any) => ({ name: a.name, values: a.values })));
+            setAttributes(attrs.map((a: any) => ({ id: a._id || a.id || a.name, name: a.name, values: a.values })));
         };
         fetchData();
     }, []);
@@ -220,7 +220,17 @@ export function ProductForm({ product, onSave, onCancel, isSaving }: ProductForm
         await Promise.all(
             imagesToRemove.map(async (url) => {
                 try {
-                    await deleteFile(url);
+                    let key = url;
+                    if (url.includes('/api/r2/proxy')) {
+                        const urlObj = new URL(url, window.location.origin);
+                        key = urlObj.searchParams.get('key') || url;
+                    } else if (url.includes('.r2.cloudflarestorage.com')) {
+                        const urlObj = new URL(url);
+                        const parts = urlObj.pathname.split('/').filter(Boolean);
+                        if (urlObj.hostname.split('.').length <= 4) parts.shift();
+                        key = decodeURIComponent(parts.join('/'));
+                    }
+                    await deleteFile(key);
                 } catch (error: any) {
                     console.error("Error deleting image from storage: ", error);
                 }

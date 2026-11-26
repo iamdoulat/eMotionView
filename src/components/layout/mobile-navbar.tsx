@@ -1,4 +1,3 @@
-
 "use client";
 
 import Link from "next/link";
@@ -7,6 +6,7 @@ import { Home, LayoutGrid, ShoppingCart, Heart, User } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useCart } from "@/hooks/use-cart";
 import { Badge } from "@/components/ui/badge";
+import { ClientOnly } from "@/components/client-only";
 
 const navItems = [
   { href: "/", label: "Home", icon: Home },
@@ -21,32 +21,68 @@ export function MobileNavbar() {
   const { cartCount, isInitialized } = useCart();
 
   return (
-    <div className="md:hidden fixed bottom-0 left-0 z-50 w-full h-16 bg-background border-t border-border">
-      <div className="grid h-full max-w-lg grid-cols-5 mx-auto">
+    <nav
+      aria-label="Mobile Bottom Navigation"
+      className="md:hidden fixed bottom-2.5 inset-x-3 mx-auto max-w-md z-50 rounded-full border border-border/70 bg-background/90 backdrop-blur-lg shadow-lg shadow-black/10 dark:shadow-black/40 px-2 py-1.5"
+    >
+      <div className="grid grid-cols-5 items-center gap-1">
         {navItems.map((item) => {
-          const isActive = (item.href === "/" && pathname === "/") || (item.href !== "/" && pathname.startsWith(item.href));
+          const isActive =
+            (item.href === "/" && pathname === "/") ||
+            (item.href !== "/" && pathname.startsWith(item.href));
+
           return (
             <Link
               key={item.href}
               href={item.href}
               className={cn(
-                "inline-flex flex-col items-center justify-center px-2 hover:bg-secondary group transition-colors",
-                isActive ? "text-primary" : "text-muted-foreground"
+                "relative flex flex-col items-center justify-center rounded-full py-1.5 px-2 transition-all duration-300 ease-out group active:scale-95",
+                isActive
+                  ? "text-primary"
+                  : "text-muted-foreground hover:text-primary"
               )}
             >
               <div className="relative">
-                <item.icon className="w-6 h-6 mb-1" />
-                {item.label === "Cart" && isInitialized && cartCount > 0 && (
-                   <Badge variant="destructive" className="absolute -top-2 -right-3 h-5 w-5 justify-center rounded-full p-0 text-xs">
-                     {cartCount}
-                   </Badge>
+                <item.icon
+                  className={cn(
+                    "w-5 h-5 mb-0.5 transition-transform duration-300 ease-out",
+                    isActive
+                      ? "-translate-y-0.5 scale-110"
+                      : "group-hover:-translate-y-0.5 group-hover:scale-110"
+                  )}
+                />
+                {item.label === "Cart" && (
+                  <ClientOnly>
+                    {isInitialized && cartCount > 0 && (
+                      <Badge
+                        variant="destructive"
+                        className="absolute -top-2 -right-2.5 h-4 min-w-4 px-1 justify-center rounded-full text-[10px] leading-none ring-2 ring-background transition-transform duration-300 group-hover:scale-110"
+                      >
+                        {cartCount}
+                      </Badge>
+                    )}
+                  </ClientOnly>
                 )}
               </div>
-              <span className="text-xs font-medium">{item.label}</span>
+              <span
+                className={cn(
+                  "text-[11px] leading-tight transition-all duration-200",
+                  isActive ? "font-semibold" : "font-medium group-hover:font-semibold"
+                )}
+              >
+                {item.label}
+              </span>
+              <span
+                aria-hidden="true"
+                className={cn(
+                  "mt-0.5 h-0.5 rounded-full bg-primary transition-all duration-300",
+                  isActive ? "w-5 opacity-100" : "w-0 opacity-0 group-hover:w-3.5 group-hover:opacity-70"
+                )}
+              />
             </Link>
           );
         })}
       </div>
-    </div>
+    </nav>
   );
 }

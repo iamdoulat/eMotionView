@@ -7,9 +7,10 @@ import { Breadcrumb } from '@/components/breadcrumb';
 import { Skeleton } from '@/components/ui/skeleton';
 import { CategoryPageClient } from '@/components/category-page-client';
 
-export default async function CategoryPage({ params }: { params: { slug: string } }) {
+export default async function CategoryPage({ params }: { params: Promise<{ slug: string }> }) {
+  const { slug } = await params;
   const categoriesCollection = collection(db, 'categories');
-  const categoryQuery = query(categoriesCollection, where("permalink", "==", params.slug), limit(1));
+  const categoryQuery = query(categoriesCollection, where("permalink", "==", slug), limit(1));
   const categorySnapshot = await getDocs(categoryQuery);
 
   if (categorySnapshot.empty) {

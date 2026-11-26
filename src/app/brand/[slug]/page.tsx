@@ -7,8 +7,8 @@ import { enrichProductsWithReviews } from '@/lib/product-utils';
 import { notFound } from 'next/navigation';
 import { Breadcrumb } from '@/components/breadcrumb';
 
-export default async function BrandPage({ params }: { params: { slug: string } }) {
-  const slug = params.slug;
+export default async function BrandPage({ params }: { params: Promise<{ slug: string }> }) {
+  const { slug } = await params;
 
   // Find the brand by its permalink
   const brandsCollection = collection(db, 'brands');

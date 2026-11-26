@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { promises as fs } from 'fs';
 import { resolve } from 'path';
+import { requireAdmin } from '@/lib/server-auth';
 
 const ENV_PATH = resolve(process.cwd(), '.env');
 
@@ -108,6 +109,10 @@ async function saveToMongoDB(vars: Record<string, string>): Promise<void> {
 }
 
 export async function POST(req: NextRequest) {
+    const adminUser = await requireAdmin(req);
+    if (!adminUser) {
+        return NextResponse.json({ success: false, error: 'Unauthorized' }, { status: 401 });
+    }
     try {
         const body = await req.json();
         const { vars = {} } = body;

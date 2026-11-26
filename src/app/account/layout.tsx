@@ -58,9 +58,9 @@ export default function AccountLayout({
         <aside className="md:col-span-1">
           <AccountSidebar />
         </aside>
-        <main className="md:col-span-3">
+        <div className="md:col-span-3 min-w-0">
           {children}
-        </main>
+        </div>
       </div>
     </div>
   );

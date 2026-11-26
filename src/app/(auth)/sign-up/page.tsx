@@ -62,6 +62,14 @@ export default function SignUpPage() {
         points: 0
       });
 
+      // Create session cookie
+      const idToken = await user.getIdToken();
+      await fetch('/api/auth/sign-in', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ idToken }),
+      });
+
       toast({
         title: 'Account Created',
         description: 'Welcome! You have been successfully signed up.',

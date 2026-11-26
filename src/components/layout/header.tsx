@@ -7,8 +7,8 @@ import Image from "next/image"
 import { useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet"
-import { Search, ShoppingCart, Menu, Phone, User, Heart, LayoutGrid, LogOut, MapPin } from "lucide-react"
+import { Sheet, SheetClose, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet"
+import { Search, ShoppingCart, Menu, Phone, User, Heart, LayoutGrid, LogOut, MapPin, X, ChevronRight } from "lucide-react"
 import { Badge } from "@/components/ui/badge"
 import { cn } from "@/lib/utils"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
@@ -18,6 +18,7 @@ import { useCart } from "@/hooks/use-cart"
 import { useAuth } from "@/hooks/use-auth"
 import { Skeleton } from "../ui/skeleton"
 import { ClientOnly } from "../client-only"
+import { ThemeToggle } from "../theme-toggle"
 import { auth } from "@/lib/firebase"
 import { signOut } from "firebase/auth"
 
@@ -126,14 +127,18 @@ export function Header({ logoUrl, companyName = "eMotionView" }: HeaderProps) {
 
     if (user) {
       return isMobile ? (
-        <>
-          <Button variant="ghost" asChild className="w-full justify-start">
-            <Link href="/account"><User className="mr-2 h-4 w-4" /> My Account</Link>
-          </Button>
-          <Button variant="ghost" onClick={handleLogout} className="w-full justify-start text-destructive hover:text-destructive">
-            <LogOut className="mr-2 h-4 w-4" /> Logout
-          </Button>
-        </>
+        <div className="space-y-1">
+          <SheetClose asChild>
+            <Button variant="ghost" size="sm" asChild className="w-full justify-start h-8 px-2">
+              <Link href="/account"><User className="mr-2 h-4 w-4" /> My Account</Link>
+            </Button>
+          </SheetClose>
+          <SheetClose asChild>
+            <Button variant="ghost" size="sm" onClick={handleLogout} className="w-full justify-start h-8 px-2 text-destructive hover:text-destructive">
+              <LogOut className="mr-2 h-4 w-4" /> Logout
+            </Button>
+          </SheetClose>
+        </div>
       ) : (
         <div className="flex items-center gap-1 hover:text-primary text-sm">
           <DropdownMenu>
@@ -156,9 +161,11 @@ export function Header({ logoUrl, companyName = "eMotionView" }: HeaderProps) {
     }
 
     return isMobile ? (
-      <Button variant="ghost" asChild className="w-full justify-start">
-        <Link href="/sign-in"><User className="mr-2 h-4 w-4" /> Login / Sign Up</Link>
-      </Button>
+      <SheetClose asChild>
+        <Button variant="ghost" size="sm" asChild className="w-full justify-start h-8 px-2">
+          <Link href="/sign-in"><User className="mr-2 h-4 w-4" /> Login / Sign Up</Link>
+        </Button>
+      </SheetClose>
     ) : (
       <Link href="/sign-in" className="flex items-center gap-1 hover:text-primary text-sm">
         <User className="h-4 w-4" />
@@ -192,6 +199,8 @@ export function Header({ logoUrl, companyName = "eMotionView" }: HeaderProps) {
               <MapPin className="h-4 w-4" />
               Order Track
             </Link>
+            <span className="text-muted-foreground">|</span>
+            <ThemeToggle />
           </div>
         </div>
       </div>
@@ -217,32 +226,65 @@ export function Header({ logoUrl, companyName = "eMotionView" }: HeaderProps) {
                 <span className="sr-only">Toggle Menu</span>
               </Button>
             </SheetTrigger>
-            <SheetContent side="left" className="w-[300px] p-0 flex flex-col">
-              <div className="bg-primary p-4">
-                <Link href="/" className="flex items-center gap-2">
-                  <Image src="https://placehold.co/40x40/FFFFFF/8B2BE2.png" alt={`${companyName} Logo`} width={40} height={40} data-ai-hint="logo initial" />
-                  <span className="font-bold text-xl text-primary-foreground">{companyName}</span>
-                </Link>
-              </div>
-              <ScrollArea className="flex-1">
-                <div className="p-4 space-y-2">
-                  <h3 className="font-semibold px-2 text-lg mb-2">Account</h3>
-                  <ClientOnly>
-                    <AccountLinks isMobile={true} />
-                  </ClientOnly>
+            <SheetContent
+              side="left"
+              hideCloseButton
+              className="w-[300px] p-0 flex flex-col"
+            >
+              <SheetHeader className="sr-only">
+                <SheetTitle>Navigation Menu</SheetTitle>
+              </SheetHeader>
+              <div className="bg-primary px-3 py-2.5 flex items-center justify-between gap-2 shrink-0">
+                <SheetClose asChild>
+                  <Link href="/" className="flex items-center gap-2 min-w-0">
+                    <Image src={logoUrl || "/icon.png"} alt={`${companyName} Logo`} width={28} height={28} className="rounded bg-white p-0.5 object-contain shrink-0" data-ai-hint="logo initial" />
+                    <span className="font-bold text-sm text-primary-foreground truncate">{companyName}</span>
+                  </Link>
+                </SheetClose>
+                <div className="flex items-center gap-1.5 shrink-0">
+                  <ThemeToggle />
+                  <SheetClose asChild>
+                    <button
+                      type="button"
+                      aria-label="Close menu"
+                      className="flex h-7 w-7 items-center justify-center rounded-full bg-white text-primary hover:bg-white/90 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-white shadow-sm"
+                    >
+                      <X className="h-3.5 w-3.5" />
+                      <span className="sr-only">Close</span>
+                    </button>
+                  </SheetClose>
                 </div>
-                <Separator />
-                <div className="p-4 space-y-2">
-                  <h3 className="font-semibold px-2 text-lg mb-2">All Categories</h3>
-                  {categoryLinks.map(link => (
-                    <Button variant="ghost" asChild key={link.name} className="w-full justify-start">
-                      <Link href={link.href}>
-                        {link.name}
-                      </Link>
-                    </Button>
-                  ))}
+              </div>
+
+              <ScrollArea className="flex-1 min-h-0">
+                <div className="px-2.5 py-2.5">
+                  <h3 className="px-2 pb-1.5 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                    All Categories
+                  </h3>
+                  <div className="space-y-0.5">
+                    {categoryLinks.map(link => (
+                      <SheetClose asChild key={link.name}>
+                        <Link
+                          href={link.href}
+                          className="flex items-center justify-between rounded-md px-2.5 py-1.5 text-sm font-medium text-foreground hover:bg-secondary hover:text-primary transition-colors"
+                        >
+                          <span className="truncate">{link.name}</span>
+                          <ChevronRight className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
+                        </Link>
+                      </SheetClose>
+                    ))}
+                  </div>
                 </div>
               </ScrollArea>
+
+              <div className="shrink-0 border-t bg-secondary/40 px-3 py-2.5">
+                <h3 className="px-1 pb-1 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                  Account
+                </h3>
+                <ClientOnly>
+                  <AccountLinks isMobile={true} />
+                </ClientOnly>
+              </div>
             </SheetContent>
           </Sheet>
 

@@ -16,15 +16,15 @@ import {
   Mail,
   MapPin
 } from "lucide-react";
-import { doc, getDoc } from '@/lib/db';
+import { doc, getDoc, docToJSON } from '@/lib/db';
 import { defaultFooterSettings, type FooterSettings } from '@/lib/placeholder-data';
 
 
 const infoItems = [
-    { icon: Headset, title: 'SUPPORT 24/7', text: 'We Support Online 24 Hours' },
-    { icon: CreditCard, title: 'Online Payment', text: 'Make payments hands free very easily' },
-    { icon: ShieldCheck, title: 'Authentic Product', text: 'Guaranteed 100% authentic product' },
-    { icon: Truck, title: 'Fast Delivery', text: 'Fast Delivery is our first moto' },
+    { icon: Headset, title: '24/7 Support', text: 'Always here to help' },
+    { icon: CreditCard, title: 'Online Payment', text: 'Secure checkout' },
+    { icon: ShieldCheck, title: 'Authentic Product', text: '100% genuine' },
+    { icon: Truck, title: 'Fast Delivery', text: 'Fast shipping' },
 ];
 
 export async function Footer() {
@@ -32,8 +32,9 @@ export async function Footer() {
   try {
     const docRef = doc({} as any, 'public_content', 'homepage');
     const docSnap = await getDoc(docRef);
-    if (docSnap.exists() && docSnap.data()?.footer) {
-        footerSettings = { ...defaultFooterSettings, ...docSnap.data().footer };
+    const data = docSnap.exists() ? docToJSON(docSnap) : null;
+    if (data?.footer) {
+        footerSettings = { ...defaultFooterSettings, ...data.footer };
     } else {
         footerSettings = defaultFooterSettings;
     }
@@ -45,13 +46,20 @@ export async function Footer() {
   return (
     <footer className="border-t">
       <div className="bg-background">
-        <div className="container mx-auto px-4 py-12">
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-8 text-center">
+        <div className="container mx-auto px-3 sm:px-4 py-3 md:py-4">
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-2 sm:gap-3">
             {infoItems.map((item, index) => (
-              <div key={index} className="flex flex-col items-center p-6 rounded-lg transition-all duration-300 ease-in-out hover:-translate-y-2 hover:shadow-xl cursor-pointer">
-                <item.icon className="h-10 w-10 text-primary mb-4" />
-                <h3 className="font-semibold text-lg">{item.title}</h3>
-                <p className="text-sm text-muted-foreground mt-1">{item.text}</p>
+              <div
+                key={index}
+                className="flex items-center gap-2.5 sm:gap-3 rounded-lg border border-border/60 bg-secondary/20 px-2.5 py-2 sm:px-3.5 sm:py-2.5 transition-all duration-200 hover:border-primary/30 hover:bg-secondary/40 hover:shadow-sm"
+              >
+                <div className="flex h-8 w-8 sm:h-9 sm:w-9 shrink-0 items-center justify-center rounded-md bg-primary/10 text-primary">
+                  <item.icon className="h-4 w-4 sm:h-[18px] sm:w-[18px]" />
+                </div>
+                <div className="min-w-0 text-left">
+                  <h3 className="font-semibold text-xs sm:text-sm leading-tight">{item.title}</h3>
+                  <p className="text-[11px] sm:text-xs text-muted-foreground leading-tight mt-0.5">{item.text}</p>
+                </div>
               </div>
             ))}
           </div>
@@ -64,18 +72,18 @@ export async function Footer() {
             
             <div className="space-y-4 lg:col-span-2">
               <Link href="/" className="flex items-center gap-2 mb-4">
-                <Image src={footerSettings.logo} alt="eMotionView Logo" width={40} height={40} className="bg-white rounded-md p-1" data-ai-hint="logo globe white"/>
+                <Image src={footerSettings.logo || defaultFooterSettings.logo} alt="eMotionView Logo" width={40} height={40} className="bg-white rounded-md p-1" data-ai-hint="logo globe white"/>
                 <span className="font-bold font-headline text-2xl text-white">eMotionView</span>
               </Link>
               <p className="text-sm max-w-md">
                 {footerSettings.description}
               </p>
               <div className="flex flex-wrap gap-4 pt-4">
-                <Link href={footerSettings.appStore.link}>
-                  <Image src={footerSettings.appStore.image} alt="Download on the App Store" width={135} height={40} data-ai-hint="app store badge" />
+                <Link href={footerSettings.appStore.link || '#'}>
+                  <Image src={footerSettings.appStore.image || defaultFooterSettings.appStore.image} alt="Download on the App Store" width={135} height={40} data-ai-hint="app store badge" />
                 </Link>
-                <Link href={footerSettings.googlePlay.link}>
-                  <Image src={footerSettings.googlePlay.image} alt="Get it on Google Play" width={135} height={40} data-ai-hint="google play badge" />
+                <Link href={footerSettings.googlePlay.link || '#'}>
+                  <Image src={footerSettings.googlePlay.image || defaultFooterSettings.googlePlay.image} alt="Get it on Google Play" width={135} height={40} data-ai-hint="google play badge" />
                 </Link>
               </div>
               <div className="flex space-x-4 pt-4">
@@ -114,8 +122,8 @@ export async function Footer() {
               </ul>
               <h4 className="font-headline font-semibold text-lg text-white pt-4">Member of:</h4>
               <div className="flex gap-4">
-                {footerSettings.memberships?.map(member => (
-                    <Link key={member.id} href={member.link} target="_blank" rel="noopener noreferrer">
+                {footerSettings.memberships?.filter(m => m.image).map(member => (
+                    <Link key={member.id} href={member.link || '#'} target="_blank" rel="noopener noreferrer">
                         <Image src={member.image} alt={member.name} width={100} height={40} data-ai-hint="membership badge" />
                     </Link>
                 ))}
@@ -129,7 +137,7 @@ export async function Footer() {
                 <span className="text-sm font-semibold shrink-0">Pay With</span>
                 <div className="flex-1">
                   <Image 
-                    src={footerSettings.paymentMethodsImage} 
+                    src={footerSettings.paymentMethodsImage || defaultFooterSettings.paymentMethodsImage} 
                     alt="Payment Methods" 
                     width={1180} 
                     height={139} 
@@ -145,7 +153,7 @@ export async function Footer() {
               {footerSettings.copyrightText}
             </p>
             <div className="flex gap-4 items-center">
-              {footerSettings.securityBadges.map(badge => (
+              {footerSettings.securityBadges?.filter(b => b.image).map(badge => (
                 <Image key={badge.id} src={badge.image} alt={badge.name} width={121} height={24} data-ai-hint="security badge" />
               ))}
             </div>

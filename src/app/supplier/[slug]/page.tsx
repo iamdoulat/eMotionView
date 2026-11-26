@@ -7,8 +7,8 @@ import { enrichProductsWithReviews } from '@/lib/product-utils';
 import { notFound } from 'next/navigation';
 import { Breadcrumb } from '@/components/breadcrumb';
 
-export default async function SupplierPage({ params }: { params: { slug: string } }) {
-  const slug = params.slug;
+export default async function SupplierPage({ params }: { params: Promise<{ slug: string }> }) {
+  const { slug } = await params;
 
   const suppliersCollection = collection(db, 'suppliers');
   const supplierQuery = query(suppliersCollection, where("permalink", "==", slug), limit(1));

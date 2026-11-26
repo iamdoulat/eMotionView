@@ -64,8 +64,9 @@ export function useWishlist() {
     const fetchProducts = async () => {
       try {
         const res = await fetch('/api/data/products');
-        const allProducts: Product[] = await res.json();
-        const filtered = allProducts.filter(p => wishlistProductIds.includes(p.id || p._id));
+        const allProducts: (Product & { _id?: string })[] = await res.json();
+        const normalized = allProducts.map((p) => ({ ...p, id: p.id || p._id || '' }));
+        const filtered = normalized.filter(p => wishlistProductIds.includes(p.id));
         setWishlistItems(filtered);
       } catch (error) {
         console.error("Error fetching wishlist products:", error);

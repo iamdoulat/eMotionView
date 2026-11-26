@@ -70,26 +70,28 @@ export default async function RootLayout({
   let trackingSettings = defaultTrackingSettings;
 
   try {
-    const settingsSnap = await getDoc(doc(db, 'settings/general'));
+    const [settingsSnap, trackingSnap] = await Promise.all([
+      getDoc(doc(db, 'settings/general')),
+      getDoc(doc(db, 'settings/tracking')),
+    ]);
     if (settingsSnap.exists()) {
       settings = { ...defaultSettings, ...settingsSnap.data() };
     }
-  } catch (error) {
-    console.warn("Could not fetch general settings. Using default values.", error);
-  }
-
-  try {
-    const trackingSnap = await getDoc(doc(db, 'settings/tracking'));
     if (trackingSnap.exists()) {
       trackingSettings = { ...defaultTrackingSettings, ...trackingSnap.data() };
     }
   } catch (error) {
-    console.warn("Could not fetch tracking settings. Tracking disabled.", error);
+    console.warn("Could not fetch layout settings. Using default values.", error);
   }
 
   return (
     <html lang="en" className={cn("h-full", inter.variable, spaceGrotesk.variable)} suppressHydrationWarning>
       <head>
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `(function(){try{var t=localStorage.getItem('theme');var d=t==='dark'||(!t&&window.matchMedia('(prefers-color-scheme: dark)').matches);if(d)document.documentElement.classList.add('dark');else document.documentElement.classList.remove('dark');}catch(e){}})();`,
+          }}
+        />
         {/* Google Tag Manager */}
         {trackingSettings.gtmEnabled && trackingSettings.gtmId && (
           <GoogleTagManager gtmId={trackingSettings.gtmId} />
@@ -108,7 +110,7 @@ export default async function RootLayout({
       <body className="font-body antialiased min-h-screen flex flex-col" suppressHydrationWarning>
         <DataLayerProvider>
           <Header logoUrl={settings.logo} companyName={settings.companyName} />
-          <main className="flex-1 pb-16 md:pb-0">
+          <main className="flex-1 pb-24 md:pb-0">
             <VisitorTracker>{children}</VisitorTracker>
           </main>
           <Footer />

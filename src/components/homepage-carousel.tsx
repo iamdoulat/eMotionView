@@ -58,7 +58,7 @@ export function HomepageCarousel({ banners }: HomepageCarouselProps) {
                         <CarouselItem key={banner.id}>
                             <div className="relative w-full group">
                                 <Image
-                                    src={banner.image}
+                                    src={banner.image || 'https://placehold.co/900x440.png'}
                                     alt={banner.headline || `Hero Banner ${index + 1}`}
                                     width={900}
                                     height={440}
