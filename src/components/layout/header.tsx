@@ -105,7 +105,7 @@ export function Header({ logoUrl, companyName = "eMotionView" }: HeaderProps) {
     </Button>
   );
 
-  const headerActionButtonClass = "h-10 w-10 rounded-full border border-neutral-300 dark:border-neutral-600 bg-background/90 hover:bg-secondary hover:border-primary text-foreground transition-all duration-200 shadow-sm";
+  const headerActionButtonClass = "h-10 w-10 rounded-full border-2 border-blue-600 dark:border-blue-500 bg-background hover:bg-blue-50/70 dark:hover:bg-blue-950/40 text-foreground hover:text-blue-600 dark:hover:text-blue-400 transition-all duration-200 shadow-sm flex items-center justify-center";
 
   const CartButton = ({ className }: { className?: string }) => (
     <ClientOnly fallback={
@@ -393,7 +393,7 @@ export function Header({ logoUrl, companyName = "eMotionView" }: HeaderProps) {
           </Link>
 
           {/* Desktop Category Dropdown (appears on scroll) */}
-          <div className={cn("hidden lg:flex items-center transition-opacity duration-300", isScrolled ? 'opacity-100' : 'opacity-0 pointer-events-none')}>
+          <div className={cn("hidden lg:flex items-center ml-4 lg:ml-6 transition-opacity duration-300", isScrolled ? 'opacity-100' : 'opacity-0 pointer-events-none')}>
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button>
