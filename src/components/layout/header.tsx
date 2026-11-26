@@ -50,19 +50,20 @@ export function Header({ logoUrl, companyName = "eMotionView" }: HeaderProps) {
   // Search state
   const [searchTerm, setSearchTerm] = useState('');
   const [isSearchFocused, setIsSearchFocused] = useState(false);
-  const searchWrapperRef = useRef<HTMLDivElement>(null);
+  const searchWrapperRef = useRef<HTMLElement>(null);
 
   useEffect(() => {
     let ticking = false;
     const handleScroll = () => {
       if (!ticking) {
         window.requestAnimationFrame(() => {
-          setIsScrolled(window.scrollY > 20);
+          setIsScrolled(window.scrollY > 10);
           ticking = false;
         });
         ticking = true;
       }
     };
+    handleScroll();
     window.addEventListener("scroll", handleScroll, { passive: true });
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
@@ -268,7 +269,7 @@ export function Header({ logoUrl, companyName = "eMotionView" }: HeaderProps) {
   }
 
   return (
-    <div className="w-full" ref={searchWrapperRef}>
+    <>
       {/* Top Bar (Desktop only) - scrolls away naturally with the page, zero layout shift */}
       <div className="hidden md:block bg-secondary/50 border-b border-border">
         <div className="container mx-auto flex h-10 items-center justify-between px-4 text-sm">
@@ -295,11 +296,16 @@ export function Header({ logoUrl, companyName = "eMotionView" }: HeaderProps) {
         </div>
       </div>
 
-      {/* Main Sticky Header */}
-      <header className={cn(
-        "sticky top-0 z-50 w-full bg-background/95 backdrop-blur-sm border-b transition-shadow duration-200",
-        isScrolled ? "shadow-md border-border" : "shadow-xs border-border/50"
-      )}>
+      {/* Main Sticky Header - sticks to top:0 for the entire page */}
+      <header
+        ref={searchWrapperRef}
+        className={cn(
+          "sticky top-0 z-50 w-full bg-background/95 backdrop-blur-md transition-shadow duration-200",
+          isScrolled
+            ? "shadow-md border-b border-border"
+            : "shadow-sm border-b border-border/60"
+        )}
+      >
         {/* Main Bar */}
         <div className="container mx-auto flex h-16 md:h-20 items-center justify-between gap-4 px-4">
           {/* --- Left Group --- */}
@@ -483,6 +489,6 @@ export function Header({ logoUrl, companyName = "eMotionView" }: HeaderProps) {
           </form>
         </div>
       </header>
-    </div>
+    </>
   );
 }
