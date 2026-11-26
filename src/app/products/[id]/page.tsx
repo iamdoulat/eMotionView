@@ -11,6 +11,7 @@ import { db } from '@/lib/db';
 import type { Product, Review, Category, Brand } from '@/lib/placeholder-data';
 import { Reviews } from '@/components/reviews';
 import { ProductDetailsClient } from '@/components/product-details-client';
+import { ProductNavTabs } from '@/components/product-nav-tabs';
 
 export default async function ProductDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id: slug } = await params;
@@ -101,17 +102,9 @@ export default async function ProductDetailPage({ params }: { params: Promise<{ 
 
         <div className="mt-12">
           <div className="flex flex-col gap-12">
-            <div className="sticky top-0 z-40 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 border-b w-full">
-              <nav className="flex items-center gap-6 overflow-x-auto py-4 text-sm font-medium">
-                <a href="#specification" className="transition-colors hover:text-foreground/80 text-foreground/60">Specification</a>
-                <a href="#description" className="transition-colors hover:text-foreground/80 text-foreground/60">Description</a>
-                <a href="#questions" className="transition-colors hover:text-foreground/80 text-foreground/60">Questions</a>
-                <a href="#video" className="transition-colors hover:text-foreground/80 text-foreground/60">Video</a>
-                <a href="#reviews" className="transition-colors hover:text-foreground/80 text-foreground/60">Reviews</a>
-              </nav>
-            </div>
+            <ProductNavTabs />
 
-            <section id="specification" className="scroll-mt-20">
+            <section id="specification" className="scroll-mt-36 md:scroll-mt-40">
               <h2 className="text-2xl font-bold mb-6">Specification</h2>
               <Card>
                 <CardHeader>
@@ -132,7 +125,7 @@ export default async function ProductDetailPage({ params }: { params: Promise<{ 
               </Card>
             </section>
 
-            <section id="description" className="scroll-mt-20">
+            <section id="description" className="scroll-mt-36 md:scroll-mt-40">
               <h2 className="text-2xl font-bold mb-6">Description</h2>
               <Card>
                 <CardContent className="pt-6">
@@ -144,7 +137,7 @@ export default async function ProductDetailPage({ params }: { params: Promise<{ 
               </Card>
             </section>
 
-            <section id="questions" className="scroll-mt-20">
+            <section id="questions" className="scroll-mt-36 md:scroll-mt-40">
               <h2 className="text-2xl font-bold mb-6">Questions</h2>
               <Card>
                 <CardHeader>
@@ -156,7 +149,7 @@ export default async function ProductDetailPage({ params }: { params: Promise<{ 
               </Card>
             </section>
 
-            <section id="video" className="scroll-mt-20">
+            <section id="video" className="scroll-mt-36 md:scroll-mt-40">
               <h2 className="text-2xl font-bold mb-6">Video</h2>
               <Card>
                 <CardHeader>
@@ -177,7 +170,7 @@ export default async function ProductDetailPage({ params }: { params: Promise<{ 
               </Card>
             </section>
 
-            <section id="reviews" className="scroll-mt-20">
+            <section id="reviews" className="scroll-mt-36 md:scroll-mt-40">
               <h2 className="text-2xl font-bold mb-6">Reviews</h2>
               <Reviews productId={product.id} reviews={approvedReviews} averageRating={averageRating} />
             </section>
