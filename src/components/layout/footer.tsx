@@ -51,12 +51,12 @@ export async function Footer() {
             {infoItems.map((item, index) => (
               <div
                 key={index}
-                className="flex items-center gap-2.5 sm:gap-3 rounded-lg border border-border/60 bg-secondary/20 px-2.5 py-2 sm:px-3.5 sm:py-2.5 transition-all duration-200 hover:border-primary/30 hover:bg-secondary/40 hover:shadow-sm"
+                className="flex items-center justify-center gap-2.5 sm:gap-3 rounded-lg border border-border/60 bg-secondary/20 px-3 py-2.5 sm:px-4 sm:py-3 transition-all duration-200 hover:border-primary/30 hover:bg-secondary/40 hover:shadow-sm"
               >
                 <div className="flex h-8 w-8 sm:h-9 sm:w-9 shrink-0 items-center justify-center rounded-md bg-primary/10 text-primary">
                   <item.icon className="h-4 w-4 sm:h-[18px] sm:w-[18px]" />
                 </div>
-                <div className="min-w-0 text-left">
+                <div className="min-w-0">
                   <h3 className="font-semibold text-xs sm:text-sm leading-tight">{item.title}</h3>
                   <p className="text-[11px] sm:text-xs text-muted-foreground leading-tight mt-0.5">{item.text}</p>
                 </div>
