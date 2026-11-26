@@ -4,7 +4,7 @@
 import React, { useState, useEffect, useRef } from "react"
 import Link from "next/link"
 import Image from "next/image"
-import { useRouter } from "next/navigation"
+import { useRouter, usePathname } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Sheet, SheetClose, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet"
@@ -45,6 +45,9 @@ export function Header({ logoUrl, companyName = "eMotionView" }: HeaderProps) {
   const [isScrolled, setIsScrolled] = useState(false);
   const { user, isLoading: isAuthLoading } = useAuth();
   const router = useRouter();
+  const pathname = usePathname();
+  const isHomePage = pathname === '/';
+  const showCategoryDropdown = !isHomePage || isScrolled;
   const { cartCount, isInitialized: isCartInitialized } = useCart();
 
   // Search state
@@ -392,12 +395,15 @@ export function Header({ logoUrl, companyName = "eMotionView" }: HeaderProps) {
             )}
           </Link>
 
-          {/* Desktop Category Dropdown (appears on scroll) */}
-          <div className={cn("hidden lg:flex items-center ml-4 lg:ml-6 transition-opacity duration-300", isScrolled ? 'opacity-100' : 'opacity-0 pointer-events-none')}>
+          {/* Desktop Category Dropdown (appears on scroll or on non-home pages) */}
+          <div className={cn(
+            "hidden lg:flex items-center ml-5 lg:ml-7 shrink-0 transition-opacity duration-300",
+            showCategoryDropdown ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'
+          )}>
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button>
-                  <LayoutGrid className="mr-2 h-4 w-4" />
+                <Button className="gap-2 font-semibold bg-primary hover:bg-primary/90 text-primary-foreground shadow-xs">
+                  <LayoutGrid className="mr-1.5 h-4 w-4" />
                   All Categories
                 </Button>
               </DropdownMenuTrigger>
@@ -431,9 +437,9 @@ export function Header({ logoUrl, companyName = "eMotionView" }: HeaderProps) {
         </div>
 
         {/* --- Right Group --- */}
-        <div className="flex flex-shrink-0 items-center justify-end gap-2 md:gap-2.5">
+        <div className="flex flex-shrink-0 items-center justify-end gap-2.5 md:gap-3">
           <ClientOnly fallback={
-            <div className={cn("hidden lg:inline-flex items-center justify-center", headerActionButtonClass)}>
+            <div className={cn("hidden md:inline-flex items-center justify-center", headerActionButtonClass)}>
               <Heart className="h-5 w-5" />
             </div>
           }>
@@ -441,9 +447,9 @@ export function Header({ logoUrl, companyName = "eMotionView" }: HeaderProps) {
               variant="ghost"
               size="icon"
               asChild
-              className={cn("hidden lg:inline-flex", headerActionButtonClass)}
+              className={cn("hidden md:inline-flex", headerActionButtonClass)}
             >
-              <Link href="/wishlist">
+              <Link href="/wishlist" aria-label="Wishlist">
                 <Heart className="h-5 w-5" />
                 <span className="sr-only">Wishlist</span>
               </Link>
@@ -453,11 +459,11 @@ export function Header({ logoUrl, companyName = "eMotionView" }: HeaderProps) {
           <CartButton />
 
           <ClientOnly fallback={
-            <div className={cn("hidden lg:inline-flex items-center justify-center", headerActionButtonClass)}>
+            <div className={cn("hidden md:inline-flex items-center justify-center", headerActionButtonClass)}>
               <User className="h-5 w-5" />
             </div>
           }>
-            <div className="hidden lg:inline-flex items-center">
+            <div className="hidden md:inline-flex items-center">
               <AccountLinks inHeader={true} />
             </div>
           </ClientOnly>
