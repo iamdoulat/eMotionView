@@ -99,10 +99,13 @@ export function Header({ logoUrl, companyName = "eMotionView" }: HeaderProps) {
     <Input
       type="search"
       placeholder="Search products, brands..."
-      className={cn("rounded-full h-10 pr-11 md:h-12 md:pr-14 border border-accent focus:ring-1 focus:ring-accent")}
+      className={cn(
+        "rounded-full h-10 pr-11 md:h-12 md:pr-14 border border-[#ff00ff] dark:border-[#ff33ff] focus-visible:border-[#ff00ff] dark:focus-visible:border-[#ff33ff] focus-visible:ring-1 focus-visible:ring-[#ff00ff] dark:focus-visible:ring-[#ff33ff] focus-visible:ring-offset-0"
+      )}
       value={searchTerm}
       onChange={(e) => setSearchTerm(e.target.value)}
       onFocus={() => setIsSearchFocused(true)}
+      onBlur={() => setIsSearchFocused(false)}
     />
   );
 
