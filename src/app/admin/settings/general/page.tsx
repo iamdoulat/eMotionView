@@ -38,7 +38,8 @@ import {
   Check,
   AlertCircle,
   FileCode,
-  Image as ImageIcon
+  Image as ImageIcon,
+  Cloud
 } from "lucide-react";
 import { doc, getDoc, setDoc } from '@/lib/db';
 import { uploadFile, getFileUrl } from '@/lib/r2';
@@ -99,7 +100,7 @@ const defaultSettings: GeneralSettingsFormData = {
   storeTagline: 'Biggest Smart Gadget & SmartPhone Collection',
   storeDescription: 'Your premier destination for authentic smartwatches, audio gear, phones, and modern smart lifestyle gadgets in Bangladesh.',
   logo: '/api/r2/proxy?key=general%2F1780921429643-motion-logo.webp',
-  favicon: '/favicon.ico',
+  favicon: '/api/r2/proxy?key=general%2Ffavicon-1795715649669.ico',
   address: '10/25 Eastern Plaza, Hatirpool, Dhaka-1205',
   phone: '09677460460',
   email: 'motionview22@gmail.com.bd',
@@ -249,14 +250,19 @@ export default function GeneralSettingsPage() {
   return (
     <Form {...form}>
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
-        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 border-b pb-4">
+        {/* Header with White Background */}
+        <div className="bg-white dark:bg-card border border-border/80 rounded-xl p-5 sm:p-6 shadow-sm flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
           <div>
-            <h1 className="text-3xl font-bold tracking-tight">General & SEO Settings</h1>
+            <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-foreground">General & SEO Settings</h1>
             <p className="text-sm text-muted-foreground mt-1">
               Configure store identity, browser titles, SEO criteria, permalinks, captcha, and social authentication.
             </p>
           </div>
-          <Button type="submit" disabled={isSubmitting} className="min-w-[140px] shrink-0">
+          <Button
+            type="submit"
+            disabled={isSubmitting}
+            className="min-w-[140px] shrink-0 bg-primary text-primary-foreground hover:bg-primary/90 font-medium shadow-xs"
+          >
             {isSubmitting ? (
               <>
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
@@ -272,21 +278,36 @@ export default function GeneralSettingsPage() {
         </div>
 
         <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-          <TabsList className="grid grid-cols-2 md:grid-cols-5 h-auto p-1 bg-muted/60">
-            <TabsTrigger value="store" className="py-2.5 data-[state=active]:bg-background">
-              <Store className="h-4 w-4 mr-2" /> Store Identity
+          <TabsList className="grid grid-cols-2 md:grid-cols-5 gap-2.5 sm:gap-3 bg-transparent p-0 h-auto">
+            <TabsTrigger
+              value="store"
+              className="py-2.5 px-3 sm:px-4 rounded-lg font-medium transition-all duration-200 border-2 border-blue-600 bg-white text-foreground hover:bg-blue-50/80 hover:text-blue-700 dark:bg-card dark:border-blue-500 dark:text-foreground dark:hover:bg-blue-950/40 data-[state=active]:!bg-blue-600 data-[state=active]:!text-white data-[state=active]:!border-blue-600 data-[state=active]:shadow-md cursor-pointer text-xs sm:text-sm"
+            >
+              <Store className="h-4 w-4 mr-2 shrink-0" /> Store Identity
             </TabsTrigger>
-            <TabsTrigger value="seo" className="py-2.5 data-[state=active]:bg-background">
-              <Search className="h-4 w-4 mr-2" /> SEO & Titles
+            <TabsTrigger
+              value="seo"
+              className="py-2.5 px-3 sm:px-4 rounded-lg font-medium transition-all duration-200 border-2 border-blue-600 bg-white text-foreground hover:bg-blue-50/80 hover:text-blue-700 dark:bg-card dark:border-blue-500 dark:text-foreground dark:hover:bg-blue-950/40 data-[state=active]:!bg-blue-600 data-[state=active]:!text-white data-[state=active]:!border-blue-600 data-[state=active]:shadow-md cursor-pointer text-xs sm:text-sm"
+            >
+              <Search className="h-4 w-4 mr-2 shrink-0" /> SEO & Titles
             </TabsTrigger>
-            <TabsTrigger value="permalinks" className="py-2.5 data-[state=active]:bg-background">
-              <Link2 className="h-4 w-4 mr-2" /> Permalinks
+            <TabsTrigger
+              value="permalinks"
+              className="py-2.5 px-3 sm:px-4 rounded-lg font-medium transition-all duration-200 border-2 border-blue-600 bg-white text-foreground hover:bg-blue-50/80 hover:text-blue-700 dark:bg-card dark:border-blue-500 dark:text-foreground dark:hover:bg-blue-950/40 data-[state=active]:!bg-blue-600 data-[state=active]:!text-white data-[state=active]:!border-blue-600 data-[state=active]:shadow-md cursor-pointer text-xs sm:text-sm"
+            >
+              <Link2 className="h-4 w-4 mr-2 shrink-0" /> Permalinks
             </TabsTrigger>
-            <TabsTrigger value="security" className="py-2.5 data-[state=active]:bg-background">
-              <ShieldCheck className="h-4 w-4 mr-2" /> Captcha
+            <TabsTrigger
+              value="security"
+              className="py-2.5 px-3 sm:px-4 rounded-lg font-medium transition-all duration-200 border-2 border-blue-600 bg-white text-foreground hover:bg-blue-50/80 hover:text-blue-700 dark:bg-card dark:border-blue-500 dark:text-foreground dark:hover:bg-blue-950/40 data-[state=active]:!bg-blue-600 data-[state=active]:!text-white data-[state=active]:!border-blue-600 data-[state=active]:shadow-md cursor-pointer text-xs sm:text-sm"
+            >
+              <ShieldCheck className="h-4 w-4 mr-2 shrink-0" /> Captcha
             </TabsTrigger>
-            <TabsTrigger value="social" className="py-2.5 data-[state=active]:bg-background">
-              <KeyRound className="h-4 w-4 mr-2" /> Social Login
+            <TabsTrigger
+              value="social"
+              className="py-2.5 px-3 sm:px-4 rounded-lg font-medium transition-all duration-200 border-2 border-blue-600 bg-white text-foreground hover:bg-blue-50/80 hover:text-blue-700 dark:bg-card dark:border-blue-500 dark:text-foreground dark:hover:bg-blue-950/40 data-[state=active]:!bg-blue-600 data-[state=active]:!text-white data-[state=active]:!border-blue-600 data-[state=active]:shadow-md cursor-pointer text-xs sm:text-sm"
+            >
+              <KeyRound className="h-4 w-4 mr-2 shrink-0" /> Social Login
             </TabsTrigger>
           </TabsList>
 
@@ -433,7 +454,14 @@ export default function GeneralSettingsPage() {
                         <Label className="text-base font-semibold">Browser Favicon</Label>
                         <p className="text-xs text-muted-foreground mt-0.5">Recommended format: 32x32 or 64x64 PNG or ICO</p>
                       </div>
-                      <Badge variant="secondary">Browser Tab</Badge>
+                      <div className="flex items-center gap-1.5">
+                        {currentFavicon && (currentFavicon.includes('/api/r2/') || currentFavicon.includes('r2.')) && (
+                          <Badge variant="outline" className="border-blue-600/40 text-blue-600 dark:text-blue-400 bg-blue-50/50 dark:bg-blue-950/30 text-[10px] flex items-center">
+                            <Cloud className="h-3 w-3 mr-1" /> R2 Storage
+                          </Badge>
+                        )}
+                        <Badge variant="secondary">Browser Tab</Badge>
+                      </div>
                     </div>
 
                     <div className="flex flex-col sm:flex-row items-center gap-4 p-4 border rounded-md bg-secondary/30">
@@ -461,10 +489,10 @@ export default function GeneralSettingsPage() {
                       <div className="flex-1 w-full space-y-2">
                         <div className="flex items-center gap-2">
                           <label className="cursor-pointer">
-                            <Button type="button" variant="outline" size="sm" disabled={isUploadingFavicon} asChild>
+                            <Button type="button" variant="outline" size="sm" disabled={isUploadingFavicon} asChild className="border-blue-600/50 text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-950/40">
                               <span>
                                 {isUploadingFavicon ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Upload className="h-4 w-4 mr-2" />}
-                                Upload Favicon
+                                Upload Favicon to R2
                               </span>
                             </Button>
                             <input
@@ -479,7 +507,7 @@ export default function GeneralSettingsPage() {
                           </label>
                         </div>
                         <Input
-                          placeholder="Or paste favicon URL (/favicon.ico)"
+                          placeholder="Favicon URL stored on Cloudflare R2 (/api/r2/proxy?key=...)"
                           value={currentFavicon || ''}
                           onChange={(e) => setValue('favicon', e.target.value, { shouldDirty: true })}
                           className="text-xs h-8"
