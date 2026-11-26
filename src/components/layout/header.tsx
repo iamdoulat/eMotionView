@@ -8,7 +8,7 @@ import { useRouter, usePathname } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Sheet, SheetClose, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet"
-import { Search, ShoppingCart, Menu, Phone, User, Heart, LayoutGrid, LogOut, MapPin, X, ChevronRight } from "lucide-react"
+import { Search, ShoppingCart, Menu, Phone, User, Heart, LayoutGrid, LogOut, MapPin, X, ChevronRight, ShieldCheck } from "lucide-react"
 import { Badge } from "@/components/ui/badge"
 import { cn } from "@/lib/utils"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
@@ -43,7 +43,8 @@ interface HeaderProps {
 
 export function Header({ logoUrl, companyName = "eMotionView" }: HeaderProps) {
   const [isScrolled, setIsScrolled] = useState(false);
-  const { user, isLoading: isAuthLoading } = useAuth();
+  const { user, role, isLoading: isAuthLoading } = useAuth();
+  const isAdmin = Boolean(role && ['admin', 'manager', 'staff'].includes(role.toLowerCase()));
   const router = useRouter();
   const { cartCount, isInitialized: isCartInitialized } = useCart();
 
@@ -163,6 +164,13 @@ export function Header({ logoUrl, companyName = "eMotionView" }: HeaderProps) {
       if (isMobile) {
         return (
           <div className="space-y-1">
+            {isAdmin && (
+              <SheetClose asChild>
+                <Button variant="outline" size="sm" asChild className="w-full justify-start h-8 px-2 border-primary/50 text-primary font-medium">
+                  <Link href="/admin"><ShieldCheck className="mr-2 h-4 w-4" /> Admin Panel</Link>
+                </Button>
+              </SheetClose>
+            )}
             <SheetClose asChild>
               <Button variant="ghost" size="sm" asChild className="w-full justify-start h-8 px-2">
                 <Link href="/account"><User className="mr-2 h-4 w-4" /> My Account</Link>
@@ -196,6 +204,13 @@ export function Header({ logoUrl, companyName = "eMotionView" }: HeaderProps) {
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
+              {isAdmin && (
+                <DropdownMenuItem asChild>
+                  <Link href="/admin" className="font-semibold text-primary flex items-center">
+                    <ShieldCheck className="mr-2 h-4 w-4" /> Admin Panel
+                  </Link>
+                </DropdownMenuItem>
+              )}
               <DropdownMenuItem asChild>
                 <Link href="/account">My Account</Link>
               </DropdownMenuItem>
@@ -221,6 +236,13 @@ export function Header({ logoUrl, companyName = "eMotionView" }: HeaderProps) {
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
+              {isAdmin && (
+                <DropdownMenuItem asChild>
+                  <Link href="/admin" className="font-semibold text-primary flex items-center">
+                    <ShieldCheck className="mr-2 h-4 w-4" /> Admin Panel
+                  </Link>
+                </DropdownMenuItem>
+              )}
               <DropdownMenuItem asChild>
                 <Link href="/account">My Account</Link>
               </DropdownMenuItem>

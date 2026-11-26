@@ -5,10 +5,11 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { User, ShoppingBag, Heart, LogOut } from 'lucide-react';
+import { User, ShoppingBag, Heart, LogOut, ShieldCheck } from 'lucide-react';
 import { cn } from "@/lib/utils";
 import { auth } from "@/lib/firebase";
 import { signOut } from "firebase/auth";
+import { useAuth } from "@/hooks/use-auth";
 
 const navItems = [
     { href: "/account/profile", label: "Profile", icon: User },
@@ -19,6 +20,8 @@ const navItems = [
 export function AccountSidebar() {
     const pathname = usePathname();
     const router = useRouter();
+    const { role } = useAuth();
+    const isAdmin = Boolean(role && ['admin', 'manager', 'staff'].includes(role.toLowerCase()));
 
     const handleSignOut = async () => {
         try {
@@ -35,6 +38,18 @@ export function AccountSidebar() {
                 <CardTitle className="font-headline">My Account</CardTitle>
             </CardHeader>
             <CardContent className="flex flex-col gap-2">
+                {isAdmin && (
+                    <Button
+                        asChild
+                        variant="outline"
+                        className="justify-start border-blue-600/40 text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-950/40 font-semibold mb-1"
+                    >
+                        <Link href="/admin">
+                            <ShieldCheck className="mr-2 h-4 w-4" />
+                            Admin Panel
+                        </Link>
+                    </Button>
+                )}
                 {navItems.map((item) => (
                     <Button
                         key={item.href}

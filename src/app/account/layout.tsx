@@ -7,7 +7,7 @@ import { useRouter } from "next/navigation";
 import { useEffect } from "react";
 import { Loader2 } from "lucide-react";
 
-const CUSTOMER_ROLES = ['Customer'];
+const isCustomerRole = (role?: string) => !role || role.toLowerCase() === 'customer';
 
 export default function AccountLayout({
   children,
@@ -18,19 +18,18 @@ export default function AccountLayout({
   const router = useRouter();
   const pathname = typeof window !== 'undefined' ? window.location.pathname : '';
 
+  const isStaff = Boolean(role && !isCustomerRole(role));
+  const isOrderDetailPage = pathname.startsWith('/account/orders/') && pathname !== '/account/orders';
+
   useEffect(() => {
     if (!isLoading) {
       if (!user) {
-        router.replace('/sign-in');
-      } else if (role && !CUSTOMER_ROLES.includes(role)) {
-        // Allow admins to view order details, but redirect from other account pages
-        const isOrderDetailPage = pathname.startsWith('/account/orders/') && pathname !== '/account/orders';
-        if (!isOrderDetailPage) {
-          router.replace('/admin');
-        }
+        router.replace('/sign-in?redirect=/account');
+      } else if (isStaff && !isOrderDetailPage) {
+        router.replace('/admin');
       }
     }
-  }, [user, role, isLoading, router, pathname]);
+  }, [user, isStaff, isOrderDetailPage, isLoading, router]);
 
   if (isLoading || !user) {
     return (
@@ -41,10 +40,9 @@ export default function AccountLayout({
   }
 
   // Allow admins to view order detail pages
-  const isOrderDetailPage = pathname.startsWith('/account/orders/') && pathname !== '/account/orders';
-  const isAdminViewingOrder = role && !CUSTOMER_ROLES.includes(role) && isOrderDetailPage;
+  const isAdminViewingOrder = isStaff && isOrderDetailPage;
 
-  if (!isAdminViewingOrder && role && !CUSTOMER_ROLES.includes(role)) {
+  if (!isAdminViewingOrder && isStaff) {
     return (
       <div className="flex h-[calc(100vh-8rem)] w-full items-center justify-center">
         <Loader2 className="h-8 w-8 animate-spin" />

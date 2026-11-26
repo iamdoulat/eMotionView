@@ -16,14 +16,25 @@ export function useAuth() {
     const [isLoading, setIsLoading] = useState(true);
     const hasMounted = useHasMounted();
 
-    const fetchUserRole = async (uid: string): Promise<UserRole | undefined> => {
+    const fetchUserRole = async (firebaseUser: FirebaseUser): Promise<UserRole | undefined> => {
         try {
-            const res = await fetch(`/api/data/users?id=${encodeURIComponent(uid)}`);
+            const token = await firebaseUser.getIdToken();
+            const resMe = await fetch('/api/auth/me', {
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+            if (resMe.ok) {
+                const data = await resMe.json();
+                if (data.role) return data.role;
+            }
+        } catch {}
+
+        try {
+            const res = await fetch(`/api/data/users?id=${encodeURIComponent(firebaseUser.uid)}`);
             if (res.ok) {
                 const data = await res.json();
                 if (data.role) return data.role;
             }
-            const res2 = await fetch(`/api/data/customers?id=${encodeURIComponent(uid)}`);
+            const res2 = await fetch(`/api/data/customers?id=${encodeURIComponent(firebaseUser.uid)}`);
             if (res2.ok) {
                 const data = await res2.json();
                 if (data.role) return data.role;
@@ -37,7 +48,7 @@ export function useAuth() {
 
         const unsubscribe = onIdTokenChanged(auth, async (firebaseUser) => {
             if (firebaseUser) {
-                const role = await fetchUserRole(firebaseUser.uid);
+                const role = await fetchUserRole(firebaseUser);
                 setUser({ ...firebaseUser, role });
             } else {
                 setUser(null);

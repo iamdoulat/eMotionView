@@ -2,8 +2,8 @@
 "use client";
 
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
-import { useState } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
+import { useState, Suspense } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -24,8 +24,10 @@ const formSchema = z.object({
   password: z.string().min(6, { message: 'Password must be at least 6 characters.' }),
 });
 
-export default function SignInPage() {
+function SignInForm() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const redirectParam = searchParams.get('redirect');
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(false);
 
@@ -36,6 +38,21 @@ export default function SignInPage() {
       password: '',
     },
   });
+
+  async function resolveTargetUrl(defaultUrl: string) {
+    if (redirectParam) return redirectParam;
+    try {
+      const res = await fetch('/api/auth/me');
+      if (res.ok) {
+        const data = await res.json();
+        const role = data.role?.toLowerCase();
+        if (['admin', 'manager', 'staff'].includes(role)) {
+          return '/admin';
+        }
+      }
+    } catch {}
+    return defaultUrl;
+  }
 
   async function onSubmit(values: z.infer<typeof formSchema>) {
     setIsLoading(true);
@@ -54,7 +71,9 @@ export default function SignInPage() {
           title: 'Login Successful',
           description: 'Welcome back!',
         });
-        router.push('/account');
+        const target = await resolveTargetUrl('/account');
+        router.push(target);
+        router.refresh();
         return; // Exit here on success
       } else {
         // Session creation failed, but auth succeeded - need to sign out
@@ -134,7 +153,9 @@ export default function SignInPage() {
           title: 'Login Successful',
           description: 'Welcome back!',
         });
-        router.push('/account');
+        const target = await resolveTargetUrl('/account');
+        router.push(target);
+        router.refresh();
       }
     } catch (error) {
       let description = 'An unexpected error occurred. Please try again.';
@@ -257,5 +278,21 @@ export default function SignInPage() {
         </form>
       </Form>
     </Card>
+  );
+}
+
+export default function SignInPage() {
+  return (
+    <Suspense
+      fallback={
+        <Card className="w-full max-w-md mx-auto my-8">
+          <CardContent className="flex items-center justify-center p-12">
+            <Loader2 className="h-8 w-8 animate-spin text-primary" />
+          </CardContent>
+        </Card>
+      }
+    >
+      <SignInForm />
+    </Suspense>
   );
 }

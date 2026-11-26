@@ -124,7 +124,18 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ coll
       if (collection === 'settings' && (id === 'database' || id === 'storage') && !isAdmin) {
         return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
       }
-      const doc = await findOne(collection, { _id: id } as any);
+      let doc = await findOne(collection, { _id: id } as any);
+      if (!doc && (collection === 'users' || collection === 'customers')) {
+        doc = await findOne(collection, { uid: id } as any);
+        if (!doc && user?.email && (id === user.uid || isAdmin)) {
+          doc = await findOne(collection, {
+            $or: [
+              { email: user.email },
+              { email: user.email.toLowerCase() },
+            ],
+          } as any);
+        }
+      }
       if (!doc) {
         if (collection === 'admin_settings') {
           if (id === 'currency') return NextResponse.json({ _id: 'currency', currency: 'BDT' });

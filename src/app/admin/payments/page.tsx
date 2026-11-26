@@ -31,7 +31,7 @@ export default function PaymentsPage() {
     useEffect(() => {
         if (isAuthLoading) return;
 
-        if (!user || !role || !['Admin', 'Manager', 'Staff'].includes(role)) {
+        if (!user || !role || !['admin', 'manager', 'staff'].includes(role.toLowerCase())) {
             router.push('/');
             return;
         }
