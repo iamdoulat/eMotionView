@@ -105,16 +105,19 @@ export function Header({ logoUrl, companyName = "eMotionView" }: HeaderProps) {
     </Button>
   );
 
+  const headerActionButtonClass = "h-10 w-10 rounded-full border border-neutral-300 dark:border-neutral-600 bg-background/90 hover:bg-secondary hover:border-primary text-foreground transition-all duration-200 shadow-sm";
+
   const CartButton = ({ className }: { className?: string }) => (
-    <ClientOnly fallback={<Skeleton className="h-10 w-10 rounded-full" />}>
+    <ClientOnly fallback={
+      <div className={cn("relative flex items-center justify-center", headerActionButtonClass, className)}>
+        <ShoppingCart className="h-5 w-5" />
+      </div>
+    }>
       <Button
         variant="ghost"
         size="icon"
         asChild
-        className={cn(
-          "relative h-10 w-10 rounded-full border border-border/80 bg-background hover:bg-secondary/70 hover:border-primary/50 text-foreground transition-all duration-200 shadow-2xs",
-          className
-        )}
+        className={cn("relative", headerActionButtonClass, className)}
       >
         <Link href="/cart" aria-label="Shopping Cart">
           <ShoppingCart className="h-5 w-5" />
@@ -130,7 +133,19 @@ export function Header({ logoUrl, companyName = "eMotionView" }: HeaderProps) {
 
   const AccountLinks = ({ isMobile = false, inHeader = false }: { isMobile?: boolean; inHeader?: boolean }) => {
     if (isAuthLoading) {
-      return isMobile ? null : inHeader ? <Skeleton className="h-10 w-10 rounded-full" /> : <Skeleton className="h-6 w-24" />;
+      return isMobile ? null : inHeader ? (
+        <Button
+          variant="ghost"
+          size="icon"
+          disabled
+          aria-label="Account"
+          className={cn(headerActionButtonClass, "opacity-75 cursor-default")}
+        >
+          <User className="h-5 w-5" />
+        </Button>
+      ) : (
+        <Skeleton className="h-6 w-24" />
+      );
     }
 
     if (user) {
@@ -159,7 +174,7 @@ export function Header({ logoUrl, companyName = "eMotionView" }: HeaderProps) {
                 variant="ghost"
                 size="icon"
                 aria-label="Account"
-                className="h-10 w-10 rounded-full border border-border/80 bg-background hover:bg-secondary/70 hover:border-primary/50 text-foreground transition-all duration-200 shadow-2xs"
+                className={headerActionButtonClass}
               >
                 <User className="h-5 w-5" />
               </Button>
@@ -214,7 +229,7 @@ export function Header({ logoUrl, companyName = "eMotionView" }: HeaderProps) {
           size="icon"
           asChild
           aria-label="Account"
-          className="h-10 w-10 rounded-full border border-border/80 bg-background hover:bg-secondary/70 hover:border-primary/50 text-foreground transition-all duration-200 shadow-2xs"
+          className={headerActionButtonClass}
         >
           <Link href="/sign-in">
             <User className="h-5 w-5" />
@@ -417,12 +432,16 @@ export function Header({ logoUrl, companyName = "eMotionView" }: HeaderProps) {
 
         {/* --- Right Group --- */}
         <div className="flex flex-shrink-0 items-center justify-end gap-2 md:gap-2.5">
-          <ClientOnly fallback={<Skeleton className="h-10 w-10 rounded-full hidden lg:block" />}>
+          <ClientOnly fallback={
+            <div className={cn("hidden lg:inline-flex items-center justify-center", headerActionButtonClass)}>
+              <Heart className="h-5 w-5" />
+            </div>
+          }>
             <Button
               variant="ghost"
               size="icon"
               asChild
-              className="hidden lg:inline-flex h-10 w-10 rounded-full border border-border/80 bg-background hover:bg-secondary/70 hover:border-primary/50 text-foreground transition-all duration-200 shadow-2xs"
+              className={cn("hidden lg:inline-flex", headerActionButtonClass)}
             >
               <Link href="/wishlist">
                 <Heart className="h-5 w-5" />
@@ -433,7 +452,11 @@ export function Header({ logoUrl, companyName = "eMotionView" }: HeaderProps) {
 
           <CartButton />
 
-          <ClientOnly fallback={<Skeleton className="h-10 w-10 rounded-full hidden lg:block" />}>
+          <ClientOnly fallback={
+            <div className={cn("hidden lg:inline-flex items-center justify-center", headerActionButtonClass)}>
+              <User className="h-5 w-5" />
+            </div>
+          }>
             <div className="hidden lg:inline-flex items-center">
               <AccountLinks inHeader={true} />
             </div>
