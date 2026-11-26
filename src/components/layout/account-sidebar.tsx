@@ -5,6 +5,7 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { Separator } from "@/components/ui/separator";
 import { User, ShoppingBag, Heart, LogOut, ShieldCheck } from 'lucide-react';
 import { cn } from "@/lib/utils";
 import { auth } from "@/lib/firebase";
@@ -68,10 +69,11 @@ export function AccountSidebar() {
                         </Link>
                     </Button>
                 ))}
+                <Separator className="my-1 opacity-70" />
                 <Button
                     onClick={handleSignOut}
                     variant="ghost"
-                    className="justify-start text-destructive hover:text-destructive hover:bg-destructive/10 dark:hover:bg-destructive/20 transition-colors"
+                    className="justify-start text-destructive hover:text-destructive hover:bg-destructive/10 dark:hover:bg-destructive/20 border border-transparent hover:border-destructive/20 transition-colors font-medium"
                 >
                     <LogOut className="mr-2 h-4 w-4" />
                     Sign Out
