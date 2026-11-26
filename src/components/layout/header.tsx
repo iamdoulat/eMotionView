@@ -199,10 +199,15 @@ export function Header({ logoUrl, companyName = "eMotionView" }: HeaderProps) {
       }
 
       return (
-        <div className="flex items-center gap-1 hover:text-primary text-sm">
+        <div className="flex items-center gap-1 text-sm">
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button variant="ghost" size="sm" aria-label="Account" className="h-auto p-0 hover:bg-transparent">
+              <Button
+                variant="ghost"
+                size="sm"
+                aria-label="Account"
+                className="h-auto p-0 font-normal text-foreground hover:bg-transparent hover:text-blue-600 dark:hover:text-blue-400 data-[state=open]:text-blue-600 dark:data-[state=open]:text-blue-400 transition-colors"
+              >
                 <User className="h-4 w-4 mr-1" /> My Account
               </Button>
             </DropdownMenuTrigger>
@@ -247,7 +252,7 @@ export function Header({ logoUrl, companyName = "eMotionView" }: HeaderProps) {
     }
 
     return (
-      <Link href="/sign-in" className="flex items-center gap-1 hover:text-primary text-sm">
+      <Link href="/sign-in" className="flex items-center gap-1 text-foreground hover:text-blue-600 dark:hover:text-blue-400 text-sm transition-colors">
         <User className="h-4 w-4" />
         Login
       </Link>
@@ -263,7 +268,7 @@ export function Header({ logoUrl, companyName = "eMotionView" }: HeaderProps) {
             <span>Biggest Smart Gadget & SmartPhone Collection</span>
           </div>
           <div className="flex items-center gap-4 text-sm">
-            <a href="tel:09677460460" className="flex items-center gap-1 hover:text-primary">
+            <a href="tel:09677460460" className="flex items-center gap-1 text-foreground hover:text-blue-600 dark:hover:text-blue-400 transition-colors">
               <Phone className="h-4 w-4" />
               09677460460
             </a>
@@ -272,7 +277,7 @@ export function Header({ logoUrl, companyName = "eMotionView" }: HeaderProps) {
               <AccountLinks />
             </ClientOnly>
             <span className="text-muted-foreground">|</span>
-            <Link href="/track-order" className="flex items-center gap-1 hover:text-primary">
+            <Link href="/track-order" className="flex items-center gap-1 text-foreground hover:text-blue-600 dark:hover:text-blue-400 transition-colors">
               <MapPin className="h-4 w-4" />
               Order Track
             </Link>
