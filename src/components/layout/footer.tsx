@@ -67,7 +67,7 @@ export async function Footer() {
       </div>
 
       <div className="bg-[#1e2128] text-gray-300">
-        <div className="container mx-auto px-4 pt-16 pb-8">
+        <div className="container mx-auto px-4 pt-12 md:pt-16 pb-24 md:pb-8">
           <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-12 mb-8">
             
             <div className="space-y-4 lg:col-span-2">

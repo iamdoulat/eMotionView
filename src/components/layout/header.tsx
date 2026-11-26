@@ -107,11 +107,19 @@ export function Header({ logoUrl, companyName = "eMotionView" }: HeaderProps) {
 
   const CartButton = ({ className }: { className?: string }) => (
     <ClientOnly fallback={<Skeleton className="h-10 w-10 rounded-full" />}>
-      <Button variant="ghost" size="icon" asChild className={cn("relative", className)}>
+      <Button
+        variant="ghost"
+        size="icon"
+        asChild
+        className={cn(
+          "relative h-10 w-10 rounded-full border border-border/80 bg-background hover:bg-secondary/70 hover:border-primary/50 text-foreground transition-all duration-200 shadow-2xs",
+          className
+        )}
+      >
         <Link href="/cart" aria-label="Shopping Cart">
-          <ShoppingCart className="h-6 w-6" />
+          <ShoppingCart className="h-5 w-5" />
           {isCartInitialized && (
-            <Badge className="absolute -top-1 -right-1 h-5 w-5 justify-center rounded-full p-0 text-xs bg-blue-600 text-primary-foreground hover:bg-blue-700 border-none">
+            <Badge className="absolute -top-1 -right-1 h-5 w-5 justify-center rounded-full p-0 text-xs bg-blue-600 text-primary-foreground hover:bg-blue-700 border-2 border-background">
               {cartCount > 0 ? cartCount : 0}
             </Badge>
           )}
@@ -120,31 +128,60 @@ export function Header({ logoUrl, companyName = "eMotionView" }: HeaderProps) {
     </ClientOnly>
   );
 
-  const AccountLinks = ({ isMobile = false }: { isMobile?: boolean }) => {
+  const AccountLinks = ({ isMobile = false, inHeader = false }: { isMobile?: boolean; inHeader?: boolean }) => {
     if (isAuthLoading) {
-      return isMobile ? null : <Skeleton className="h-6 w-24" />;
+      return isMobile ? null : inHeader ? <Skeleton className="h-10 w-10 rounded-full" /> : <Skeleton className="h-6 w-24" />;
     }
 
     if (user) {
-      return isMobile ? (
-        <div className="space-y-1">
-          <SheetClose asChild>
-            <Button variant="ghost" size="sm" asChild className="w-full justify-start h-8 px-2">
-              <Link href="/account"><User className="mr-2 h-4 w-4" /> My Account</Link>
-            </Button>
-          </SheetClose>
-          <SheetClose asChild>
-            <Button variant="ghost" size="sm" onClick={handleLogout} className="w-full justify-start h-8 px-2 text-destructive hover:text-destructive">
-              <LogOut className="mr-2 h-4 w-4" /> Logout
-            </Button>
-          </SheetClose>
-        </div>
-      ) : (
+      if (isMobile) {
+        return (
+          <div className="space-y-1">
+            <SheetClose asChild>
+              <Button variant="ghost" size="sm" asChild className="w-full justify-start h-8 px-2">
+                <Link href="/account"><User className="mr-2 h-4 w-4" /> My Account</Link>
+              </Button>
+            </SheetClose>
+            <SheetClose asChild>
+              <Button variant="ghost" size="sm" onClick={handleLogout} className="w-full justify-start h-8 px-2 text-destructive hover:text-destructive">
+                <LogOut className="mr-2 h-4 w-4" /> Logout
+              </Button>
+            </SheetClose>
+          </div>
+        );
+      }
+
+      if (inHeader) {
+        return (
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button
+                variant="ghost"
+                size="icon"
+                aria-label="Account"
+                className="h-10 w-10 rounded-full border border-border/80 bg-background hover:bg-secondary/70 hover:border-primary/50 text-foreground transition-all duration-200 shadow-2xs"
+              >
+                <User className="h-5 w-5" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <DropdownMenuItem asChild>
+                <Link href="/account">My Account</Link>
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={handleLogout}>
+                Logout
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        );
+      }
+
+      return (
         <div className="flex items-center gap-1 hover:text-primary text-sm">
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button variant="ghost" size="icon" aria-label="Account">
-                <User className="h-6 w-6" />
+              <Button variant="ghost" size="sm" aria-label="Account" className="h-auto p-0 hover:bg-transparent">
+                <User className="h-4 w-4 mr-1" /> My Account
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
@@ -157,21 +194,42 @@ export function Header({ logoUrl, companyName = "eMotionView" }: HeaderProps) {
             </DropdownMenuContent>
           </DropdownMenu>
         </div>
-      )
+      );
     }
 
-    return isMobile ? (
-      <SheetClose asChild>
-        <Button variant="ghost" size="sm" asChild className="w-full justify-start h-8 px-2">
-          <Link href="/sign-in"><User className="mr-2 h-4 w-4" /> Login / Sign Up</Link>
+    if (isMobile) {
+      return (
+        <SheetClose asChild>
+          <Button variant="ghost" size="sm" asChild className="w-full justify-start h-8 px-2">
+            <Link href="/sign-in"><User className="mr-2 h-4 w-4" /> Login / Sign Up</Link>
+          </Button>
+        </SheetClose>
+      );
+    }
+
+    if (inHeader) {
+      return (
+        <Button
+          variant="ghost"
+          size="icon"
+          asChild
+          aria-label="Account"
+          className="h-10 w-10 rounded-full border border-border/80 bg-background hover:bg-secondary/70 hover:border-primary/50 text-foreground transition-all duration-200 shadow-2xs"
+        >
+          <Link href="/sign-in">
+            <User className="h-5 w-5" />
+            <span className="sr-only">Login / Sign In</span>
+          </Link>
         </Button>
-      </SheetClose>
-    ) : (
+      );
+    }
+
+    return (
       <Link href="/sign-in" className="flex items-center gap-1 hover:text-primary text-sm">
         <User className="h-4 w-4" />
         Login
       </Link>
-    )
+    );
   }
 
   return (
@@ -257,8 +315,8 @@ export function Header({ logoUrl, companyName = "eMotionView" }: HeaderProps) {
               </div>
 
               <ScrollArea className="flex-1 min-h-0">
-                <div className="px-2.5 py-2.5">
-                  <h3 className="px-2 pb-1.5 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                <div className="px-2 py-2">
+                  <h3 className="px-2 pb-1 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
                     All Categories
                   </h3>
                   <div className="space-y-0.5">
@@ -266,10 +324,22 @@ export function Header({ logoUrl, companyName = "eMotionView" }: HeaderProps) {
                       <SheetClose asChild key={link.name}>
                         <Link
                           href={link.href}
-                          className="flex items-center justify-between rounded-md px-2.5 py-1.5 text-sm font-medium text-foreground hover:bg-secondary hover:text-primary transition-colors"
+                          className="relative flex items-center justify-between rounded-md px-3 py-1.5 text-sm font-medium text-foreground hover:text-primary transition-colors overflow-hidden group"
                         >
-                          <span className="truncate">{link.name}</span>
-                          <ChevronRight className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
+                          {/* Gradient background: primary/70 on left → transparent on right */}
+                          <span
+                            aria-hidden="true"
+                            className="absolute inset-0 rounded-md opacity-0 group-hover:opacity-100 transition-opacity duration-200"
+                            style={{ background: 'linear-gradient(to right, hsl(var(--primary)/0.12) 0%, transparent 100%)' }}
+                          />
+                          {/* Always-visible subtle left accent */}
+                          <span
+                            aria-hidden="true"
+                            className="absolute inset-0 rounded-md"
+                            style={{ background: 'linear-gradient(to right, hsl(var(--primary)/0.07) 0%, transparent 70%)' }}
+                          />
+                          <span className="relative truncate">{link.name}</span>
+                          <ChevronRight className="relative h-3.5 w-3.5 text-muted-foreground shrink-0" />
                         </Link>
                       </SheetClose>
                     ))}
@@ -346,11 +416,16 @@ export function Header({ logoUrl, companyName = "eMotionView" }: HeaderProps) {
         </div>
 
         {/* --- Right Group --- */}
-        <div className="flex flex-shrink-0 items-center justify-end gap-1">
+        <div className="flex flex-shrink-0 items-center justify-end gap-2 md:gap-2.5">
           <ClientOnly fallback={<Skeleton className="h-10 w-10 rounded-full hidden lg:block" />}>
-            <Button variant="ghost" size="icon" asChild className="hidden lg:inline-flex">
+            <Button
+              variant="ghost"
+              size="icon"
+              asChild
+              className="hidden lg:inline-flex h-10 w-10 rounded-full border border-border/80 bg-background hover:bg-secondary/70 hover:border-primary/50 text-foreground transition-all duration-200 shadow-2xs"
+            >
               <Link href="/wishlist">
-                <Heart className="h-6 w-6" />
+                <Heart className="h-5 w-5" />
                 <span className="sr-only">Wishlist</span>
               </Link>
             </Button>
@@ -360,7 +435,7 @@ export function Header({ logoUrl, companyName = "eMotionView" }: HeaderProps) {
 
           <ClientOnly fallback={<Skeleton className="h-10 w-10 rounded-full hidden lg:block" />}>
             <div className="hidden lg:inline-flex items-center">
-              <AccountLinks />
+              <AccountLinks inHeader={true} />
             </div>
           </ClientOnly>
         </div>

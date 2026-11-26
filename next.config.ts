@@ -8,12 +8,28 @@ const withPWA = require('@ducanh2912/next-pwa').default({
   disable: process.env.NODE_ENV === 'development',
 });
 
+// Suppress the flaky unhandledRejection from next-pwa probing for pages/_document
+// in App Router-only projects (Next.js 15 + @ducanh2912/next-pwa compatibility)
+if (typeof process !== 'undefined') {
+  process.on('unhandledRejection', (err: any) => {
+    if (err?.type === 'PageNotFoundError' || err?.message?.includes('_document')) return;
+    throw err;
+  });
+}
+
 const nextConfig: NextConfig = {
   webpack(config, { isServer }) {
     config.experiments = { ...config.experiments, asyncWebAssembly: true };
     
-    // Fix build errors with genkit and optional MongoDB peer deps
-    config.externals = [...config.externals, "node:process", "node:stream"];
+    // Add node: protocol externals — safely handle any existing externals type
+    const extra = ["node:process", "node:stream"];
+    if (Array.isArray(config.externals)) {
+      config.externals = [...config.externals, ...extra];
+    } else if (config.externals) {
+      config.externals = [config.externals, ...extra];
+    } else {
+      config.externals = extra;
+    }
 
     if (!isServer) {
       config.resolve.fallback = {

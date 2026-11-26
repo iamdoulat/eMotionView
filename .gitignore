@@ -1,6 +1,9 @@
 # See https://help.github.com/articles/ignoring-files/ for more about ignoring files.
 
-# dependencies
+# --- Documentation & Markdown Files ---
+*.md
+
+# --- Dependencies ---
 /node_modules
 /.pnp
 .pnp.*
@@ -10,40 +13,73 @@
 !.yarn/releases
 !.yarn/versions
 
-# testing
-/coverage
+# --- Environment & Sensitive Credentials (SECURITY) ---
+.env*
+*.env
+*.pem
+*.key
+*.cert
+*.crt
+*.pfx
+*.p12
+*.ca-bundle
+*service-account*.json
+*service_account*.json
+*firebase-adminsdk*.json
+*credentials*.json
+*secret*
+secrets/
 
-# next.js
+# --- Next.js Build & Outputs ---
 /.next/
 /out/
-
-# production
 /build
+/dist
+/.turbo
+*.tsbuildinfo
+next-env.d.ts
 
-# 
-.kiro/
-.vscode/
-.DS_Store
-*.pem
+# --- PWA Service Worker Generated Outputs ---
+public/sw.js
+public/sw.js.map
+public/workbox-*.js
+public/workbox-*.js.map
+public/fallback-*.js
+public/fallback-*.js.map
+public/swe-worker-*.js
 
-# debug
+# --- Logs & Debug Output ---
+*.log
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 .pnpm-debug.log*
+firebase-debug.log*
+firestore-debug.log*
+dev-server.log
 
-# vercel
+# --- Testing & Coverage ---
+/coverage
+.nyc_output
+
+# --- Genkit & AI Cache ---
+.genkit/*
+
+# --- Vercel & Hosting ---
 .vercel
 
-# typescript
-*.tsbuildinfo
-next-env.d.ts
+# --- IDE, Editor & OS Files ---
+.vscode/
+.idea/
+.idx/
+.kiro/
+.DS_Store
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+.modified
+workspace/
 
-.genkit/*
-.env*
-
-# firebase
-firebase-debug.log
-firestore-debug.log
+# --- Firebase Rules ---
 firestore.rules
 storage.rules

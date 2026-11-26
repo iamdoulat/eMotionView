@@ -110,7 +110,7 @@ export default async function RootLayout({
       <body className="font-body antialiased min-h-screen flex flex-col" suppressHydrationWarning>
         <DataLayerProvider>
           <Header logoUrl={settings.logo} companyName={settings.companyName} />
-          <main className="flex-1 pb-24 md:pb-0">
+          <main className="flex-1 pb-6 md:pb-0">
             <VisitorTracker>{children}</VisitorTracker>
           </main>
           <Footer />

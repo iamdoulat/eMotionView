@@ -16,23 +16,23 @@ export async function CategoryMenu() {
     }
     
     return (
-        <Card className="h-full">
-            <div className="px-3 pt-2 pb-3 border-b">
-                 <Button className="w-full justify-start font-bold text-base bg-primary hover:bg-primary/90">
-                    <LayoutGrid className="mr-3 h-5 w-5" />
-                    All Categories
-                </Button>
+        <Card className="rounded-xl border border-border/70 shadow-xs overflow-hidden">
+            <div className="p-2 border-b bg-primary/5">
+                <div className="flex items-center gap-2 px-2.5 py-1.5 rounded-lg bg-primary text-primary-foreground font-semibold text-sm">
+                    <LayoutGrid className="h-4 w-4 shrink-0" />
+                    <span>All Categories</span>
+                </div>
             </div>
-            <nav className="p-2">
-                <ul className="space-y-1">
+            <nav className="p-1.5">
+                <ul className="space-y-0.5">
                     {categories.map((cat) => (
                         <li key={cat.id}>
                             <Link 
                                 href={`/category/${cat.permalink}`} 
-                                className="flex items-center justify-between p-2 text-sm font-medium text-foreground rounded-md transition-colors hover:bg-secondary group"
+                                className="flex items-center justify-between px-2.5 py-1.5 text-xs sm:text-[13px] font-medium text-foreground/90 rounded-md transition-all hover:bg-secondary hover:text-primary group"
                             >
-                                <span>{cat.name}</span>
-                                <ChevronRight className="h-4 w-4 text-muted-foreground opacity-0 transition-all group-hover:opacity-100 group-hover:translate-x-1" />
+                                <span className="truncate">{cat.name}</span>
+                                <ChevronRight className="h-3.5 w-3.5 text-muted-foreground/60 transition-transform group-hover:translate-x-0.5 group-hover:text-primary shrink-0" />
                             </Link>
                         </li>
                     ))}
