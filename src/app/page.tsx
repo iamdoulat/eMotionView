@@ -98,9 +98,9 @@ export default async function HomePage() {
                     <CategoryMenu />
                 </div>
                 <div className="lg:col-span-3 flex flex-col">
-                  <nav className="hidden md:flex items-center gap-6 text-sm font-medium text-foreground -mt-[1px] mb-[15px]">
+                  <nav className="hidden md:inline-flex items-center gap-6 text-sm font-medium text-foreground -mt-[1px] mb-[15px] px-4 py-1.5 rounded-lg border border-blue-500/50 dark:border-blue-400/50 bg-background/90 w-fit shadow-xs">
                     {mainNavLinks.map(link => (
-                      <Link key={link.label} href={link.href} className="hover:text-primary transition-colors flex items-center">
+                      <Link key={link.label} href={link.href} className="hover:text-blue-600 dark:hover:text-blue-400 transition-colors flex items-center">
                         {link.label}
                       </Link>
                     ))}
