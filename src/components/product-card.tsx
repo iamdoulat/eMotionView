@@ -108,21 +108,21 @@ export function ProductCard({ product }: ProductCardProps) {
                 size="icon"
                 variant="ghost"
                 className={cn(
-                  "h-7 w-7 rounded-full border transition-colors",
+                  "h-7 w-7 rounded-full border transition-all duration-200 shadow-xs",
                   isWished
-                    ? "border-destructive/40 bg-destructive/10 text-destructive"
-                    : "border-transparent bg-transparent hover:border-border/70 hover:bg-secondary text-muted-foreground hover:text-destructive"
+                    ? "border-destructive/50 bg-destructive/10 text-destructive hover:bg-destructive/20 hover:border-destructive"
+                    : "border-border/90 bg-background/90 text-muted-foreground hover:border-destructive/50 hover:bg-destructive/10 hover:text-destructive"
                 )}
                 onClick={handleWishlistClick}
                 aria-label={isWished ? 'Remove from wishlist' : 'Add to wishlist'}
               >
-                <Heart className={cn("h-3.5 w-3.5", isWished && "fill-destructive text-destructive")} />
+                <Heart className={cn("h-3.5 w-3.5 transition-transform active:scale-90", isWished && "fill-destructive text-destructive")} />
               </Button>
               <DialogTrigger asChild>
                 <Button
                   size="icon"
                   variant="ghost"
-                  className="h-7 w-7 rounded-full border border-transparent bg-transparent hover:border-border/70 hover:bg-secondary text-muted-foreground hover:text-primary transition-colors"
+                  className="h-7 w-7 rounded-full border border-border/90 bg-background/90 text-muted-foreground hover:border-primary/50 hover:bg-primary/10 hover:text-primary transition-all duration-200 shadow-xs active:scale-95"
                   aria-label="Quick view"
                 >
                   <Eye className="h-3.5 w-3.5" />
