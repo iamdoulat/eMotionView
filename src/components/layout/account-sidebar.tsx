@@ -40,7 +40,12 @@ export function AccountSidebar() {
                         key={item.href}
                         asChild
                         variant={pathname.startsWith(item.href) ? "default" : "ghost"}
-                        className="justify-start"
+                        className={cn(
+                            "justify-start transition-colors",
+                            pathname.startsWith(item.href)
+                                ? "bg-primary text-primary-foreground hover:bg-primary/90"
+                                : "hover:bg-secondary hover:text-foreground"
+                        )}
                     >
                         <Link href={item.href}>
                             <item.icon className="mr-2 h-4 w-4" />
@@ -48,7 +53,11 @@ export function AccountSidebar() {
                         </Link>
                     </Button>
                 ))}
-                <Button onClick={handleSignOut} variant="ghost" className="justify-start text-destructive hover:text-destructive">
+                <Button
+                    onClick={handleSignOut}
+                    variant="ghost"
+                    className="justify-start text-destructive hover:text-destructive hover:bg-destructive/10 dark:hover:bg-destructive/20 transition-colors"
+                >
                     <LogOut className="mr-2 h-4 w-4" />
                     Sign Out
                 </Button>

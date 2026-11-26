@@ -197,7 +197,11 @@ export function AdminSidebar() {
 
       <div className="flex-grow" />
 
-      <Button onClick={handleSignOut} variant="ghost" className="justify-start text-destructive hover:text-destructive">
+      <Button
+        onClick={handleSignOut}
+        variant="ghost"
+        className="justify-start text-destructive hover:text-destructive hover:bg-destructive/10 dark:hover:bg-destructive/20 transition-colors"
+      >
         <LogOut className="mr-2 h-4 w-4" />
         Sign Out
       </Button>

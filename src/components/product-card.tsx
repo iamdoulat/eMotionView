@@ -341,7 +341,7 @@ export function ProductCard({ product }: ProductCardProps) {
 
             <div className="flex flex-row gap-4 mt-auto">
               <Button size="lg" className="flex-1 h-11" onClick={handleDialogAddToCart} disabled={!canPurchase}>Add to cart</Button>
-              <Button size="lg" className="flex-1 h-11 bg-accent text-accent-foreground hover:bg-accent/90" asChild>
+              <Button size="lg" variant="outline" className="flex-1 h-11" asChild>
                 <Link href={`/products/${product.permalink || product.id}`}>View Details</Link>
               </Button>
             </div>

@@ -165,7 +165,12 @@ export function Header({ logoUrl, companyName = "eMotionView" }: HeaderProps) {
               </Button>
             </SheetClose>
             <SheetClose asChild>
-              <Button variant="ghost" size="sm" onClick={handleLogout} className="w-full justify-start h-8 px-2 text-destructive hover:text-destructive">
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={handleLogout}
+                className="w-full justify-start h-8 px-2 text-destructive hover:text-destructive hover:bg-destructive/10 dark:hover:bg-destructive/20 transition-colors"
+              >
                 <LogOut className="mr-2 h-4 w-4" /> Logout
               </Button>
             </SheetClose>
