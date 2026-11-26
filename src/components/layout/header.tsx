@@ -56,10 +56,24 @@ export function Header({ logoUrl, companyName = "eMotionView" }: HeaderProps) {
   const searchWrapperRef = useRef<HTMLElement>(null);
 
   useEffect(() => {
+    let ticking = false;
     const handleScroll = () => {
-      setIsScrolled(window.scrollY > 10);
+      if (!ticking) {
+        window.requestAnimationFrame(() => {
+          const y = window.scrollY;
+          setIsScrolled((prev) => {
+            // Hysteresis prevents flickering when hovering/scrolling near the boundary:
+            // Scroll down past 50px to activate, scroll back up past 15px to deactivate
+            if (!prev && y > 50) return true;
+            if (prev && y < 15) return false;
+            return prev;
+          });
+          ticking = false;
+        });
+        ticking = true;
+      }
     };
-    window.addEventListener("scroll", handleScroll);
+    window.addEventListener("scroll", handleScroll, { passive: true });
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
 
@@ -251,13 +265,13 @@ export function Header({ logoUrl, companyName = "eMotionView" }: HeaderProps) {
   }
 
   return (
-    <header className="sticky top-0 z-50 w-full bg-background/95 backdrop-blur-sm shadow-md" ref={searchWrapperRef}>
-      {/* Top Bar (Desktop only) */}
+    <header className="sticky top-0 z-50 w-full bg-background/95 backdrop-blur-sm shadow-md transform-gpu" ref={searchWrapperRef}>
+      {/* Top Bar (Desktop only) - smooth height/opacity collapse with fixed inner container to prevent text reflow */}
       <div className={cn(
-        "hidden border-b bg-secondary/50 transition-all duration-300 overflow-hidden md:block",
-        isScrolled ? 'max-h-0 py-0 border-transparent' : 'max-h-12 pt-3 pb-2.5 border-border'
+        "hidden md:block overflow-hidden bg-secondary/50 border-b transition-all duration-300 ease-in-out",
+        isScrolled ? 'max-h-0 opacity-0 -translate-y-2 pointer-events-none border-transparent' : 'max-h-12 opacity-100 translate-y-0 border-border'
       )}>
-        <div className="container mx-auto flex h-full items-center justify-between px-4">
+        <div className="container mx-auto flex h-10 items-center justify-between px-4 text-sm">
           <div className="font-bold text-sm">
             <span>Biggest Smart Gadget & SmartPhone Collection</span>
           </div>
@@ -286,9 +300,9 @@ export function Header({ logoUrl, companyName = "eMotionView" }: HeaderProps) {
       {/* Uses responsive classes to show/hide/rearrange elements */}
       {/* ======================================================= */}
 
-      {/* Main Bar */}
+      {/* Main Bar - transitions only height on desktop */}
       <div className={cn(
-        "container mx-auto flex items-center justify-between gap-4 px-4 transition-all duration-300",
+        "container mx-auto flex items-center justify-between gap-4 px-4 transition-[height] duration-300 ease-in-out",
         "h-16 md:h-20", // Base heights for mobile and desktop
         isScrolled && "md:h-16" // Scrolled height for desktop
       )}>
@@ -376,20 +390,23 @@ export function Header({ logoUrl, companyName = "eMotionView" }: HeaderProps) {
             </SheetContent>
           </Sheet>
 
-          {/* Desktop Logo */}
-          <Link href="/" className="hidden items-center gap-2 md:flex">
+          {/* Desktop Logo - constant Image dimensions + CSS width transition prevents image re-decoding flicker */}
+          <Link href="/" className="hidden items-center gap-2 md:flex shrink-0">
             {logoUrl ? (
               <Image
                 src={logoUrl}
                 alt={`${companyName} Logo`}
-                width={isScrolled ? 120 : 150}
-                height={isScrolled ? 32 : 40}
-                className="transition-all duration-300 h-auto"
-                style={{ width: isScrolled ? '120px' : '150px' }}
+                width={150}
+                height={40}
+                priority
+                className={cn(
+                  "h-auto object-contain transition-all duration-300 ease-in-out",
+                  isScrolled ? "w-[120px]" : "w-[145px]"
+                )}
                 data-ai-hint="logo globe"
               />
             ) : (
-              <span className={cn("font-bold font-headline text-foreground transition-all duration-300", isScrolled ? 'text-xl' : 'text-2xl')}>
+              <span className={cn("font-bold font-headline text-foreground transition-all duration-300 ease-in-out", isScrolled ? 'text-xl' : 'text-2xl')}>
                 {companyName}
               </span>
             )}
@@ -397,7 +414,7 @@ export function Header({ logoUrl, companyName = "eMotionView" }: HeaderProps) {
 
           {/* Desktop Category Dropdown (appears on scroll or on non-home pages) */}
           <div className={cn(
-            "hidden lg:flex items-center ml-5 lg:ml-7 shrink-0 transition-opacity duration-300",
+            "hidden lg:flex items-center ml-5 lg:ml-7 shrink-0 transition-opacity duration-300 ease-in-out",
             showCategoryDropdown ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'
           )}>
             <DropdownMenu>
@@ -425,9 +442,9 @@ export function Header({ logoUrl, companyName = "eMotionView" }: HeaderProps) {
             <span className="font-bold font-headline text-xl text-foreground">{companyName}</span>
           </Link>
 
-          {/* Desktop Search */}
+          {/* Desktop Search - scoped max-width transition */}
           <div className="w-full max-w-2xl hidden md:block">
-            <div className={cn("w-full transition-all duration-300", isScrolled ? 'max-w-lg' : 'max-w-2xl')}>
+            <div className={cn("w-full transition-[max-width] duration-300 ease-in-out", isScrolled ? 'max-w-lg' : 'max-w-2xl')}>
               <form className="relative" onSubmit={handleSearchSubmit}>
                 {searchInput}
                 {searchButton}
