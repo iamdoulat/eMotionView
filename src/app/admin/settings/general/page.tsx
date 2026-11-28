@@ -241,26 +241,36 @@ export default function GeneralSettingsPage() {
   const [editingTabKey, setEditingTabKey] = useState<string | null>(null);
   const [editingNameValue, setEditingNameValue] = useState<string>('');
 
-  const handleSaveTabName = (tabKey: string, newName: string) => {
+  const handleSaveTabName = async (tabKey: string, newName: string) => {
     const trimmed = newName.trim();
     if (!trimmed) {
       setEditingTabKey(null);
       return;
     }
-    setProvidersState((prev) => ({
-      ...prev,
+    const updated = {
+      ...providersState,
       [tabKey]: {
-        ...(prev[tabKey] || DEFAULT_AI_PROVIDERS[tabKey]),
+        ...(providersState[tabKey] || DEFAULT_AI_PROVIDERS[tabKey]),
         name: trimmed,
       },
-    }));
+    };
+    setProvidersState(updated);
     if (selectedProviderTab === tabKey) {
       setValue('aiProviderName', trimmed, { shouldDirty: true });
     }
     setEditingTabKey(null);
+    try {
+      const docRef = doc({} as any, 'settings', 'general');
+      await setDoc(docRef, {
+        aiProviders: updated,
+        ...(selectedProviderTab === tabKey ? { aiProviderName: trimmed } : {}),
+      }, { merge: true });
+    } catch (saveErr) {
+      console.warn('Failed to save renamed tab to database:', saveErr);
+    }
     toast({
       title: 'Tab Renamed',
-      description: `Provider tab renamed to "${trimmed}".`,
+      description: `Provider tab renamed to "${trimmed}" and saved to database.`,
     });
   };
 
@@ -312,12 +322,14 @@ export default function GeneralSettingsPage() {
     const apiKey = (providerName === selectedProviderTab ? getValues('aiApiKey') : currentConfig?.apiKey) || currentConfig?.apiKey || '';
     const defaultModel = (providerName === selectedProviderTab ? getValues('aiDefaultModel') : currentConfig?.defaultModel) || currentConfig?.defaultModel || 'gpt-4o-mini';
 
+    const effectiveName = (providerName === selectedProviderTab ? getValues('aiProviderName') : '') || providersState[providerName]?.name || currentConfig?.name || providerName;
+
     if (!apiKey && providerName !== 'Ollama') {
       const updatedProviders = {
         ...providersState,
         [providerName]: {
           ...currentConfig,
-          name: providerName,
+          name: effectiveName,
           baseUrl,
           apiKey: '',
           defaultModel,
@@ -331,14 +343,14 @@ export default function GeneralSettingsPage() {
         ...prev,
         [providerName]: {
           success: false,
-          message: `Please enter an API Key for ${providerName} before testing connection.`,
+          message: `Please enter an API Key for ${effectiveName} before testing connection.`,
         },
       }));
       if (!silent) {
         toast({
           variant: 'destructive',
-          title: `Missing API Key for ${providerName}`,
-          description: `Please enter an API Key for ${providerName} before testing connection.`,
+          title: `Missing API Key for ${effectiveName}`,
+          description: `Please enter an API Key for ${effectiveName} before testing connection.`,
         });
       }
       return;
@@ -350,7 +362,7 @@ export default function GeneralSettingsPage() {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          providerName,
+          providerName: effectiveName,
           baseUrl,
           apiKey,
           defaultModel,
@@ -364,7 +376,7 @@ export default function GeneralSettingsPage() {
       setLastTestedAt(new Date());
 
       const updatedProvider: AIProviderConfig = {
-        name: providerName,
+        name: effectiveName,
         baseUrl,
         apiKey,
         defaultModel,
@@ -386,7 +398,7 @@ export default function GeneralSettingsPage() {
         await setDoc(docRef, {
           aiProviders: updatedProviders,
           ...(data.success && providerName === selectedProviderTab ? {
-            aiProviderName: providerName,
+            aiProviderName: effectiveName,
             aiBaseUrl: baseUrl,
             aiApiKey: apiKey,
             aiDefaultModel: defaultModel,
@@ -460,7 +472,9 @@ export default function GeneralSettingsPage() {
           const openAiKey = rawProviders['OpenAI']?.apiKey || existingKey || '';
           const openAiBase = rawProviders['OpenAI']?.baseUrl || existingBase || 'https://manifest.uddoktasoft.com/v1';
           const openAiModel = rawProviders['OpenAI']?.defaultModel || existingModel || 'auto';
-          const openAiName = rawProviders['OpenAI']?.name || existingProv || 'OpenAI';
+          const openAiName = (rawProviders['OpenAI']?.name && rawProviders['OpenAI']?.name !== 'OpenAI')
+            ? rawProviders['OpenAI']?.name
+            : (existingProv && existingProv !== 'OpenAI' ? existingProv : (rawProviders['OpenAI']?.name || existingProv || 'Manifest'));
           const isOpenAiWorkable = Boolean(openAiKey);
 
           const loadedProviders: Record<string, AIProviderConfig> = {
@@ -1841,6 +1855,27 @@ export default function GeneralSettingsPage() {
                                   name: newName,
                                 },
                               }));
+                            }}
+                            onBlur={async (e) => {
+                              field.onBlur();
+                              const newName = e.target.value.trim();
+                              if (newName) {
+                                try {
+                                  const docRef = doc({} as any, 'settings', 'general');
+                                  await setDoc(docRef, {
+                                    aiProviderName: newName,
+                                    aiProviders: {
+                                      ...providersState,
+                                      [selectedProviderTab]: {
+                                        ...(providersState[selectedProviderTab] || DEFAULT_AI_PROVIDERS[selectedProviderTab]),
+                                        name: newName,
+                                      },
+                                    },
+                                  }, { merge: true });
+                                } catch (err) {
+                                  console.warn('Auto-save provider name error:', err);
+                                }
+                              }
                             }}
                           />
                         </FormControl>
