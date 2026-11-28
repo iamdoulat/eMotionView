@@ -27,18 +27,16 @@ export default async function CategoryPage({ params }: { params: Promise<{ slug:
   products = await enrichProductsWithReviews(products);
 
   return (
-    <div className="container mx-auto px-4 py-8">
-      <Breadcrumb
-        items={[
-          { label: 'Home', href: '/' },
-          { label: 'Categories' },
-          { label: category.name, href: `/category/${category.permalink}` },
-        ]}
-      />
-      <header className="my-8">
-        <h1 className="font-headline text-4xl font-bold text-foreground">{category.name}</h1>
-        <p className="text-muted-foreground mt-2">{category.description}</p>
-      </header>
+    <div className="container mx-auto px-4 py-6">
+      <div className="mb-4">
+        <Breadcrumb
+          items={[
+            { label: 'Home', href: '/' },
+            { label: 'Categories' },
+            { label: category.name, href: `/category/${category.permalink}` },
+          ]}
+        />
+      </div>
       <CategoryPageClient initialProducts={products} category={category} />
     </div>
   );

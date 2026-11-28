@@ -11,7 +11,8 @@ import { Slider } from '@/components/ui/slider';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useCurrency } from '@/hooks/use-currency';
-import { ChevronLeft, ChevronRight, SlidersHorizontal, X } from 'lucide-react';
+import { ChevronLeft, ChevronRight, SlidersHorizontal, Filter } from 'lucide-react';
+import { cn } from '@/lib/utils';
 
 const PRODUCTS_PER_PAGE = 12;
 
@@ -31,6 +32,7 @@ export function CategoryPageClient({ initialProducts, category }: CategoryPageCl
 
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedBrands, setSelectedBrands] = useState<string[]>([]);
+  const [minPrice, setMinPrice] = useState<number>(0);
   const [maxPrice, setMaxPrice] = useState<number>(maxCatalogPrice);
   const [minRating, setMinRating] = useState<number | null>(null);
   const [sortBy, setSortBy] = useState<SortOption>('featured');
@@ -54,6 +56,7 @@ export function CategoryPageClient({ initialProducts, category }: CategoryPageCl
   const clearFilters = () => {
     setSearchQuery('');
     setSelectedBrands([]);
+    setMinPrice(0);
     setMaxPrice(maxCatalogPrice);
     setMinRating(null);
     setSortBy('featured');
@@ -68,7 +71,7 @@ export function CategoryPageClient({ initialProducts, category }: CategoryPageCl
         if (!hay.includes(q)) return false;
       }
       if (selectedBrands.length > 0 && !selectedBrands.includes(product.brand)) return false;
-      if (product.price > maxPrice) return false;
+      if (product.price < minPrice || product.price > maxPrice) return false;
       if (minRating !== null && (product.rating || 0) < minRating) return false;
       return true;
     });
@@ -81,7 +84,7 @@ export function CategoryPageClient({ initialProducts, category }: CategoryPageCl
       default: break;
     }
     return sorted;
-  }, [initialProducts, searchQuery, selectedBrands, maxPrice, minRating, sortBy]);
+  }, [initialProducts, searchQuery, selectedBrands, minPrice, maxPrice, minRating, sortBy]);
 
   const totalPages = Math.max(1, Math.ceil(filteredProducts.length / PRODUCTS_PER_PAGE));
   const safePage = Math.min(currentPage, totalPages);
@@ -91,143 +94,304 @@ export function CategoryPageClient({ initialProducts, category }: CategoryPageCl
   const hasActiveFilters =
     Boolean(searchQuery.trim()) ||
     selectedBrands.length > 0 ||
+    minPrice > 0 ||
     maxPrice < maxCatalogPrice ||
     minRating !== null;
 
   return (
-    <div className="space-y-6">
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <Button
-          type="button"
-          variant="outline"
-          className="md:hidden"
-          onClick={() => setShowMobileFilters(prev => !prev)}
-        >
-          <SlidersHorizontal className="mr-2 h-4 w-4" />
-          {showMobileFilters ? 'Hide Filters' : 'Filters'}
-        </Button>
-        <p className="text-sm text-muted-foreground">
-          Showing {filteredProducts.length} of {initialProducts.length} products
-        </p>
-        <Select value={sortBy} onValueChange={(v) => { setSortBy(v as SortOption); setCurrentPage(1); }}>
-          <SelectTrigger className="w-[180px]" aria-label="Sort category products">
-            <SelectValue placeholder="Sort by" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="featured">Featured</SelectItem>
-            <SelectItem value="newest">Newest</SelectItem>
-            <SelectItem value="price-asc">Price: Low to High</SelectItem>
-            <SelectItem value="price-desc">Price: High to Low</SelectItem>
-            <SelectItem value="rating-desc">Top Rated</SelectItem>
-          </SelectContent>
-        </Select>
+    <div className="space-y-5">
+      {/* TOP HEADER ROW: Matching bordered boxes for Sidebar and Product Grid */}
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-5 items-stretch">
+        {/* Left Box: Filter Header Card */}
+        <div className="md:col-span-1 rounded-xl border border-border/80 bg-card px-4 py-3 shadow-xs flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <Filter className="h-4 w-4 text-foreground/80" />
+            <span className="font-semibold text-sm tracking-wide text-foreground">Filter</span>
+          </div>
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            onClick={clearFilters}
+            className={cn(
+              "h-7 px-3 text-xs font-medium rounded-md border-border transition-all cursor-pointer",
+              hasActiveFilters ? "text-primary hover:bg-primary/10 border-primary/40" : "text-muted-foreground hover:bg-secondary"
+            )}
+          >
+            Reset
+          </Button>
+        </div>
+
+        {/* Right Box: Category Title & Sort Card */}
+        <div className="md:col-span-3 rounded-xl border border-border/80 bg-card px-4 py-3 shadow-xs flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+          <div className="flex items-baseline gap-3 min-w-0">
+            <h1 className="font-headline text-base sm:text-lg md:text-xl font-bold text-foreground tracking-tight truncate">
+              {category.name}
+            </h1>
+            <span className="text-xs text-muted-foreground shrink-0 font-medium hidden sm:inline">
+              ({filteredProducts.length} {filteredProducts.length === 1 ? 'product' : 'products'})
+            </span>
+          </div>
+
+          <div className="flex items-center gap-2.5 shrink-0 self-end sm:self-auto">
+            {/* Mobile filter toggle */}
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              className="md:hidden h-8 px-3 text-xs font-medium rounded-md border-border"
+              onClick={() => setShowMobileFilters((prev) => !prev)}
+            >
+              <SlidersHorizontal className="mr-1.5 h-3.5 w-3.5" />
+              {showMobileFilters ? "Hide Filters" : "Filters"}
+            </Button>
+
+            <Select
+              value={sortBy}
+              onValueChange={(v) => {
+                setSortBy(v as SortOption);
+                setCurrentPage(1);
+              }}
+            >
+              <SelectTrigger className="w-[155px] sm:w-[170px] h-8 text-xs font-medium rounded-md border-border/80" aria-label="Sort products">
+                <SelectValue placeholder="Sort by" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="featured">Featured</SelectItem>
+                <SelectItem value="newest">Newest</SelectItem>
+                <SelectItem value="price-asc">Price: Low to High</SelectItem>
+                <SelectItem value="price-desc">Price: High to Low</SelectItem>
+                <SelectItem value="rating-desc">Top Rated</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+        </div>
       </div>
 
-      <div className="grid grid-cols-1 gap-8 md:grid-cols-4">
-        <aside className={`${showMobileFilters ? 'block' : 'hidden'} md:block md:col-span-1`}>
-          <div className="flex items-center justify-between mb-4">
-            <h2 className="font-headline text-xl font-semibold">Filters</h2>
-            {hasActiveFilters && (
-              <Button type="button" variant="ghost" size="sm" onClick={clearFilters} className="h-8 px-2 text-xs">
-                <X className="mr-1 h-3 w-3" /> Clear
-              </Button>
-            )}
-          </div>
-          <div className="space-y-6">
+      {/* MAIN CONTENT GRID */}
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-5 items-start">
+        {/* Left Column: Filter Sidebar Card with borders */}
+        <aside
+          className={cn(
+            "md:col-span-1 rounded-xl border border-border/80 bg-card p-4 sm:p-5 shadow-xs space-y-5",
+            showMobileFilters ? "block" : "hidden md:block"
+          )}
+        >
+          {/* Quick Search inside category */}
+          <div>
             <Input
-              placeholder="Search products..."
+              placeholder={`Search in ${category.name}...`}
               value={searchQuery}
-              onChange={(e) => { setSearchQuery(e.target.value); setCurrentPage(1); }}
+              onChange={(e) => {
+                setSearchQuery(e.target.value);
+                setCurrentPage(1);
+              }}
+              className="h-8.5 text-xs rounded-lg border-border/80 bg-background/50 focus-visible:ring-1"
             />
-            <Accordion type="multiple" defaultValue={['brand', 'price']} className="w-full">
-              <AccordionItem value="brand">
-                <AccordionTrigger className="font-semibold">Brand</AccordionTrigger>
-                <AccordionContent className="space-y-2 pt-2">
-                  {brands.map((brand, index) => (
-                    <div key={`${brand}-${index}`} className="flex items-center space-x-2">
-                      <Checkbox
-                        id={`cat-brand-${brand}`}
-                        checked={selectedBrands.includes(brand)}
-                        onCheckedChange={() => toggleBrand(brand)}
-                      />
-                      <Label htmlFor={`cat-brand-${brand}`} className="font-normal cursor-pointer">{brand}</Label>
-                    </div>
-                  ))}
-                </AccordionContent>
-              </AccordionItem>
-              <AccordionItem value="price">
-                <AccordionTrigger className="font-semibold">Price Range</AccordionTrigger>
-                <AccordionContent className="pt-4">
+          </div>
+
+          <Accordion
+            type="multiple"
+            defaultValue={["price", "brand", "rating"]}
+            className="w-full space-y-3"
+          >
+            {/* PRICE ACCORDION */}
+            <AccordionItem value="price" className="border-b border-border/60 pb-4">
+              <AccordionTrigger className="py-1 text-xs font-bold tracking-wider uppercase text-foreground hover:no-underline">
+                PRICE
+              </AccordionTrigger>
+              <AccordionContent className="pt-3 space-y-3.5">
+                <div className="px-1 pt-1">
                   <Slider
-                    value={[maxPrice]}
+                    value={[minPrice, maxPrice]}
                     max={maxCatalogPrice}
                     step={10}
-                    onValueChange={(vals) => { setMaxPrice(vals[0] ?? maxCatalogPrice); setCurrentPage(1); }}
+                    onValueChange={(vals) => {
+                      if (vals.length === 2) {
+                        setMinPrice(vals[0]);
+                        setMaxPrice(vals[1]);
+                      } else if (vals.length === 1) {
+                        setMaxPrice(vals[0]);
+                      }
+                      setCurrentPage(1);
+                    }}
                   />
-                  <div className="flex justify-between text-sm text-muted-foreground mt-2">
-                    <span>{symbol}0</span>
-                    <span>Up to {symbol}{maxPrice}</span>
+                </div>
+
+                <div className="grid grid-cols-5 items-center gap-2 pt-1">
+                  <div className="col-span-2 space-y-1">
+                    <Label className="text-[11px] font-medium text-muted-foreground block text-left">
+                      Min Price
+                    </Label>
+                    <Input
+                      type="number"
+                      min={0}
+                      max={maxPrice}
+                      value={minPrice}
+                      onChange={(e) => {
+                        const val = Math.max(0, Number(e.target.value) || 0);
+                        setMinPrice(Math.min(val, maxPrice));
+                        setCurrentPage(1);
+                      }}
+                      className="h-8 text-xs font-medium text-center rounded-lg border-border/80 bg-background"
+                    />
                   </div>
+
+                  <div className="col-span-1 flex justify-center text-muted-foreground font-bold pt-4 select-none">
+                    –
+                  </div>
+
+                  <div className="col-span-2 space-y-1">
+                    <Label className="text-[11px] font-medium text-muted-foreground block text-left">
+                      Max Price
+                    </Label>
+                    <Input
+                      type="number"
+                      min={minPrice}
+                      max={maxCatalogPrice}
+                      value={maxPrice}
+                      onChange={(e) => {
+                        const val = Number(e.target.value) || maxCatalogPrice;
+                        setMaxPrice(Math.max(val, minPrice));
+                        setCurrentPage(1);
+                      }}
+                      className="h-8 text-xs font-medium text-center rounded-lg border-border/80 bg-background"
+                    />
+                  </div>
+                </div>
+              </AccordionContent>
+            </AccordionItem>
+
+            {/* BRANDS ACCORDION */}
+            {brands.length > 0 && (
+              <AccordionItem value="brand" className="border-b border-border/60 pb-4">
+                <AccordionTrigger className="py-1 text-xs font-bold tracking-wider uppercase text-foreground hover:no-underline">
+                  BRANDS
+                </AccordionTrigger>
+                <AccordionContent className="pt-2 space-y-2 max-h-56 overflow-y-auto pr-1">
+                  {brands.map((brand, index) => {
+                    const isChecked = selectedBrands.includes(brand);
+                    const count = initialProducts.filter((p) => p.brand === brand).length;
+                    return (
+                      <div
+                        key={`${brand}-${index}`}
+                        onClick={() => toggleBrand(brand)}
+                        className="flex items-center justify-between text-xs py-0.5 cursor-pointer hover:text-primary transition-colors group"
+                      >
+                        <div className="flex items-center space-x-2.5">
+                          <Checkbox
+                            id={`cat-brand-${brand}`}
+                            checked={isChecked}
+                            onCheckedChange={() => toggleBrand(brand)}
+                            className="rounded"
+                          />
+                          <Label
+                            htmlFor={`cat-brand-${brand}`}
+                            className="font-medium text-xs cursor-pointer group-hover:text-primary"
+                          >
+                            {brand}
+                          </Label>
+                        </div>
+                        <span className="text-[11px] text-muted-foreground">({count})</span>
+                      </div>
+                    );
+                  })}
                 </AccordionContent>
               </AccordionItem>
-              <AccordionItem value="rating">
-                <AccordionTrigger className="font-semibold">Rating</AccordionTrigger>
-                <AccordionContent className="space-y-2 pt-2">
-                  {[5, 4, 3, 2, 1].map(rating => (
-                    <div key={`cat-rating-${rating}`} className="flex items-center space-x-2">
+            )}
+
+            {/* RATING ACCORDION */}
+            <AccordionItem value="rating" className="border-none pb-1">
+              <AccordionTrigger className="py-1 text-xs font-bold tracking-wider uppercase text-foreground hover:no-underline">
+                RATING
+              </AccordionTrigger>
+              <AccordionContent className="pt-2 space-y-2">
+                {[5, 4, 3, 2, 1].map((rating) => {
+                  const isChecked = minRating === rating;
+                  return (
+                    <div
+                      key={`cat-rating-${rating}`}
+                      onClick={() => {
+                        setMinRating(isChecked ? null : rating);
+                        setCurrentPage(1);
+                      }}
+                      className="flex items-center space-x-2.5 text-xs py-0.5 cursor-pointer hover:text-primary transition-colors group"
+                    >
                       <Checkbox
                         id={`cat-rating-${rating}`}
-                        checked={minRating === rating}
-                        onCheckedChange={(checked) => { setMinRating(checked ? rating : null); setCurrentPage(1); }}
+                        checked={isChecked}
+                        onCheckedChange={(checked) => {
+                          setMinRating(checked ? rating : null);
+                          setCurrentPage(1);
+                        }}
+                        className="rounded"
                       />
-                      <Label htmlFor={`cat-rating-${rating}`} className="font-normal cursor-pointer">{rating} Stars & Up</Label>
+                      <Label
+                        htmlFor={`cat-rating-${rating}`}
+                        className="font-medium text-xs cursor-pointer flex items-center gap-1 group-hover:text-primary"
+                      >
+                        <span>{rating} Stars & Up</span>
+                      </Label>
                     </div>
-                  ))}
-                </AccordionContent>
-              </AccordionItem>
-            </Accordion>
-          </div>
+                  );
+                })}
+              </AccordionContent>
+            </AccordionItem>
+          </Accordion>
         </aside>
 
+        {/* Right Column: Products Grid */}
         <div className="md:col-span-3">
           {currentProducts.length > 0 ? (
-            <div className="grid grid-cols-2 gap-x-3 gap-y-6 sm:gap-x-4 lg:grid-cols-3 xl:grid-cols-4">
-              {currentProducts.map((product) => (
-                <ProductCard key={product.id} product={product} />
-              ))}
-            </div>
+            <>
+              <div className="grid grid-cols-2 gap-3 sm:gap-4 md:grid-cols-3 lg:grid-cols-4">
+                {currentProducts.map((product) => (
+                  <ProductCard key={product.id} product={product} />
+                ))}
+              </div>
+              {totalPages > 1 && (
+                <div className="mt-8 flex justify-center items-center gap-3">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+                    disabled={safePage === 1}
+                    className="rounded-lg h-8 text-xs cursor-pointer"
+                  >
+                    <ChevronLeft className="mr-1.5 h-3.5 w-3.5" />
+                    Previous
+                  </Button>
+                  <span className="text-xs font-semibold text-muted-foreground px-2">
+                    Page {safePage} of {totalPages}
+                  </span>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
+                    disabled={safePage === totalPages}
+                    className="rounded-lg h-8 text-xs cursor-pointer"
+                  >
+                    Next
+                    <ChevronRight className="ml-1.5 h-3.5 w-3.5" />
+                  </Button>
+                </div>
+              )}
+            </>
           ) : (
-            <div className="text-center py-20 border-2 border-dashed rounded-lg col-span-full">
-              <h2 className="mt-4 text-xl font-semibold">No Products Found</h2>
-              <p className="mt-2 text-muted-foreground">There are currently no products matching your filters in the &ldquo;{category.name}&rdquo; category.</p>
+            <div className="text-center py-16 border-2 border-dashed border-border/80 rounded-xl bg-card/40">
+              <h2 className="text-lg font-semibold text-foreground">No Products Found</h2>
+              <p className="mt-1 text-xs text-muted-foreground">There are currently no products matching your filters in &ldquo;{category.name}&rdquo;.</p>
               {hasActiveFilters && (
-                <Button type="button" variant="outline" className="mt-4" onClick={clearFilters}>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  className="mt-4 h-8 text-xs rounded-lg cursor-pointer"
+                  onClick={clearFilters}
+                >
                   Reset Filters
                 </Button>
               )}
-            </div>
-          )}
-          {totalPages > 1 && (
-            <div className="mt-8 flex justify-center items-center gap-4">
-              <Button
-                variant="outline"
-                onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
-                disabled={safePage === 1}
-              >
-                <ChevronLeft className="mr-2 h-4 w-4" />
-                Previous
-              </Button>
-              <span className="text-sm font-medium">
-                Page {safePage} of {totalPages}
-              </span>
-              <Button
-                variant="outline"
-                onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
-                disabled={safePage === totalPages}
-              >
-                Next
-                <ChevronRight className="ml-2 h-4 w-4" />
-              </Button>
             </div>
           )}
         </div>

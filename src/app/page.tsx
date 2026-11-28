@@ -14,6 +14,7 @@ import { db } from '@/lib/db';
 import { enrichProductsWithReviews } from '@/lib/product-utils';
 import { cn } from '@/lib/utils';
 import { HomepageCarousel } from '@/components/homepage-carousel';
+import { ExploreCategoriesCarousel } from '@/components/explore-categories-carousel';
 
 export const dynamic = 'force-dynamic';
 
@@ -178,20 +179,7 @@ export default async function HomePage() {
                             <h2 className="font-headline text-2xl md:text-3xl font-bold tracking-tight text-foreground">Explore Popular Categories</h2>
                              <p className="text-muted-foreground mt-2 text-sm md:text-base">Find your preferred item in the highlighted product selection.</p>
                         </div>
-                        <Carousel opts={{ align: "start", dragFree: true }} className="w-full">
-                            <CarouselContent className="-ml-2 md:-ml-4">
-                            {resolvedCategories.map((category: any) => (
-                                <CarouselItem key={category.id} className="basis-1/3 sm:basis-1/4 md:basis-1/6 lg:basis-auto pl-2 md:pl-4">
-                                <Link href={`/category/${category.permalink}`} className="group text-center block w-full md:w-[130px]">
-                                    <div className="w-20 h-20 sm:w-24 sm:h-24 md:w-32 md:h-32 mx-auto rounded-full bg-secondary/50 flex items-center justify-center overflow-hidden border-2 border-transparent group-hover:border-primary transition-all duration-300 group-hover:shadow-lg">
-                                        <Image src={category.image} alt={category.name} width={128} height={128} unoptimized className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-300" data-ai-hint="category icon" />
-                                    </div>
-                                    <h3 className="mt-3 md:mt-4 font-semibold text-xs sm:text-sm text-foreground group-hover:text-primary transition-colors truncate">{category.name}</h3>
-                                </Link>
-                                </CarouselItem>
-                            ))}
-                            </CarouselContent>
-                        </Carousel>
+                        <ExploreCategoriesCarousel categories={resolvedCategories} />
                     </section>
                 );
 
