@@ -554,7 +554,7 @@ export default function CategoriesPage() {
               </div>
 
               {categoryToEdit && (
-                <div className="flex items-center gap-1.5 flex-wrap sm:mr-8">
+                <div className="flex items-center gap-1.5 flex-wrap">
                   {categoryToEdit.permalink && (
                     <Badge variant="outline" className="font-mono text-[10px]">
                       /{categoryToEdit.permalink}

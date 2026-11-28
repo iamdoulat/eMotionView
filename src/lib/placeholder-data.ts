@@ -238,6 +238,14 @@ export type Brand = {
   name: string;
   logo: string;
   permalink: string;
+  description?: string;
+  banner?: string;
+  website?: string;
+  isFeatured?: boolean;
+  order?: number;
+  metaTitle?: string;
+  metaDescription?: string;
+  metaKeywords?: string;
 };
 
 export type Attribute = {
