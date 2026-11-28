@@ -69,10 +69,10 @@ export function ProductNavTabs({ tabs = DEFAULT_TABS }: ProductNavTabsProps) {
   };
 
   return (
-    <div className="sticky top-16 md:top-20 z-40 w-full bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/80 border-b border-border transition-colors">
+    <div className="sticky top-16 md:top-20 z-30 w-full bg-background/95 backdrop-blur-md supports-[backdrop-filter]:bg-background/85 border-b border-border shadow-xs transition-colors">
       <nav
         aria-label="Product Sections"
-        className="container mx-auto flex items-center gap-2.5 sm:gap-3 overflow-x-auto py-3 no-scrollbar"
+        className="container mx-auto flex items-center gap-2 sm:gap-2.5 overflow-x-auto py-2.5 no-scrollbar"
       >
         {tabs.map((tab) => {
           const isActive = activeTab === tab.id;
@@ -82,10 +82,10 @@ export function ProductNavTabs({ tabs = DEFAULT_TABS }: ProductNavTabsProps) {
               href={`#${tab.id}`}
               onClick={(e) => handleTabClick(e, tab.id)}
               className={cn(
-                "inline-flex items-center justify-center px-4 py-2 rounded-lg text-sm transition-all duration-200 shrink-0 select-none cursor-pointer",
+                "inline-flex items-center justify-center px-4 py-1.5 rounded-full text-xs sm:text-sm transition-all duration-200 shrink-0 select-none cursor-pointer font-medium",
                 isActive
-                  ? "bg-blue-600 text-white border-2 border-blue-600 font-semibold shadow-sm hover:bg-blue-700 hover:border-blue-700 dark:bg-blue-600 dark:border-blue-500"
-                  : "bg-background text-foreground/80 border border-border hover:border-blue-600 hover:text-blue-600 hover:bg-blue-50/70 dark:border-border dark:hover:border-blue-500 dark:hover:text-blue-400 dark:hover:bg-blue-950/40 font-medium"
+                  ? "bg-primary text-primary-foreground font-semibold shadow-xs scale-102"
+                  : "bg-secondary/40 text-muted-foreground hover:text-foreground hover:bg-secondary/80 border border-border/60"
               )}
             >
               {tab.label}
