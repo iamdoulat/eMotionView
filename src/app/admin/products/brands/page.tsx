@@ -197,7 +197,7 @@ export default function BrandsPage() {
       </Card>
 
       <Dialog open={isFormOpen} onOpenChange={setIsFormOpen}>
-        <DialogContent>
+        <DialogContent className="sm:max-w-lg max-h-[85vh] overflow-y-auto modal-scrollbar">
           <DialogHeader>
             <DialogTitle>{brandToEdit ? "Edit Brand" : "Add New Brand"}</DialogTitle>
             <DialogDescription>

@@ -67,3 +67,40 @@
     @apply bg-background text-foreground;
   }
 }
+
+/* Visible, smooth vertical scrollbar for modals and scroll panels */
+.modal-scrollbar {
+  scrollbar-width: thin;
+  scrollbar-color: hsl(var(--primary) / 0.45) hsl(var(--muted) / 0.5);
+}
+
+.modal-scrollbar::-webkit-scrollbar {
+  width: 8px;
+}
+
+.modal-scrollbar::-webkit-scrollbar-track {
+  background: hsl(var(--muted) / 0.4);
+  border-radius: 9999px;
+  margin: 6px 0;
+}
+
+.modal-scrollbar::-webkit-scrollbar-thumb {
+  background: hsl(var(--primary) / 0.4);
+  border-radius: 9999px;
+  border: 2px solid transparent;
+  background-clip: padding-box;
+  transition: background-color 0.2s ease;
+}
+
+.modal-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: hsl(var(--primary) / 0.8);
+  background-clip: padding-box;
+}
+
+.dark .modal-scrollbar::-webkit-scrollbar-thumb {
+  background: hsl(var(--primary) / 0.5);
+}
+
+.dark .modal-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: hsl(var(--primary) / 0.85);
+}

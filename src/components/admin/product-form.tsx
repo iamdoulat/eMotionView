@@ -22,7 +22,6 @@ import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { ScrollArea } from "@/components/ui/scroll-area";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
 
@@ -477,8 +476,8 @@ export function ProductForm({ product, onSave, onCancel, isSaving }: ProductForm
           </Tabs>
         </div>
 
-        {/* Scrollable Form Body */}
-        <ScrollArea className="flex-1 min-h-0 px-6 py-5">
+        {/* Scrollable Form Body with Visible Vertical Scroll */}
+        <div className="flex-1 min-h-0 overflow-y-auto px-6 py-5 overscroll-contain modal-scrollbar">
           {/* TAB 1: General Info */}
           {activeTab === "basic" && (
             <div className="space-y-6">
@@ -1392,7 +1391,7 @@ export function ProductForm({ product, onSave, onCancel, isSaving }: ProductForm
               )}
             </div>
           )}
-        </ScrollArea>
+        </div>
 
         {/* Sticky Action Footer */}
         <div className="px-6 py-4 border-t bg-muted/40 flex items-center justify-between gap-4 shrink-0">

@@ -152,7 +152,7 @@ export default function AttributesPage() {
       </Card>
 
       <Dialog open={isFormOpen} onOpenChange={setIsFormOpen}>
-        <DialogContent>
+        <DialogContent className="sm:max-w-lg max-h-[85vh] overflow-y-auto modal-scrollbar">
           <DialogHeader>
             <DialogTitle>{attributeToEdit ? "Edit Attribute" : "Add New Attribute"}</DialogTitle>
             <DialogDescription>

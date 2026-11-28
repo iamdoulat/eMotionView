@@ -196,7 +196,7 @@ export default function SuppliersPage() {
       </Card>
 
       <Dialog open={isFormOpen} onOpenChange={setIsFormOpen}>
-        <DialogContent>
+        <DialogContent className="sm:max-w-lg max-h-[85vh] overflow-y-auto modal-scrollbar">
           <DialogHeader>
             <DialogTitle>{supplierToEdit ? "Edit Supplier" : "Add New Supplier"}</DialogTitle>
             <DialogDescription>

@@ -216,7 +216,7 @@ export default function CategoriesPage() {
       </Card>
 
       <Dialog open={isFormOpen} onOpenChange={setIsFormOpen}>
-        <DialogContent>
+        <DialogContent className="sm:max-w-lg max-h-[85vh] overflow-y-auto modal-scrollbar">
           <DialogHeader>
             <DialogTitle>{categoryToEdit ? "Edit Category" : "Add New Category"}</DialogTitle>
             <DialogDescription>
