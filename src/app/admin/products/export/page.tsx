@@ -255,11 +255,10 @@ export default function BulkExportPage() {
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div
                 onClick={() => setExportFormat("csv")}
-                className={`p-4 rounded-xl border-2 cursor-pointer transition-all flex items-center justify-between ${
-                  exportFormat === "csv"
-                    ? "border-primary bg-primary/5 ring-2 ring-primary/20"
-                    : "border-border hover:border-border/80 bg-card hover:bg-muted/20"
-                }`}
+                className={`p-4 rounded-xl border-2 cursor-pointer transition-all flex items-center justify-between ${exportFormat === "csv"
+                  ? "border-primary bg-primary/5 ring-2 ring-primary/20"
+                  : "border-border hover:border-border/80 bg-card hover:bg-muted/20"
+                  }`}
               >
                 <div className="flex items-center gap-3">
                   <div className="w-10 h-10 rounded-lg bg-emerald-500/10 text-emerald-600 flex items-center justify-center shrink-0">
@@ -277,11 +276,10 @@ export default function BulkExportPage() {
 
               <div
                 onClick={() => setExportFormat("json")}
-                className={`p-4 rounded-xl border-2 cursor-pointer transition-all flex items-center justify-between ${
-                  exportFormat === "json"
-                    ? "border-primary bg-primary/5 ring-2 ring-primary/20"
-                    : "border-border hover:border-border/80 bg-card hover:bg-muted/20"
-                }`}
+                className={`p-4 rounded-xl border-2 cursor-pointer transition-all flex items-center justify-between ${exportFormat === "json"
+                  ? "border-primary bg-primary/5 ring-2 ring-primary/20"
+                  : "border-border hover:border-border/80 bg-card hover:bg-muted/20"
+                  }`}
               >
                 <div className="flex items-center gap-3">
                   <div className="w-10 h-10 rounded-lg bg-blue-500/10 text-blue-600 flex items-center justify-center shrink-0">

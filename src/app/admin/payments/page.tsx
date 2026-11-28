@@ -537,9 +537,9 @@ export default function PaymentsPage() {
       o.total.toFixed(2),
       o.paymentStatus || "pending",
       o.paymentDetails?.bkash?.trxID ||
-        o.paymentDetails?.sslcommerz?.tran_id ||
-        o.paymentDetails?.bkash?.transactionID ||
-        "N/A",
+      o.paymentDetails?.sslcommerz?.tran_id ||
+      o.paymentDetails?.bkash?.transactionID ||
+      "N/A",
       o.paymentDetails?.bkash?.paymentID || o.paymentDetails?.sslcommerz?.val_id || "N/A",
     ]);
 

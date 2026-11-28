@@ -372,7 +372,7 @@ export default function BulkImportExportPage() {
         } else if (typeof row.specifications === "string") {
           try {
             specifications = JSON.parse(row.specifications);
-          } catch {}
+          } catch { }
         }
 
         let productAttributes: any[] = [];
@@ -381,16 +381,16 @@ export default function BulkImportExportPage() {
         } else if (typeof row.productAttributes === "string") {
           try {
             productAttributes = JSON.parse(row.productAttributes);
-          } catch {}
+          } catch { }
         }
 
         const categoriesArray = Array.isArray(row.categories)
           ? row.categories
           : typeof row.categories === "string" && row.categories
-          ? row.categories.split(",").map((s: string) => s.trim()).filter(Boolean)
-          : row.category
-          ? [row.category]
-          : [fallbackCategory];
+            ? row.categories.split(",").map((s: string) => s.trim()).filter(Boolean)
+            : row.category
+              ? [row.category]
+              : [fallbackCategory];
 
         const payload = {
           name: item.name,
@@ -411,13 +411,13 @@ export default function BulkImportExportPage() {
           images: Array.isArray(row.images)
             ? row.images
             : typeof row.images === "string" && row.images
-            ? row.images.split(",").map((s: string) => s.trim()).filter(Boolean)
-            : ["https://placehold.co/600x600.png"],
+              ? row.images.split(",").map((s: string) => s.trim()).filter(Boolean)
+              : ["https://placehold.co/600x600.png"],
           features: Array.isArray(row.features)
             ? row.features
             : typeof row.features === "string" && row.features
-            ? row.features.split(";").map((s: string) => s.trim()).filter(Boolean)
-            : [],
+              ? row.features.split(";").map((s: string) => s.trim()).filter(Boolean)
+              : [],
           specifications,
           productAttributes,
           rating: Number(row.rating) || 0,
@@ -473,7 +473,7 @@ export default function BulkImportExportPage() {
         .then((data) => {
           if (Array.isArray(data)) setCatalogProducts(data);
         })
-        .catch(() => {});
+        .catch(() => { });
     } catch (err) {
       toast({
         variant: "destructive",
@@ -1022,11 +1022,10 @@ export default function BulkImportExportPage() {
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                       <div
                         onClick={() => setExportFormat("csv")}
-                        className={`p-4 rounded-xl border-2 cursor-pointer transition-all flex items-center justify-between ${
-                          exportFormat === "csv"
-                            ? "border-primary bg-primary/5 ring-2 ring-primary/20"
-                            : "border-border hover:border-border/80 bg-card hover:bg-muted/20"
-                        }`}
+                        className={`p-4 rounded-xl border-2 cursor-pointer transition-all flex items-center justify-between ${exportFormat === "csv"
+                          ? "border-primary bg-primary/5 ring-2 ring-primary/20"
+                          : "border-border hover:border-border/80 bg-card hover:bg-muted/20"
+                          }`}
                       >
                         <div className="flex items-center gap-3">
                           <div className="w-10 h-10 rounded-lg bg-emerald-500/10 text-emerald-600 flex items-center justify-center shrink-0">
@@ -1044,11 +1043,10 @@ export default function BulkImportExportPage() {
 
                       <div
                         onClick={() => setExportFormat("json")}
-                        className={`p-4 rounded-xl border-2 cursor-pointer transition-all flex items-center justify-between ${
-                          exportFormat === "json"
-                            ? "border-primary bg-primary/5 ring-2 ring-primary/20"
-                            : "border-border hover:border-border/80 bg-card hover:bg-muted/20"
-                        }`}
+                        className={`p-4 rounded-xl border-2 cursor-pointer transition-all flex items-center justify-between ${exportFormat === "json"
+                          ? "border-primary bg-primary/5 ring-2 ring-primary/20"
+                          : "border-border hover:border-border/80 bg-card hover:bg-muted/20"
+                          }`}
                       >
                         <div className="flex items-center gap-3">
                           <div className="w-10 h-10 rounded-lg bg-blue-500/10 text-blue-600 flex items-center justify-center shrink-0">
@@ -1338,9 +1336,8 @@ export default function BulkImportExportPage() {
               <button
                 type="button"
                 onClick={() => setModalImportStep("upload")}
-                className={`py-1.5 rounded-lg transition-all ${
-                  modalImportStep === "upload" ? "bg-background shadow-xs text-foreground" : "text-muted-foreground hover:text-foreground"
-                }`}
+                className={`py-1.5 rounded-lg transition-all ${modalImportStep === "upload" ? "bg-background shadow-xs text-foreground" : "text-muted-foreground hover:text-foreground"
+                  }`}
               >
                 1. Upload File
               </button>
@@ -1348,9 +1345,8 @@ export default function BulkImportExportPage() {
                 type="button"
                 onClick={() => parsedRows.length > 0 && setModalImportStep("preview")}
                 disabled={parsedRows.length === 0}
-                className={`py-1.5 rounded-lg transition-all disabled:opacity-40 ${
-                  modalImportStep === "preview" ? "bg-background shadow-xs text-foreground" : "text-muted-foreground hover:text-foreground"
-                }`}
+                className={`py-1.5 rounded-lg transition-all disabled:opacity-40 ${modalImportStep === "preview" ? "bg-background shadow-xs text-foreground" : "text-muted-foreground hover:text-foreground"
+                  }`}
               >
                 2. Preview & Validation
               </button>
@@ -1358,9 +1354,8 @@ export default function BulkImportExportPage() {
                 type="button"
                 onClick={() => parsedRows.length > 0 && setModalImportStep("options")}
                 disabled={parsedRows.length === 0}
-                className={`py-1.5 rounded-lg transition-all disabled:opacity-40 ${
-                  modalImportStep === "options" ? "bg-background shadow-xs text-foreground" : "text-muted-foreground hover:text-foreground"
-                }`}
+                className={`py-1.5 rounded-lg transition-all disabled:opacity-40 ${modalImportStep === "options" ? "bg-background shadow-xs text-foreground" : "text-muted-foreground hover:text-foreground"
+                  }`}
               >
                 3. Rules & Execution
               </button>
@@ -1617,11 +1612,10 @@ export default function BulkImportExportPage() {
               <div className="grid grid-cols-2 gap-3">
                 <div
                   onClick={() => setExportFormat("csv")}
-                  className={`p-3.5 rounded-xl border-2 cursor-pointer transition-all flex items-center justify-between ${
-                    exportFormat === "csv"
-                      ? "border-primary bg-primary/5 ring-2 ring-primary/20"
-                      : "border-border hover:border-border/80 bg-card hover:bg-muted/20"
-                  }`}
+                  className={`p-3.5 rounded-xl border-2 cursor-pointer transition-all flex items-center justify-between ${exportFormat === "csv"
+                    ? "border-primary bg-primary/5 ring-2 ring-primary/20"
+                    : "border-border hover:border-border/80 bg-card hover:bg-muted/20"
+                    }`}
                 >
                   <div className="flex items-center gap-2.5">
                     <FileSpreadsheet className="h-5 w-5 text-emerald-600" />
@@ -1635,11 +1629,10 @@ export default function BulkImportExportPage() {
 
                 <div
                   onClick={() => setExportFormat("json")}
-                  className={`p-3.5 rounded-xl border-2 cursor-pointer transition-all flex items-center justify-between ${
-                    exportFormat === "json"
-                      ? "border-primary bg-primary/5 ring-2 ring-primary/20"
-                      : "border-border hover:border-border/80 bg-card hover:bg-muted/20"
-                  }`}
+                  className={`p-3.5 rounded-xl border-2 cursor-pointer transition-all flex items-center justify-between ${exportFormat === "json"
+                    ? "border-primary bg-primary/5 ring-2 ring-primary/20"
+                    : "border-border hover:border-border/80 bg-card hover:bg-muted/20"
+                    }`}
                 >
                   <div className="flex items-center gap-2.5">
                     <FileCode className="h-5 w-5 text-blue-600" />
