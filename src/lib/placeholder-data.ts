@@ -221,6 +221,16 @@ export type Category = {
   name: string;
   description: string;
   permalink: string;
+  image?: string;
+  banner?: string;
+  parentId?: string | null;
+  parentName?: string | null;
+  isFeatured?: boolean;
+  showInMenu?: boolean;
+  order?: number;
+  metaTitle?: string;
+  metaDescription?: string;
+  metaKeywords?: string;
 };
 
 export type Brand = {
