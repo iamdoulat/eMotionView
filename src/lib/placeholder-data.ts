@@ -57,7 +57,7 @@ export type ShippingAddress = {
 
 export type PaymentMethod = 'card' | 'bkash' | 'sslcommerz' | 'cod' | 'stripe' | 'paypal';
 export type PaymentStatus = 'pending' | 'completed' | 'failed' | 'refunded';
-export type Currency = 'USD' | 'CAD' | 'BDT';
+export type Currency = 'USD' | 'CAD' | 'BDT' | 'QAR' | 'AED' | 'SAR';
 
 export type ShippingMethodType = 'flat_rate' | 'free_shipping' | 'local_pickup';
 

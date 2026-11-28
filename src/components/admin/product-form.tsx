@@ -24,6 +24,15 @@ import { Separator } from "@/components/ui/separator";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { useToast } from "@/hooks/use-toast";
 
 // Icons
 import {
@@ -50,7 +59,9 @@ import {
   Boxes,
   HelpCircle,
   Tag,
-  DollarSign
+  DollarSign,
+  Globe,
+  ClipboardCopy
 } from "lucide-react";
 
 const productSchema = z.object({
@@ -219,12 +230,21 @@ export function ProductForm({ product, onSave, onCancel, isSaving }: ProductForm
     setValue,
   } = form;
 
+  const { toast } = useToast();
+
   // Media state
   const [imagePreviews, setImagePreviews] = useState<string[]>(product?.images || []);
   const [filesToUpload, setFilesToUpload] = useState<File[]>([]);
   const [imagesToRemove, setImagesToRemove] = useState<string[]>([]);
   const [newImageUrl, setNewImageUrl] = useState<string>("");
   const [isUrlAdding, setIsUrlAdding] = useState(false);
+
+  // Fetch from External URL state
+  const [isFetchModalOpen, setIsFetchModalOpen] = useState(false);
+  const [fetchUrl, setFetchUrl] = useState("");
+  const [isFetchingAi, setIsFetchingAi] = useState(false);
+  const [fetchStep, setFetchStep] = useState<"idle" | "fetching" | "extracting" | "populating">("idle");
+  const [fetchError, setFetchError] = useState<string | null>(null);
 
   // Auto slug & SKU generators
   const [isPermalinkLocked, setIsPermalinkLocked] = useState(true);
@@ -285,6 +305,7 @@ export function ProductForm({ product, onSave, onCancel, isSaving }: ProductForm
     fields: featureFields,
     append: appendFeature,
     remove: removeFeature,
+    replace: replaceFeatures,
   } = useFieldArray({
     control,
     name: "features",
@@ -294,6 +315,7 @@ export function ProductForm({ product, onSave, onCancel, isSaving }: ProductForm
     fields: specFields,
     append: appendSpec,
     remove: removeSpec,
+    replace: replaceSpecs,
   } = useFieldArray({
     control,
     name: "specifications",
@@ -346,6 +368,121 @@ export function ProductForm({ product, onSave, onCancel, isSaving }: ProductForm
     setImagePreviews((prev) => [...prev, newImageUrl.trim()]);
     setNewImageUrl("");
     setIsUrlAdding(false);
+  };
+
+  // Fetch product from external URL with Custom AI
+  const handleFetchExternalProduct = async () => {
+    const trimmed = fetchUrl.trim();
+    if (!trimmed) {
+      setFetchError("Please enter a valid product webpage URL.");
+      return;
+    }
+    if (!/^https?:\/\//i.test(trimmed)) {
+      setFetchError("URL must start with http:// or https://");
+      return;
+    }
+
+    setIsFetchingAi(true);
+    setFetchError(null);
+    setFetchStep("fetching");
+
+    try {
+      setFetchStep("extracting");
+      const res = await fetch("/api/admin/ai/fetch-product", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ url: trimmed }),
+      });
+
+      const data = await res.json();
+      if (!data.success) {
+        setFetchError(data.message || "Failed to extract product details from this webpage.");
+        setIsFetchingAi(false);
+        return;
+      }
+
+      setFetchStep("populating");
+      const p = data.product;
+
+      // Populate basic info
+      if (p.name) setValue("name", p.name, { shouldValidate: true, shouldDirty: true });
+      if (p.description) setValue("description", p.description, { shouldValidate: true, shouldDirty: true });
+      if (p.price !== undefined && p.price !== null) {
+        setValue("price", Number(p.price) || 0, { shouldValidate: true, shouldDirty: true });
+      }
+      if (p.originalPrice !== undefined && p.originalPrice !== null) {
+        setValue("originalPrice", Number(p.originalPrice) || undefined, { shouldValidate: true, shouldDirty: true });
+      }
+      if (p.brand) setValue("brand", p.brand, { shouldValidate: true, shouldDirty: true });
+      if (p.sku) setValue("sku", p.sku, { shouldValidate: true, shouldDirty: true });
+      if (p.stock !== undefined && p.stock !== null) {
+        setValue("stock", Number(p.stock) || 10, { shouldValidate: true, shouldDirty: true });
+      }
+      if (p.supplier) setValue("supplier", p.supplier, { shouldValidate: true, shouldDirty: true });
+      if (p.warranty) setValue("warranty", p.warranty, { shouldValidate: true, shouldDirty: true });
+
+      // Match categories
+      if (Array.isArray(p.categories) && p.categories.length > 0) {
+        const matchedCats = p.categories.map((cat: string) => {
+          const found = dbCategories.find(
+            (c) => c.name.toLowerCase() === String(cat).toLowerCase()
+          );
+          return found ? found.name : String(cat);
+        });
+        setValue("categories", matchedCats, { shouldValidate: true, shouldDirty: true });
+      }
+
+      // Populate features
+      if (Array.isArray(p.features) && p.features.length > 0) {
+        replaceFeatures(p.features.map((f: string) => ({ value: String(f) })));
+      }
+
+      // Populate specifications
+      if (Array.isArray(p.specifications) && p.specifications.length > 0) {
+        replaceSpecs(
+          p.specifications.map((s: any) => ({
+            key: String(s.key || "").trim(),
+            value: String(s.value || "").trim(),
+          }))
+        );
+      }
+
+      // Populate images
+      if (Array.isArray(p.images) && p.images.length > 0) {
+        const validImgs = p.images.map(String).filter((img: string) => /^https?:\/\//i.test(img));
+        if (validImgs.length > 0) {
+          setImagePreviews(validImgs);
+          setValue("images", validImgs, { shouldValidate: true, shouldDirty: true });
+        }
+      }
+
+      // Auto generate permalink
+      if (p.name) {
+        const generatedPermalink = p.name
+          .toLowerCase()
+          .trim()
+          .replace(/&/g, "and")
+          .replace(/[^a-z0-9\s-]/g, "")
+          .replace(/\s+/g, "-")
+          .replace(/-+/g, "-");
+        setValue("permalink", generatedPermalink, { shouldValidate: true, shouldDirty: true });
+      }
+
+      toast({
+        title: "Product Imported Successfully!",
+        description: `Extracted all product details via ${data.provider || "Custom AI"}. All fields have been filled.`,
+      });
+
+      setIsFetchModalOpen(false);
+      setFetchUrl("");
+      setActiveTab("basic");
+    } catch (err: any) {
+      console.error("AI import failed:", err);
+      setFetchError(err.message || "An unexpected error occurred during import.");
+    } finally {
+      setIsFetchingAi(false);
+      setFetchStep("idle");
+    }
   };
 
   const onSubmit: SubmitHandler<ProductFormData> = async (data) => {
@@ -433,47 +570,61 @@ export function ProductForm({ product, onSave, onCancel, isSaving }: ProductForm
   return (
     <Form {...form}>
       <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col flex-1 min-h-0 overflow-hidden">
-        {/* Navigation Tabs Bar */}
-        <div className="px-6 pt-4 pb-2 border-b bg-muted/30 shrink-0">
-          <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+        {/* Navigation Tabs Bar & Quick AI Import Action */}
+        <div className="px-6 pt-3 pb-2 border-b bg-muted/30 shrink-0 flex flex-col md:flex-row items-stretch md:items-center justify-between gap-2.5">
+          <Tabs value={activeTab} onValueChange={setActiveTab} className="flex-1 min-w-0">
             <TabsList className="grid grid-cols-5 w-full h-auto p-1 bg-muted/80 rounded-xl gap-1">
               <TabsTrigger
                 value="basic"
-                className="py-2 text-xs sm:text-sm font-medium rounded-lg data-[state=active]:bg-background data-[state=active]:text-primary data-[state=active]:shadow-xs flex items-center justify-center gap-1.5"
+                className="py-2 text-xs sm:text-sm font-medium rounded-lg data-[state=active]:bg-background data-[state=active]:text-primary data-[state=active]:shadow-xs flex items-center justify-center gap-1.5 cursor-pointer"
               >
                 <Package className="h-4 w-4 shrink-0" />
                 <span className="hidden sm:inline">General</span>
               </TabsTrigger>
               <TabsTrigger
                 value="pricing"
-                className="py-2 text-xs sm:text-sm font-medium rounded-lg data-[state=active]:bg-background data-[state=active]:text-primary data-[state=active]:shadow-xs flex items-center justify-center gap-1.5"
+                className="py-2 text-xs sm:text-sm font-medium rounded-lg data-[state=active]:bg-background data-[state=active]:text-primary data-[state=active]:shadow-xs flex items-center justify-center gap-1.5 cursor-pointer"
               >
                 <DollarSign className="h-4 w-4 shrink-0" />
                 <span className="hidden sm:inline">Price & Stock</span>
               </TabsTrigger>
               <TabsTrigger
                 value="media"
-                className="py-2 text-xs sm:text-sm font-medium rounded-lg data-[state=active]:bg-background data-[state=active]:text-primary data-[state=active]:shadow-xs flex items-center justify-center gap-1.5"
+                className="py-2 text-xs sm:text-sm font-medium rounded-lg data-[state=active]:bg-background data-[state=active]:text-primary data-[state=active]:shadow-xs flex items-center justify-center gap-1.5 cursor-pointer"
               >
                 <ImageIcon className="h-4 w-4 shrink-0" />
                 <span className="hidden sm:inline">Media ({imagePreviews.length})</span>
               </TabsTrigger>
               <TabsTrigger
                 value="specs"
-                className="py-2 text-xs sm:text-sm font-medium rounded-lg data-[state=active]:bg-background data-[state=active]:text-primary data-[state=active]:shadow-xs flex items-center justify-center gap-1.5"
+                className="py-2 text-xs sm:text-sm font-medium rounded-lg data-[state=active]:bg-background data-[state=active]:text-primary data-[state=active]:shadow-xs flex items-center justify-center gap-1.5 cursor-pointer"
               >
                 <Layers className="h-4 w-4 shrink-0" />
                 <span className="hidden sm:inline">Specs & Info</span>
               </TabsTrigger>
               <TabsTrigger
                 value="variants"
-                className="py-2 text-xs sm:text-sm font-medium rounded-lg data-[state=active]:bg-background data-[state=active]:text-primary data-[state=active]:shadow-xs flex items-center justify-center gap-1.5"
+                className="py-2 text-xs sm:text-sm font-medium rounded-lg data-[state=active]:bg-background data-[state=active]:text-primary data-[state=active]:shadow-xs flex items-center justify-center gap-1.5 cursor-pointer"
               >
-                <Sparkles className="h-4 w-4 shrink-0" />
+                <Boxes className="h-4 w-4 shrink-0" />
                 <span className="hidden sm:inline">Variants</span>
               </TabsTrigger>
             </TabsList>
           </Tabs>
+
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            onClick={() => {
+              setFetchError(null);
+              setIsFetchModalOpen(true);
+            }}
+            className="h-9 px-3 gap-1.5 text-xs font-semibold shrink-0 border-blue-600/40 text-blue-600 bg-blue-50/70 hover:bg-blue-100/80 dark:bg-blue-950/40 dark:border-blue-500/50 dark:text-blue-400 dark:hover:bg-blue-900/60 shadow-2xs transition-all cursor-pointer"
+          >
+            <Sparkles className="h-3.5 w-3.5 text-blue-600 dark:text-blue-400" />
+            <span>Fetch from external url</span>
+          </Button>
         </div>
 
         {/* Scrollable Form Body with Visible Vertical Scroll */}
@@ -1429,6 +1580,155 @@ export function ProductForm({ product, onSave, onCancel, isSaving }: ProductForm
           </div>
         </div>
       </form>
+
+      {/* Fetch from External URL Modal */}
+      <Dialog open={isFetchModalOpen} onOpenChange={setIsFetchModalOpen}>
+        <DialogContent className="max-w-lg sm:max-w-xl p-6">
+          <DialogHeader className="space-y-2">
+            <div className="flex items-center gap-2">
+              <div className="p-2 rounded-lg bg-blue-100 text-blue-600 dark:bg-blue-950 dark:text-blue-400">
+                <Sparkles className="h-5 w-5" />
+              </div>
+              <div>
+                <DialogTitle className="text-lg font-bold">Fetch Product from External URL</DialogTitle>
+                <DialogDescription className="text-xs text-muted-foreground mt-0.5">
+                  Import product details, pricing, specifications, features, and images with Custom AI.
+                </DialogDescription>
+              </div>
+            </div>
+          </DialogHeader>
+
+          <div className="space-y-4 py-2">
+            <div className="space-y-2">
+              <Label htmlFor="external-url-input" className="text-xs font-semibold flex items-center justify-between">
+                <span>Product Webpage URL</span>
+                <span className="text-[11px] text-muted-foreground font-normal">HTTP or HTTPS</span>
+              </Label>
+              <div className="flex items-center gap-2">
+                <div className="relative flex-1">
+                  <Globe className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                  <Input
+                    id="external-url-input"
+                    type="url"
+                    value={fetchUrl}
+                    onChange={(e) => {
+                      setFetchUrl(e.target.value);
+                      if (fetchError) setFetchError(null);
+                    }}
+                    placeholder="https://www.example.com/product-page"
+                    className="pl-9 text-xs"
+                    disabled={isFetchingAi}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter") {
+                        e.preventDefault();
+                        handleFetchExternalProduct();
+                      }
+                    }}
+                  />
+                </div>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={async () => {
+                    try {
+                      const text = await navigator.clipboard.readText();
+                      if (text && /^https?:\/\//i.test(text.trim())) {
+                        setFetchUrl(text.trim());
+                        setFetchError(null);
+                      }
+                    } catch {}
+                  }}
+                  disabled={isFetchingAi}
+                  className="h-9 px-3 text-xs shrink-0 cursor-pointer"
+                >
+                  <ClipboardCopy className="h-3.5 w-3.5 mr-1" /> Paste
+                </Button>
+              </div>
+              <p className="text-[11px] text-muted-foreground">
+                Paste any product link (e.g. Amazon, AliExpress, Daraz, Apple, Samsung, StarTech, or any store).
+              </p>
+            </div>
+
+            {/* Popular supported stores chips */}
+            <div className="space-y-1.5">
+              <p className="text-[11px] font-medium text-muted-foreground">Supported across any eCommerce site:</p>
+              <div className="flex flex-wrap gap-1.5">
+                {["Amazon", "AliExpress", "Daraz", "Apple Store", "Samsung", "StarTech", "Gadget & Gear", "Shopify Stores"].map((store) => (
+                  <Badge key={store} variant="secondary" className="text-[10px] py-0.5 px-2 font-normal">
+                    {store}
+                  </Badge>
+                ))}
+              </div>
+            </div>
+
+            {/* Step / Progress Indicator */}
+            {isFetchingAi && (
+              <div className="rounded-xl border bg-blue-50/50 dark:bg-blue-950/20 p-4 space-y-3 animate-in fade-in-50">
+                <div className="flex items-center gap-3">
+                  <Loader2 className="h-5 w-5 text-blue-600 dark:text-blue-400 animate-spin shrink-0" />
+                  <div className="space-y-0.5">
+                    <p className="text-xs font-semibold text-foreground">
+                      {fetchStep === "fetching" && "Step 1/3: Downloading external webpage..."}
+                      {fetchStep === "extracting" && "Step 2/3: Analyzing & extracting data with Custom AI..."}
+                      {fetchStep === "populating" && "Step 3/3: Mapping specifications and gallery..."}
+                    </p>
+                    <p className="text-[11px] text-muted-foreground">
+                      Extracting product title, pricing, specifications, features, and imagery.
+                    </p>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Error Message */}
+            {fetchError && (
+              <div className="rounded-lg border border-destructive/30 bg-destructive/10 p-3 text-xs text-destructive flex items-start gap-2">
+                <AlertCircle className="h-4 w-4 shrink-0 mt-0.5" />
+                <div className="space-y-0.5 flex-1">
+                  <p className="font-semibold">Import Failed</p>
+                  <p className="text-[11px] opacity-90">{fetchError}</p>
+                </div>
+              </div>
+            )}
+          </div>
+
+          <DialogFooter className="flex flex-col-reverse sm:flex-row items-center justify-end gap-2 pt-2 border-t">
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={() => {
+                setIsFetchModalOpen(false);
+                setFetchError(null);
+              }}
+              disabled={isFetchingAi}
+              className="w-full sm:w-auto text-xs"
+            >
+              Cancel
+            </Button>
+            <Button
+              type="button"
+              size="sm"
+              onClick={handleFetchExternalProduct}
+              disabled={isFetchingAi || !fetchUrl.trim()}
+              className="w-full sm:w-auto text-xs font-semibold bg-blue-600 hover:bg-blue-700 text-white gap-2 shadow-xs cursor-pointer"
+            >
+              {isFetchingAi ? (
+                <>
+                  <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                  Fetching with AI...
+                </>
+              ) : (
+                <>
+                  <Sparkles className="h-3.5 w-3.5" />
+                  Fetch & Fill Form
+                </>
+              )}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </Form>
   );
 }

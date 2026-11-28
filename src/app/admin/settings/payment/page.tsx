@@ -405,6 +405,9 @@ export default function PaymentSettingsPage() {
                                 <SelectItem value="USD">🇺🇸 USD - US Dollar</SelectItem>
                                 <SelectItem value="CAD">🇨🇦 CAD - Canadian Dollar</SelectItem>
                                 <SelectItem value="BDT">🇧🇩 BDT - Bangladeshi Taka</SelectItem>
+                                <SelectItem value="QAR">🇶🇦 QAR - Qatari Riyal</SelectItem>
+                                <SelectItem value="AED">🇦🇪 AED - UAE Dirham</SelectItem>
+                                <SelectItem value="SAR">🇸🇦 SAR - Saudi Riyal</SelectItem>
                             </SelectContent>
                         </Select>
                         {isCurrencySaving && <Loader2 className="h-4 w-4 animate-spin" />}

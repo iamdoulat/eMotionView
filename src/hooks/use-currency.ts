@@ -101,9 +101,20 @@ export function useCurrency() {
         };
     }, []);
 
+    const updateCurrency = (newCurrency: Currency) => {
+        setCurrency(newCurrency);
+        notify(newCurrency);
+        if (typeof window !== 'undefined') {
+            try {
+                localStorage.setItem(CACHE_KEY, JSON.stringify({ value: newCurrency, ts: Date.now() }));
+            } catch { }
+        }
+    };
+
     return {
         currency,
         isLoading,
+        setCurrency: updateCurrency,
         symbol: getCurrencySymbol(currency),
         formatPrice: (amount: number) => formatPrice(amount, currency),
     };

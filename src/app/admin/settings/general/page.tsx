@@ -24,6 +24,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { Skeleton } from '@/components/ui/skeleton';
+import { cn } from "@/lib/utils";
 import {
   Loader2,
   Store,
@@ -35,11 +36,17 @@ import {
   Globe,
   ExternalLink,
   Eye,
+  EyeOff,
   Check,
   AlertCircle,
   FileCode,
   Image as ImageIcon,
-  Cloud
+  Cloud,
+  Sparkles,
+  Bot,
+  Zap,
+  CheckCircle2,
+  Cpu
 } from "lucide-react";
 import { doc, getDoc, setDoc } from '@/lib/db';
 import { uploadFile, getFileUrl } from '@/lib/r2';
@@ -91,6 +98,13 @@ const generalSettingsSchema = z.object({
   facebookLoginEnabled: z.boolean().default(false),
   facebookAppId: z.string().optional().default(''),
   facebookAppSecret: z.string().optional().default(''),
+
+  // Custom AI Provider Configuration
+  aiEnabled: z.boolean().default(true),
+  aiProviderName: z.string().min(1, 'Provider name is required').default('OpenAI'),
+  aiBaseUrl: z.string().min(1, 'Base URL is required').default('https://api.openai.com/v1'),
+  aiApiKey: z.string().optional().default(''),
+  aiDefaultModel: z.string().min(1, 'Default model name is required').default('gpt-4o-mini'),
 });
 
 type GeneralSettingsFormData = z.infer<typeof generalSettingsSchema>;
@@ -135,6 +149,12 @@ const defaultSettings: GeneralSettingsFormData = {
   facebookLoginEnabled: false,
   facebookAppId: '',
   facebookAppSecret: '',
+
+  aiEnabled: true,
+  aiProviderName: 'OpenAI',
+  aiBaseUrl: 'https://api.openai.com/v1',
+  aiApiKey: '',
+  aiDefaultModel: 'gpt-4o-mini',
 };
 
 export default function GeneralSettingsPage() {
@@ -144,6 +164,88 @@ export default function GeneralSettingsPage() {
   const [isUploadingFavicon, setIsUploadingFavicon] = useState(false);
   const [isUploadingOg, setIsUploadingOg] = useState(false);
   const [activeTab, setActiveTab] = useState('store');
+  const [isTestingAi, setIsTestingAi] = useState(false);
+  const [showApiKey, setShowApiKey] = useState(false);
+  const [aiTestResult, setAiTestResult] = useState<{
+    success: boolean;
+    message: string;
+    latency?: number;
+    model?: string;
+  } | null>(null);
+
+  const aiPresets = [
+    {
+      name: 'OpenAI',
+      baseUrl: 'https://api.openai.com/v1',
+      model: 'gpt-4o-mini',
+      badge: 'Cloud'
+    },
+    {
+      name: 'DeepSeek',
+      baseUrl: 'https://api.deepseek.com/v1',
+      model: 'deepseek-chat',
+      badge: 'High Value'
+    },
+    {
+      name: 'Groq',
+      baseUrl: 'https://api.groq.com/openai/v1',
+      model: 'llama-3.3-70b-versatile',
+      badge: 'Ultra Fast'
+    },
+    {
+      name: 'OpenRouter',
+      baseUrl: 'https://openrouter.ai/api/v1',
+      model: 'google/gemini-2.0-flash-001',
+      badge: 'Multi-Model'
+    },
+    {
+      name: 'Ollama (Local)',
+      baseUrl: 'http://localhost:11434/v1',
+      model: 'llama3.2',
+      badge: 'Self-Hosted'
+    },
+  ];
+
+  const handleTestAi = async () => {
+    setIsTestingAi(true);
+    setAiTestResult(null);
+    try {
+      const res = await fetch('/api/admin/ai/test', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          providerName: watch('aiProviderName'),
+          baseUrl: watch('aiBaseUrl'),
+          apiKey: watch('aiApiKey'),
+          defaultModel: watch('aiDefaultModel'),
+        }),
+      });
+      const data = await res.json();
+      setAiTestResult(data);
+      if (data.success) {
+        toast({
+          title: 'AI Connection Successful',
+          description: `Connected to ${watch('aiProviderName')} (${watch('aiDefaultModel')}) in ${data.latency}ms.`,
+        });
+      } else {
+        toast({
+          variant: 'destructive',
+          title: 'AI Connection Failed',
+          description: data.message || 'Unable to connect to AI provider.',
+        });
+      }
+    } catch (err: any) {
+      const msg = err.message || 'Network error while testing connection';
+      setAiTestResult({ success: false, message: msg });
+      toast({
+        variant: 'destructive',
+        title: 'Connection Error',
+        description: msg,
+      });
+    } finally {
+      setIsTestingAi(false);
+    }
+  };
 
   const form = useForm<GeneralSettingsFormData>({
     resolver: zodResolver(generalSettingsSchema),
@@ -280,7 +382,7 @@ export default function GeneralSettingsPage() {
         </div>
 
         <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-          <TabsList className="grid grid-cols-2 md:grid-cols-5 gap-2.5 sm:gap-3 bg-transparent p-0 h-auto">
+          <TabsList className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-2.5 sm:gap-3 bg-transparent p-0 h-auto">
             <TabsTrigger
               value="store"
               className="py-2.5 px-3 sm:px-4 rounded-lg font-medium transition-all duration-200 border-2 border-blue-600 bg-white text-foreground hover:bg-blue-50/80 hover:text-blue-700 dark:bg-card dark:border-blue-500 dark:text-foreground dark:hover:bg-blue-950/40 data-[state=active]:!bg-blue-600 data-[state=active]:!text-white data-[state=active]:!border-blue-600 data-[state=active]:shadow-md cursor-pointer text-xs sm:text-sm"
@@ -310,6 +412,12 @@ export default function GeneralSettingsPage() {
               className="py-2.5 px-3 sm:px-4 rounded-lg font-medium transition-all duration-200 border-2 border-blue-600 bg-white text-foreground hover:bg-blue-50/80 hover:text-blue-700 dark:bg-card dark:border-blue-500 dark:text-foreground dark:hover:bg-blue-950/40 data-[state=active]:!bg-blue-600 data-[state=active]:!text-white data-[state=active]:!border-blue-600 data-[state=active]:shadow-md cursor-pointer text-xs sm:text-sm"
             >
               <KeyRound className="h-4 w-4 mr-2 shrink-0" /> Social Login
+            </TabsTrigger>
+            <TabsTrigger
+              value="ai"
+              className="py-2.5 px-3 sm:px-4 rounded-lg font-medium transition-all duration-200 border-2 border-blue-600 bg-white text-foreground hover:bg-blue-50/80 hover:text-blue-700 dark:bg-card dark:border-blue-500 dark:text-foreground dark:hover:bg-blue-950/40 data-[state=active]:!bg-blue-600 data-[state=active]:!text-white data-[state=active]:!border-blue-600 data-[state=active]:shadow-md cursor-pointer text-xs sm:text-sm"
+            >
+              <Sparkles className="h-4 w-4 mr-2 shrink-0" /> Custom AI
             </TabsTrigger>
           </TabsList>
 
@@ -1192,6 +1300,271 @@ export default function GeneralSettingsPage() {
                       />
                     </div>
                   )}
+                </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          {/* TAB 6: Custom AI Provider */}
+          <TabsContent value="ai" className="space-y-6">
+            <Card className="border shadow-xs">
+              <CardHeader className="bg-gradient-to-r from-blue-50/50 via-indigo-50/30 to-transparent dark:from-blue-950/20 dark:via-indigo-950/10 dark:to-transparent border-b">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                  <div className="space-y-1">
+                    <CardTitle className="text-xl flex items-center gap-2">
+                      <Sparkles className="h-5 w-5 text-blue-600 dark:text-blue-400" />
+                      Custom AI Provider Configuration
+                    </CardTitle>
+                    <CardDescription>
+                      Configure an OpenAI-compatible LLM provider to power application-wide AI features, such as instant product data extraction from external URLs.
+                    </CardDescription>
+                  </div>
+                  <FormField
+                    control={form.control}
+                    name="aiEnabled"
+                    render={({ field }) => (
+                      <div className="flex items-center gap-3 bg-background px-3 py-1.5 rounded-lg border shadow-2xs shrink-0">
+                        <Label htmlFor="ai-enabled-toggle" className="text-sm font-medium cursor-pointer">
+                          {field.value ? 'AI Active' : 'AI Disabled'}
+                        </Label>
+                        <FormControl>
+                          <Switch
+                            id="ai-enabled-toggle"
+                            checked={field.value}
+                            onCheckedChange={field.onChange}
+                          />
+                        </FormControl>
+                      </div>
+                    )}
+                  />
+                </div>
+              </CardHeader>
+              <CardContent className="p-6 space-y-6">
+                {/* Provider Presets */}
+                <div className="space-y-2">
+                  <Label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground flex items-center gap-1.5">
+                    <Cpu className="h-3.5 w-3.5" /> Quick Provider Presets
+                  </Label>
+                  <div className="flex flex-wrap gap-2 pt-1">
+                    {aiPresets.map((preset) => {
+                      const isCurrent = watch('aiProviderName') === preset.name;
+                      return (
+                        <Button
+                          key={preset.name}
+                          type="button"
+                          variant={isCurrent ? "default" : "outline"}
+                          size="sm"
+                          onClick={() => {
+                            setValue('aiProviderName', preset.name, { shouldDirty: true });
+                            setValue('aiBaseUrl', preset.baseUrl, { shouldDirty: true });
+                            setValue('aiDefaultModel', preset.model, { shouldDirty: true });
+                            toast({
+                              title: `${preset.name} Preset Applied`,
+                              description: `Base URL and default model updated for ${preset.name}.`,
+                            });
+                          }}
+                          className={cn(
+                            "h-8 gap-1.5 text-xs transition-all",
+                            isCurrent
+                              ? "bg-blue-600 text-white hover:bg-blue-700 shadow-xs"
+                              : "hover:border-blue-500 hover:text-blue-600 dark:hover:text-blue-400"
+                          )}
+                        >
+                          <Zap className="h-3 w-3" />
+                          <span className="font-semibold">{preset.name}</span>
+                          <span className={cn(
+                            "text-[10px] px-1.5 py-0.2 rounded-full",
+                            isCurrent ? "bg-white/20 text-white" : "bg-muted text-muted-foreground"
+                          )}>
+                            {preset.badge}
+                          </span>
+                        </Button>
+                      );
+                    })}
+                  </div>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    Clicking a preset fills in standard base URLs and models. You can also specify any custom or self-hosted endpoint.
+                  </p>
+                </div>
+
+                <Separator />
+
+                {/* Main Settings Grid */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  {/* Provider Name */}
+                  <FormField
+                    control={form.control}
+                    name="aiProviderName"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel className="flex items-center gap-1.5">
+                          <Bot className="h-4 w-4 text-primary" />
+                          Provider Name
+                        </FormLabel>
+                        <FormControl>
+                          <Input placeholder="e.g. OpenAI, DeepSeek, Groq, Ollama" {...field} />
+                        </FormControl>
+                        <FormDescription>
+                          A friendly label for this AI provider.
+                        </FormDescription>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  {/* Default Model */}
+                  <FormField
+                    control={form.control}
+                    name="aiDefaultModel"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel className="flex items-center gap-1.5">
+                          <Cpu className="h-4 w-4 text-primary" />
+                          Default Model
+                        </FormLabel>
+                        <FormControl>
+                          <Input placeholder="e.g. gpt-4o-mini, deepseek-chat, llama-3.3-70b-versatile" {...field} />
+                        </FormControl>
+                        <FormDescription>
+                          Model name used for product data extraction and content generation.
+                        </FormDescription>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  {/* Base URL */}
+                  <FormField
+                    control={form.control}
+                    name="aiBaseUrl"
+                    render={({ field }) => (
+                      <FormItem className="md:col-span-2">
+                        <FormLabel className="flex items-center gap-1.5">
+                          <Globe className="h-4 w-4 text-primary" />
+                          Base URL
+                        </FormLabel>
+                        <FormControl>
+                          <Input placeholder="https://api.openai.com/v1" {...field} />
+                        </FormControl>
+                        <FormDescription>
+                          OpenAI-compatible base API endpoint. Must accept <code>/chat/completions</code> requests.
+                        </FormDescription>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  {/* API Key */}
+                  <FormField
+                    control={form.control}
+                    name="aiApiKey"
+                    render={({ field }) => (
+                      <FormItem className="md:col-span-2">
+                        <FormLabel className="flex items-center gap-1.5">
+                          <KeyRound className="h-4 w-4 text-primary" />
+                          API Key
+                        </FormLabel>
+                        <div className="relative">
+                          <FormControl>
+                            <Input
+                              type={showApiKey ? "text" : "password"}
+                              placeholder="sk-••••••••••••••••••••••••••••••••"
+                              {...field}
+                              className="pr-10"
+                            />
+                          </FormControl>
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => setShowApiKey(!showApiKey)}
+                            className="absolute right-0 top-0 h-full px-3 text-muted-foreground hover:text-foreground"
+                          >
+                            {showApiKey ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                            <span className="sr-only">{showApiKey ? "Hide API key" : "Show API key"}</span>
+                          </Button>
+                        </div>
+                        <FormDescription>
+                          Secret API key for authentication. Leave empty if using local Ollama without auth.
+                        </FormDescription>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
+
+                {/* Connection Test Section */}
+                <div className="bg-muted/40 rounded-xl p-4 border space-y-3">
+                  <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+                    <div>
+                      <h4 className="text-sm font-semibold flex items-center gap-2">
+                        <ShieldCheck className="h-4 w-4 text-primary" />
+                        Test Provider Connection
+                      </h4>
+                      <p className="text-xs text-muted-foreground">
+                        Verify your Base URL, API Key, and Model before using them across the store.
+                      </p>
+                    </div>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={handleTestAi}
+                      disabled={isTestingAi}
+                      className="gap-2 shrink-0 border-blue-600/40 text-blue-600 hover:bg-blue-50/70 dark:border-blue-500/40 dark:text-blue-400 dark:hover:bg-blue-950/40"
+                    >
+                      {isTestingAi ? (
+                        <>
+                          <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                          Testing Connection...
+                        </>
+                      ) : (
+                        <>
+                          <Zap className="h-3.5 w-3.5" />
+                          Test AI Connection
+                        </>
+                      )}
+                    </Button>
+                  </div>
+
+                  {aiTestResult && (
+                    <div className={cn(
+                      "p-3 rounded-lg text-xs flex items-start gap-2.5 border transition-all",
+                      aiTestResult.success
+                        ? "bg-emerald-50 text-emerald-900 border-emerald-200 dark:bg-emerald-950/40 dark:text-emerald-300 dark:border-emerald-800"
+                        : "bg-destructive/10 text-destructive border-destructive/20"
+                    )}>
+                      {aiTestResult.success ? (
+                        <CheckCircle2 className="h-4 w-4 text-emerald-600 dark:text-emerald-400 shrink-0 mt-0.5" />
+                      ) : (
+                        <AlertCircle className="h-4 w-4 text-destructive shrink-0 mt-0.5" />
+                      )}
+                      <div className="space-y-0.5 flex-1">
+                        <div className="font-semibold flex items-center gap-2">
+                          <span>{aiTestResult.success ? 'Connection Verified' : 'Connection Failed'}</span>
+                          {aiTestResult.latency !== undefined && (
+                            <Badge variant="outline" className="text-[10px] py-0 px-1.5 h-4 bg-background">
+                              {aiTestResult.latency}ms
+                            </Badge>
+                          )}
+                        </div>
+                        <p className="opacity-90">{aiTestResult.message}</p>
+                      </div>
+                    </div>
+                  )}
+                </div>
+
+                {/* Feature Showcase Banner */}
+                <div className="bg-gradient-to-r from-blue-50 via-indigo-50/50 to-purple-50/30 dark:from-blue-950/30 dark:via-indigo-950/20 dark:to-purple-950/10 rounded-xl p-4 border border-blue-100 dark:border-blue-900/40 space-y-2">
+                  <h4 className="text-xs font-semibold uppercase tracking-wider text-blue-900 dark:text-blue-300 flex items-center gap-1.5">
+                    <Sparkles className="h-3.5 w-3.5 text-blue-600 dark:text-blue-400" />
+                    How eMotionView Uses Your Custom AI Provider
+                  </h4>
+                  <ul className="text-xs text-muted-foreground space-y-1.5 list-disc list-inside">
+                    <li><strong className="text-foreground">Fetch from External URL:</strong> In the Add Product and Edit Product modals, click <em>&ldquo;Fetch from external url&rdquo;</em> to scrape any web page and automatically fill all product details (title, pricing, specs, features, SKU, and gallery images).</li>
+                    <li><strong className="text-foreground">Universal Compatibility:</strong> Works with standard OpenAI, DeepSeek, Groq, OpenRouter, Mistral, or self-hosted Ollama via the OpenAI Chat Completions API standard.</li>
+                    <li><strong className="text-foreground">No Code Modifications:</strong> Changes to provider and model take effect immediately across all admin operations upon saving.</li>
+                  </ul>
                 </div>
               </CardContent>
             </Card>

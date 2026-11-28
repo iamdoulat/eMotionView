@@ -8,7 +8,7 @@ import { useRouter, usePathname } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Sheet, SheetClose, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet"
-import { Search, ShoppingCart, Menu, Phone, User, Heart, LayoutGrid, LogOut, MapPin, X, ChevronRight, ShieldCheck } from "lucide-react"
+import { Search, ShoppingCart, Menu, Phone, User, Heart, LayoutGrid, LogOut, MapPin, X, ChevronRight, ShieldCheck, Check } from "lucide-react"
 import { Badge } from "@/components/ui/badge"
 import { cn } from "@/lib/utils"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
@@ -21,6 +21,8 @@ import { ClientOnly } from "../client-only"
 import { ThemeToggle } from "../theme-toggle"
 import { auth } from "@/lib/firebase"
 import { signOut } from "firebase/auth"
+import { useCurrency } from "@/hooks/use-currency"
+import { currencies, currencyFlags, currencyNames } from "@/lib/currency"
 
 const categoryLinks = [
   { name: 'Smart Watches', href: '/products?category=Wearables' },
@@ -116,6 +118,44 @@ export function Header({ logoUrl, companyName = "eMotionView" }: HeaderProps) {
       <span className="flex items-center gap-2"><Search className={cn("h-5 w-5 transition-transform duration-500", isSearchFocused && "rotate-[360deg]")} /></span>
     </Button>
   );
+
+  const CurrencySwitcher = ({ isMobile = false }: { isMobile?: boolean }) => {
+    const { currency, setCurrency } = useCurrency();
+    return (
+      <DropdownMenu>
+        <DropdownMenuTrigger asChild>
+          <button
+            type="button"
+            aria-label="Select currency"
+            className={cn(
+              "flex items-center gap-1 font-medium transition-colors focus:outline-none rounded-md cursor-pointer",
+              isMobile
+                ? "px-2 py-1 text-xs bg-white/20 text-white hover:bg-white/30"
+                : "text-xs text-foreground hover:text-blue-600 dark:hover:text-blue-400"
+            )}
+          >
+            <span>{currencyFlags[currency] || '🌐'}</span>
+            <span className="font-semibold">{currency}</span>
+          </button>
+        </DropdownMenuTrigger>
+        <DropdownMenuContent align="end" className="w-44 z-50">
+          {currencies.map((c) => (
+            <DropdownMenuItem
+              key={c}
+              onClick={() => setCurrency(c)}
+              className={cn("flex items-center justify-between cursor-pointer text-xs py-1.5", currency === c && "font-semibold text-primary bg-primary/5")}
+            >
+              <span className="flex items-center gap-2">
+                <span className="text-sm">{currencyFlags[c]}</span>
+                <span>{c} - {currencyNames[c]}</span>
+              </span>
+              {currency === c && <Check className="h-3.5 w-3.5 text-primary shrink-0" />}
+            </DropdownMenuItem>
+          ))}
+        </DropdownMenuContent>
+      </DropdownMenu>
+    );
+  };
 
   const headerActionButtonClass = "h-10 w-10 rounded-full border-2 border-blue-600 dark:border-blue-500 bg-background hover:bg-blue-50/70 dark:hover:bg-blue-950/40 text-foreground hover:text-blue-600 dark:hover:text-blue-400 transition-all duration-200 shadow-sm flex items-center justify-center";
 
@@ -313,6 +353,10 @@ export function Header({ logoUrl, companyName = "eMotionView" }: HeaderProps) {
               Order Track
             </Link>
             <span className="text-muted-foreground">|</span>
+            <ClientOnly fallback={<div className="w-12 h-4" />}>
+              <CurrencySwitcher />
+            </ClientOnly>
+            <span className="text-muted-foreground">|</span>
             <ThemeToggle />
           </div>
         </div>
@@ -356,6 +400,9 @@ export function Header({ logoUrl, companyName = "eMotionView" }: HeaderProps) {
                     </Link>
                   </SheetClose>
                   <div className="flex items-center gap-1.5 shrink-0">
+                    <ClientOnly>
+                      <CurrencySwitcher isMobile={true} />
+                    </ClientOnly>
                     <ThemeToggle />
                     <SheetClose asChild>
                       <button
