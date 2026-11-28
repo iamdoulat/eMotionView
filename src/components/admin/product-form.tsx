@@ -997,6 +997,7 @@ export function ProductForm({ product, onSave, onCancel, isSaving }: ProductForm
                                   return (
                                     <CommandItem
                                       key={category.id}
+                                      value={category.name}
                                       onSelect={() => {
                                         const current = field.value || [];
                                         const updated = isChecked
@@ -1006,7 +1007,7 @@ export function ProductForm({ product, onSave, onCancel, isSaving }: ProductForm
                                       }}
                                       className="cursor-pointer flex items-center justify-between"
                                     >
-                                      <div className="flex items-center gap-2">
+                                      <div className="flex items-center gap-2 pointer-events-none">
                                         <Checkbox checked={isChecked} />
                                         <span>{category.name}</span>
                                       </div>
