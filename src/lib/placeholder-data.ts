@@ -248,10 +248,23 @@ export type Brand = {
   metaKeywords?: string;
 };
 
+export type AttributeValueDetail = {
+  value: string;
+  colorHex?: string;
+  image?: string;
+};
+
 export type Attribute = {
   id: string;
   name: string;
+  code?: string;
+  displayType?: "button" | "color" | "select" | "radio";
+  description?: string;
   values: string[];
+  valueDetails?: AttributeValueDetail[];
+  order?: number;
+  isRequired?: boolean;
+  isActive?: boolean;
 };
 
 export type Supplier = {
@@ -566,9 +579,46 @@ export const brands: Omit<Brand, 'id'>[] = [
   { name: 'Xiaomi', logo: 'https://placehold.co/100x40.png', permalink: 'xiaomi' },
 ];
 export const attributes: Attribute[] = [
-  { id: 'attr-color', name: 'Color', values: ['Black', 'White', 'Silver', 'Blue', 'Red'] },
-  { id: 'attr-size', name: 'Size', values: ['S', 'M', 'L', 'XL'] },
-  { id: 'attr-storage', name: 'Storage', values: ['64GB', '128GB', '256GB', '512GB'] },
+  {
+    id: 'attr-color',
+    name: 'Color',
+    code: 'color',
+    displayType: 'color',
+    description: 'Product exterior and casing color variations',
+    values: ['Black', 'White', 'Silver', 'Blue', 'Red'],
+    valueDetails: [
+      { value: 'Black', colorHex: '#0f172a' },
+      { value: 'White', colorHex: '#ffffff' },
+      { value: 'Silver', colorHex: '#94a3b8' },
+      { value: 'Blue', colorHex: '#2563eb' },
+      { value: 'Red', colorHex: '#ef4444' },
+    ],
+    order: 1,
+    isRequired: true,
+    isActive: true,
+  },
+  {
+    id: 'attr-size',
+    name: 'Size',
+    code: 'size',
+    displayType: 'button',
+    description: 'Band and strap physical sizes',
+    values: ['S', 'M', 'L', 'XL'],
+    order: 2,
+    isRequired: false,
+    isActive: true,
+  },
+  {
+    id: 'attr-storage',
+    name: 'Storage',
+    code: 'storage',
+    displayType: 'button',
+    description: 'Internal flash storage capacity',
+    values: ['64GB', '128GB', '256GB', '512GB'],
+    order: 3,
+    isRequired: false,
+    isActive: true,
+  },
 ];
 export const suppliers: Omit<Supplier, 'id'>[] = [
   { name: 'KOSPET Direct', contactPerson: 'John Kospet', email: 'sales@kospet.com', permalink: 'kospet-direct' },
