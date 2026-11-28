@@ -58,6 +58,23 @@ export function ProductDetailsClient({ product, brand }: { product: Product; bra
 
   const [selectedImage, setSelectedImage] = useState(product.images[0] || "https://placehold.co/600x600.png");
   const [quantity, setQuantity] = useState(1);
+
+  // Find color attribute or direct colors array
+  const colorAttribute = product.productAttributes?.find(
+    (attr) => attr.name.toLowerCase() === "color" || attr.name.toLowerCase() === "colour"
+  );
+
+  const directColors: string[] = Array.isArray((product as any).colors)
+    ? (product as any).colors.map((c: any) => (typeof c === "string" ? c : c.name || c.color || c.label || String(c)))
+    : [];
+
+  const availableColorValues: string[] =
+    colorAttribute?.values && colorAttribute.values.length > 0
+      ? colorAttribute.values
+      : directColors;
+
+  const colorAttrName = colorAttribute ? colorAttribute.name : "Color";
+
   const [selectedAttributes, setSelectedAttributes] = useState<Record<string, string>>(() => {
     const initial: Record<string, string> = {};
     if (product.productAttributes && product.productAttributes.length > 0) {
@@ -66,6 +83,9 @@ export function ProductDetailsClient({ product, brand }: { product: Product; bra
           initial[attr.name] = attr.values[0];
         }
       });
+    }
+    if (!initial[colorAttrName] && availableColorValues.length > 0) {
+      initial[colorAttrName] = availableColorValues[0];
     }
     return initial;
   });
@@ -78,26 +98,30 @@ export function ProductDetailsClient({ product, brand }: { product: Product; bra
   const canPurchase = !isStockManaged || product.stock > 0;
   const stockQuantity = isStockManaged ? product.stock : 999;
 
-  // Find color attribute if available
-  const colorAttribute = product.productAttributes?.find(
-    (attr) => attr.name.toLowerCase() === "color" || attr.name.toLowerCase() === "colour"
-  );
-
   // Monitor scroll position to show sticky bar on desktop
   useEffect(() => {
     const handleScroll = () => {
+      const scrollY = window.scrollY || document.documentElement.scrollTop || 0;
+      let shouldShow = false;
       if (mainBuyBoxRef.current) {
         const rect = mainBuyBoxRef.current.getBoundingClientRect();
-        // Show sticky bar when the main buy box scrolled past the top
-        setIsStickyVisible(rect.bottom < 80);
+        // Show sticky bar once user scrolls down:
+        // Either main buy box is scrolled above viewport or near top (rect.top < 150),
+        // or user has scrolled down > 200px
+        shouldShow = scrollY > 200 || rect.top < 150;
       } else {
-        setIsStickyVisible(window.scrollY > 450);
+        shouldShow = scrollY > 200;
       }
+      setIsStickyVisible(shouldShow);
     };
 
     window.addEventListener("scroll", handleScroll, { passive: true });
+    window.addEventListener("resize", handleScroll, { passive: true });
     handleScroll();
-    return () => window.removeEventListener("scroll", handleScroll);
+    return () => {
+      window.removeEventListener("scroll", handleScroll);
+      window.removeEventListener("resize", handleScroll);
+    };
   }, []);
 
   const handleAddToCart = () => {
@@ -503,7 +527,7 @@ export function ProductDetailsClient({ product, brand }: { product: Product; bra
       {/* DESKTOP STICKY BOTTOM BAR (Triggered on scroll bottom) */}
       <div
         className={cn(
-          "fixed bottom-0 left-0 right-0 z-50 bg-background/95 backdrop-blur-md border-t border-border shadow-[0_-8px_30px_rgba(0,0,0,0.12)] transition-all duration-300 ease-in-out hidden md:block",
+          "fixed bottom-0 left-0 right-0 z-[90] bg-background/95 backdrop-blur-md border-t border-border shadow-[0_-8px_30px_rgba(0,0,0,0.15)] transition-all duration-300 ease-in-out hidden md:block",
           isStickyVisible
             ? "translate-y-0 opacity-100 pointer-events-auto"
             : "translate-y-full opacity-0 pointer-events-none"
@@ -550,20 +574,20 @@ export function ProductDetailsClient({ product, brand }: { product: Product; bra
           </div>
 
           {/* Center-Right: Color Variants (If Available, as in user diagram) */}
-          {colorAttribute && colorAttribute.values && colorAttribute.values.length > 0 && (
+          {availableColorValues.length > 0 && (
             <div className="flex items-center gap-2 px-3 border-l border-border shrink-0">
               <span className="text-xs font-medium text-muted-foreground hidden lg:inline">Color:</span>
               <div className="flex items-center gap-1.5">
-                {colorAttribute.values.map((val) => {
+                {availableColorValues.map((val) => {
                   const isSelected =
-                    (selectedAttributes[colorAttribute.name] || colorAttribute.values[0]) === val;
+                    (selectedAttributes[colorAttrName] || availableColorValues[0]) === val;
                   const hex = COLOR_MAP[val.toLowerCase()] || "#6B7280";
                   return (
                     <button
                       key={val}
                       type="button"
                       title={`Select Color: ${val}`}
-                      onClick={() => handleAttributeSelect(colorAttribute.name, val)}
+                      onClick={() => handleAttributeSelect(colorAttrName, val)}
                       className={cn(
                         "h-7 w-7 rounded-full border-2 p-0.5 transition-transform hover:scale-110 cursor-pointer flex items-center justify-center",
                         isSelected
@@ -583,7 +607,7 @@ export function ProductDetailsClient({ product, brand }: { product: Product; bra
                 })}
               </div>
               <span className="text-xs font-semibold text-foreground capitalize hidden xl:inline max-w-[80px] truncate">
-                {selectedAttributes[colorAttribute.name] || colorAttribute.values[0]}
+                {selectedAttributes[colorAttrName] || availableColorValues[0]}
               </span>
             </div>
           )}

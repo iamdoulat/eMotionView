@@ -82,7 +82,7 @@ export default async function ProductDetailPage({ params }: { params: Promise<{ 
 
 
   return (
-    <div className="bg-background">
+    <div className="bg-background pb-20 md:pb-24">
       <div className="container mx-auto px-4 py-6">
         <Breadcrumb
           items={[
