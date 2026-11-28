@@ -101,26 +101,33 @@ export function ProductDetailsClient({ product, brand }: { product: Product; bra
   // Monitor scroll position to show sticky bar on desktop
   useEffect(() => {
     const handleScroll = () => {
-      const scrollY = window.scrollY || document.documentElement.scrollTop || 0;
+      const scrollY =
+        window.pageYOffset ||
+        window.scrollY ||
+        document.documentElement.scrollTop ||
+        document.body.scrollTop ||
+        0;
+
       let shouldShow = false;
       if (mainBuyBoxRef.current) {
         const rect = mainBuyBoxRef.current.getBoundingClientRect();
-        // Show sticky bar once user scrolls down:
-        // Either main buy box is scrolled above viewport or near top (rect.top < 150),
-        // or user has scrolled down > 200px
-        shouldShow = scrollY > 200 || rect.top < 150;
+        // Trigger as soon as user scrolls down (> 60px) OR main buy box begins scrolling out of view (rect.top < 350)
+        shouldShow = scrollY > 60 || rect.top < 350;
       } else {
-        shouldShow = scrollY > 200;
+        shouldShow = scrollY > 60;
       }
       setIsStickyVisible(shouldShow);
     };
 
     window.addEventListener("scroll", handleScroll, { passive: true });
     window.addEventListener("resize", handleScroll, { passive: true });
+    document.addEventListener("scroll", handleScroll, { passive: true });
     handleScroll();
+
     return () => {
       window.removeEventListener("scroll", handleScroll);
       window.removeEventListener("resize", handleScroll);
+      document.removeEventListener("scroll", handleScroll);
     };
   }, []);
 
@@ -527,7 +534,7 @@ export function ProductDetailsClient({ product, brand }: { product: Product; bra
       {/* DESKTOP STICKY BOTTOM BAR (Triggered on scroll bottom) */}
       <div
         className={cn(
-          "fixed bottom-0 left-0 right-0 z-[90] bg-background/95 backdrop-blur-md border-t border-border shadow-[0_-8px_30px_rgba(0,0,0,0.15)] transition-all duration-300 ease-in-out hidden md:block",
+          "fixed bottom-0 left-0 right-0 z-[95] bg-background/95 backdrop-blur-md border-t border-border shadow-[0_-8px_30px_rgba(0,0,0,0.15)] transition-all duration-300 ease-in-out hidden md:block",
           isStickyVisible
             ? "translate-y-0 opacity-100 pointer-events-auto"
             : "translate-y-full opacity-0 pointer-events-none"
