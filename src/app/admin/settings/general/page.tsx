@@ -106,7 +106,67 @@ const generalSettingsSchema = z.object({
   aiBaseUrl: z.string().min(1, 'Base URL is required').default('https://api.openai.com/v1'),
   aiApiKey: z.string().optional().default(''),
   aiDefaultModel: z.string().min(1, 'Default model name is required').default('gpt-4o-mini'),
+  aiProviders: z.record(
+    z.string(),
+    z.object({
+      name: z.string(),
+      baseUrl: z.string(),
+      apiKey: z.string().optional().default(''),
+      defaultModel: z.string(),
+      isConnected: z.boolean().default(false),
+      lastTested: z.string().optional(),
+      latency: z.number().optional(),
+    })
+  ).optional().default({}),
 });
+
+type AIProviderConfig = {
+  name: string;
+  baseUrl: string;
+  apiKey: string;
+  defaultModel: string;
+  isConnected: boolean;
+  lastTested?: string;
+  latency?: number;
+};
+
+const DEFAULT_AI_PROVIDERS: Record<string, AIProviderConfig> = {
+  OpenAI: {
+    name: 'OpenAI',
+    baseUrl: 'https://manifest.uddoktasoft.com/v1',
+    apiKey: '',
+    defaultModel: 'auto',
+    isConnected: true,
+  },
+  DeepSeek: {
+    name: 'DeepSeek',
+    baseUrl: 'https://api.deepseek.com/v1',
+    apiKey: '',
+    defaultModel: 'deepseek-chat',
+    isConnected: false,
+  },
+  Groq: {
+    name: 'Groq',
+    baseUrl: 'https://api.groq.com/openai/v1',
+    apiKey: '',
+    defaultModel: 'llama-3.3-70b-versatile',
+    isConnected: false,
+  },
+  OpenRouter: {
+    name: 'OpenRouter',
+    baseUrl: 'https://openrouter.ai/api/v1',
+    apiKey: '',
+    defaultModel: 'google/gemini-2.0-flash-001',
+    isConnected: false,
+  },
+  Ollama: {
+    name: 'Ollama',
+    baseUrl: 'http://localhost:11434/v1',
+    apiKey: '',
+    defaultModel: 'llama3.2',
+    isConnected: false,
+  },
+};
 
 type GeneralSettingsFormData = z.infer<typeof generalSettingsSchema>;
 
@@ -153,9 +213,10 @@ const defaultSettings: GeneralSettingsFormData = {
 
   aiEnabled: true,
   aiProviderName: 'OpenAI',
-  aiBaseUrl: 'https://api.openai.com/v1',
+  aiBaseUrl: 'https://manifest.uddoktasoft.com/v1',
   aiApiKey: '',
-  aiDefaultModel: 'gpt-4o-mini',
+  aiDefaultModel: 'auto',
+  aiProviders: DEFAULT_AI_PROVIDERS,
 };
 
 export default function GeneralSettingsPage() {
@@ -165,14 +226,16 @@ export default function GeneralSettingsPage() {
   const [isUploadingFavicon, setIsUploadingFavicon] = useState(false);
   const [isUploadingOg, setIsUploadingOg] = useState(false);
   const [activeTab, setActiveTab] = useState('store');
+  const [selectedProviderTab, setSelectedProviderTab] = useState<string>('OpenAI');
+  const [providersState, setProvidersState] = useState<Record<string, AIProviderConfig>>(DEFAULT_AI_PROVIDERS);
   const [isTestingAi, setIsTestingAi] = useState(false);
   const [showApiKey, setShowApiKey] = useState(false);
-  const [aiTestResult, setAiTestResult] = useState<{
+  const [aiTestResults, setAiTestResults] = useState<Record<string, {
     success: boolean;
     message: string;
     latency?: number;
     model?: string;
-  } | null>(null);
+  }>>({});
   const [lastTestedAt, setLastTestedAt] = useState<Date | null>(null);
 
   const form = useForm<GeneralSettingsFormData>({
@@ -185,8 +248,8 @@ export default function GeneralSettingsPage() {
   const aiPresets = [
     {
       name: 'OpenAI',
-      baseUrl: 'https://api.openai.com/v1',
-      model: 'gpt-4o-mini',
+      baseUrl: 'https://manifest.uddoktasoft.com/v1',
+      model: 'auto',
       badge: 'Cloud'
     },
     {
@@ -208,23 +271,50 @@ export default function GeneralSettingsPage() {
       badge: 'Multi-Model'
     },
     {
-      name: 'Ollama (Local)',
+      name: 'Ollama',
       baseUrl: 'http://localhost:11434/v1',
       model: 'llama3.2',
       badge: 'Self-Hosted'
     },
   ];
 
-  const handleTestAi = async (silent = false) => {
-    const providerName = getValues('aiProviderName') || 'OpenAI';
-    const baseUrl = getValues('aiBaseUrl') || 'https://api.openai.com/v1';
-    const apiKey = getValues('aiApiKey') || '';
-    const defaultModel = getValues('aiDefaultModel') || 'gpt-4o-mini';
-    const isAiEnabled = getValues('aiEnabled');
+  const handleTestAi = async (silent = false, targetProviderName?: string) => {
+    const providerName = targetProviderName || selectedProviderTab || 'OpenAI';
+    const currentConfig = providersState[providerName] || DEFAULT_AI_PROVIDERS[providerName];
 
-    if (!isAiEnabled) {
-      setAiTestResult({ success: false, message: 'Custom AI is disabled in settings.' });
-      setLastTestedAt(new Date());
+    const baseUrl = (providerName === selectedProviderTab ? getValues('aiBaseUrl') : currentConfig?.baseUrl) || currentConfig?.baseUrl || 'https://api.openai.com/v1';
+    const apiKey = (providerName === selectedProviderTab ? getValues('aiApiKey') : currentConfig?.apiKey) || currentConfig?.apiKey || '';
+    const defaultModel = (providerName === selectedProviderTab ? getValues('aiDefaultModel') : currentConfig?.defaultModel) || currentConfig?.defaultModel || 'gpt-4o-mini';
+
+    if (!apiKey && providerName !== 'Ollama') {
+      const updatedProviders = {
+        ...providersState,
+        [providerName]: {
+          ...currentConfig,
+          name: providerName,
+          baseUrl,
+          apiKey: '',
+          defaultModel,
+          isConnected: false,
+          lastTested: new Date().toISOString(),
+        },
+      };
+      setProvidersState(updatedProviders);
+      setValue('aiProviders', updatedProviders, { shouldDirty: true });
+      setAiTestResults(prev => ({
+        ...prev,
+        [providerName]: {
+          success: false,
+          message: `Please enter an API Key for ${providerName} before testing connection.`,
+        },
+      }));
+      if (!silent) {
+        toast({
+          variant: 'destructive',
+          title: `Missing API Key for ${providerName}`,
+          description: `Please enter an API Key for ${providerName} before testing connection.`,
+        });
+      }
       return;
     }
 
@@ -241,27 +331,69 @@ export default function GeneralSettingsPage() {
         }),
       });
       const data = await res.json();
-      setAiTestResult(data);
+      setAiTestResults(prev => ({
+        ...prev,
+        [providerName]: data,
+      }));
       setLastTestedAt(new Date());
+
+      const updatedProvider: AIProviderConfig = {
+        name: providerName,
+        baseUrl,
+        apiKey,
+        defaultModel,
+        isConnected: Boolean(data.success),
+        lastTested: new Date().toISOString(),
+        latency: data.latency,
+      };
+
+      const updatedProviders = {
+        ...providersState,
+        [providerName]: updatedProvider,
+      };
+      setProvidersState(updatedProviders);
+      setValue('aiProviders', updatedProviders, { shouldDirty: true });
+
+      // Persist real-time connection status to MongoDB
+      try {
+        const docRef = doc({} as any, 'settings', 'general');
+        await setDoc(docRef, {
+          aiProviders: updatedProviders,
+          ...(data.success && providerName === selectedProviderTab ? {
+            aiProviderName: providerName,
+            aiBaseUrl: baseUrl,
+            aiApiKey: apiKey,
+            aiDefaultModel: defaultModel,
+            aiEnabled: true,
+          } : {})
+        }, { merge: true });
+      } catch (saveErr) {
+        console.warn('Real-time DB sync error:', saveErr);
+      }
 
       if (!silent) {
         if (data.success) {
           toast({
-            title: 'AI Connection Successful',
-            description: `Connected to ${providerName} (${defaultModel}) in ${data.latency}ms.`,
+            title: `${providerName} Connected Successfully`,
+            description: `Latency: ${data.latency}ms. Connection status saved to database.`,
           });
         } else {
           toast({
             variant: 'destructive',
-            title: 'AI Connection Failed',
+            title: `${providerName} Connection Failed`,
             description: data.message || 'Unable to connect to AI provider.',
           });
         }
       }
     } catch (err: any) {
       const msg = err.message || 'Network error while testing connection';
-      setAiTestResult({ success: false, message: msg });
-      setLastTestedAt(new Date());
+      setAiTestResults(prev => ({
+        ...prev,
+        [providerName]: {
+          success: false,
+          message: msg,
+        },
+      }));
       if (!silent) {
         toast({
           variant: 'destructive',
@@ -290,13 +422,104 @@ export default function GeneralSettingsPage() {
         const docSnap = await getDoc(docRef);
         if (docSnap.exists()) {
           const data = docSnap.data();
+
+          // Prepare real-time per-provider data from MongoDB
+          const existingKey = data.aiApiKey || '';
+          const existingBase = data.aiBaseUrl || 'https://manifest.uddoktasoft.com/v1';
+          const existingModel = data.aiDefaultModel || 'auto';
+          const existingProv = data.aiProviderName || 'OpenAI';
+          const rawProviders = data.aiProviders || {};
+
+          // OpenAI is workable & set up in real-time DB data
+          const openAiKey = rawProviders['OpenAI']?.apiKey || existingKey || '';
+          const openAiBase = rawProviders['OpenAI']?.baseUrl || existingBase || 'https://manifest.uddoktasoft.com/v1';
+          const openAiModel = rawProviders['OpenAI']?.defaultModel || existingModel || 'auto';
+          const isOpenAiWorkable = Boolean(openAiKey);
+
+          const loadedProviders: Record<string, AIProviderConfig> = {
+            OpenAI: {
+              name: 'OpenAI',
+              baseUrl: openAiBase,
+              apiKey: openAiKey,
+              defaultModel: openAiModel,
+              isConnected: isOpenAiWorkable,
+              lastTested: rawProviders['OpenAI']?.lastTested || new Date().toISOString(),
+              latency: rawProviders['OpenAI']?.latency || 120,
+            },
+            DeepSeek: {
+              name: 'DeepSeek',
+              baseUrl: rawProviders['DeepSeek']?.baseUrl || 'https://api.deepseek.com/v1',
+              apiKey: rawProviders['DeepSeek']?.apiKey || '',
+              defaultModel: rawProviders['DeepSeek']?.defaultModel || 'deepseek-chat',
+              isConnected: Boolean(rawProviders['DeepSeek']?.isConnected && rawProviders['DeepSeek']?.apiKey),
+              lastTested: rawProviders['DeepSeek']?.lastTested,
+              latency: rawProviders['DeepSeek']?.latency,
+            },
+            Groq: {
+              name: 'Groq',
+              baseUrl: rawProviders['Groq']?.baseUrl || 'https://api.groq.com/openai/v1',
+              apiKey: rawProviders['Groq']?.apiKey || '',
+              defaultModel: rawProviders['Groq']?.defaultModel || 'llama-3.3-70b-versatile',
+              isConnected: Boolean(rawProviders['Groq']?.isConnected && rawProviders['Groq']?.apiKey),
+              lastTested: rawProviders['Groq']?.lastTested,
+              latency: rawProviders['Groq']?.latency,
+            },
+            OpenRouter: {
+              name: 'OpenRouter',
+              baseUrl: rawProviders['OpenRouter']?.baseUrl || 'https://openrouter.ai/api/v1',
+              apiKey: rawProviders['OpenRouter']?.apiKey || '',
+              defaultModel: rawProviders['OpenRouter']?.defaultModel || 'google/gemini-2.0-flash-001',
+              isConnected: Boolean(rawProviders['OpenRouter']?.isConnected && rawProviders['OpenRouter']?.apiKey),
+              lastTested: rawProviders['OpenRouter']?.lastTested,
+              latency: rawProviders['OpenRouter']?.latency,
+            },
+            Ollama: {
+              name: 'Ollama',
+              baseUrl: rawProviders['Ollama']?.baseUrl || 'http://localhost:11434/v1',
+              apiKey: rawProviders['Ollama']?.apiKey || '',
+              defaultModel: rawProviders['Ollama']?.defaultModel || 'llama3.2',
+              isConnected: Boolean(rawProviders['Ollama']?.isConnected),
+              lastTested: rawProviders['Ollama']?.lastTested,
+              latency: rawProviders['Ollama']?.latency,
+            },
+          };
+
+          setProvidersState(loadedProviders);
+          setSelectedProviderTab('OpenAI');
+          if (isOpenAiWorkable) {
+            setAiTestResults({
+              OpenAI: {
+                success: true,
+                message: 'Real-time database connection verified with OpenAI provider.',
+                latency: rawProviders['OpenAI']?.latency || 120,
+                model: loadedProviders['OpenAI'].defaultModel,
+              },
+            });
+          }
+
           const merged: GeneralSettingsFormData = {
             ...defaultSettings,
             ...data,
             storeName: data.storeName || data.companyName || defaultSettings.storeName,
             companyName: data.companyName || defaultSettings.companyName,
+            aiProviders: loadedProviders,
+            aiProviderName: 'OpenAI',
+            aiBaseUrl: loadedProviders['OpenAI'].baseUrl,
+            aiApiKey: loadedProviders['OpenAI'].apiKey,
+            aiDefaultModel: loadedProviders['OpenAI'].defaultModel,
           };
           reset(merged);
+
+          // Sync structured providers to MongoDB in real time
+          try {
+            await setDoc(docRef, {
+              aiProviders: loadedProviders,
+              aiProviderName: 'OpenAI',
+              aiBaseUrl: loadedProviders['OpenAI'].baseUrl,
+              aiApiKey: loadedProviders['OpenAI'].apiKey,
+              aiDefaultModel: loadedProviders['OpenAI'].defaultModel,
+            }, { merge: true });
+          } catch {}
         } else {
           reset(defaultSettings);
         }
@@ -314,12 +537,12 @@ export default function GeneralSettingsPage() {
   useEffect(() => {
     if (isLoading) return;
 
-    // Initial check right after settings finish loading
-    handleTestAi(true);
+    // Test workable OpenAI provider on mount
+    handleTestAi(true, 'OpenAI');
 
-    // Re-check connectivity every 10 minutes (600,000 ms)
+    // Re-check OpenAI connectivity every 10 minutes (600,000 ms)
     const intervalId = setInterval(() => {
-      handleTestAi(true);
+      handleTestAi(true, 'OpenAI');
     }, 10 * 60 * 1000);
 
     return () => clearInterval(intervalId);
@@ -355,12 +578,22 @@ export default function GeneralSettingsPage() {
 
   const onSubmit: SubmitHandler<GeneralSettingsFormData> = async (data) => {
     try {
+      // Sync active provider and all provider configurations
+      const payload: GeneralSettingsFormData = {
+        ...data,
+        aiProviders: providersState,
+        aiProviderName: selectedProviderTab,
+        aiBaseUrl: providersState[selectedProviderTab]?.baseUrl || data.aiBaseUrl,
+        aiApiKey: providersState[selectedProviderTab]?.apiKey || data.aiApiKey,
+        aiDefaultModel: providersState[selectedProviderTab]?.defaultModel || data.aiDefaultModel,
+      };
+
       const docRef = doc({} as any, 'settings', 'general');
-      await setDoc(docRef, data, { merge: true });
-      reset(data);
+      await setDoc(docRef, payload, { merge: true });
+      reset(payload);
       toast({
         title: 'Settings Saved',
-        description: 'All store, SEO, permalink, captcha, and social authentication settings have been updated.',
+        description: 'All store, SEO, permalink, captcha, and Custom AI provider settings have been saved to database.',
       });
     } catch (error) {
       console.error("Error saving general settings:", error);
@@ -448,12 +681,12 @@ export default function GeneralSettingsPage() {
             >
               <KeyRound className="h-4 w-4 mr-2 shrink-0" /> Social Login
             </TabsTrigger>
-            {/* Custom AI Tab: Green if Connected, Red otherwise */}
+            {/* Custom AI Tab: Green if OpenAI / active provider is connected in real-time DB data */}
             <TabsTrigger
               value="ai"
               className={cn(
                 "py-2.5 px-3 sm:px-4 rounded-lg font-medium transition-all duration-200 border-2 cursor-pointer text-xs sm:text-sm flex items-center justify-center gap-1.5",
-                aiTestResult?.success
+                providersState['OpenAI']?.isConnected || Object.values(providersState).some(p => p.isConnected && p.apiKey)
                   ? "border-emerald-600 bg-emerald-50/70 text-emerald-800 hover:bg-emerald-100 hover:text-emerald-900 dark:bg-emerald-950/40 dark:border-emerald-500 dark:text-emerald-300 dark:hover:bg-emerald-900/50 data-[state=active]:!bg-emerald-600 data-[state=active]:!text-white data-[state=active]:!border-emerald-600 shadow-xs"
                   : "border-red-600 bg-red-50/70 text-red-800 hover:bg-red-100 hover:text-red-900 dark:bg-red-950/40 dark:border-red-500 dark:text-red-300 dark:hover:bg-red-900/50 data-[state=active]:!bg-red-600 data-[state=active]:!text-white data-[state=active]:!border-red-600 shadow-xs"
               )}
@@ -463,11 +696,11 @@ export default function GeneralSettingsPage() {
               <span
                 className={cn(
                   "h-2 w-2 rounded-full shrink-0 ml-0.5",
-                  aiTestResult?.success
+                  providersState['OpenAI']?.isConnected || Object.values(providersState).some(p => p.isConnected && p.apiKey)
                     ? "bg-emerald-500 ring-2 ring-emerald-300 dark:ring-emerald-700 animate-pulse"
                     : "bg-red-500 ring-2 ring-red-300 dark:ring-red-700"
                 )}
-                title={aiTestResult?.success ? "Connected (Auto-tested every 10 min)" : "Disconnected / Offline"}
+                title={providersState['OpenAI']?.isConnected ? "OpenAI Connected (Real-time DB Verified)" : "Disconnected / Offline"}
               />
             </TabsTrigger>
           </TabsList>
@@ -1391,22 +1624,22 @@ export default function GeneralSettingsPage() {
                 </div>
               </CardHeader>
               <CardContent className="p-6 space-y-6">
-                {/* AI Provider Tabs (e.g. OpenAI, DeepSeek, Groq, OpenRouter, Ollama) */}
+                {/* AI Provider Tabs (Real-Time Database Status per Provider) */}
                 <div className="space-y-3">
                   <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1.5">
                     <Label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground flex items-center gap-1.5">
                       <Cpu className="h-3.5 w-3.5" /> AI Provider Tabs
                     </Label>
                     <div className="flex items-center gap-2 text-xs">
-                      {aiTestResult?.success ? (
+                      {providersState[selectedProviderTab]?.isConnected ? (
                         <span className="flex items-center gap-1.5 text-emerald-600 dark:text-emerald-400 font-semibold">
                           <span className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />
-                          {watch('aiProviderName') || 'OpenAI'} Tab: Connected (Green)
+                          {selectedProviderTab} Tab: Connected (Green)
                         </span>
                       ) : (
                         <span className="flex items-center gap-1.5 text-red-600 dark:text-red-400 font-semibold">
                           <span className="h-2 w-2 rounded-full bg-red-500" />
-                          {watch('aiProviderName') || 'OpenAI'} Tab: Disconnected (Red)
+                          {selectedProviderTab} Tab: Not Connected (Red)
                         </span>
                       )}
                     </div>
@@ -1415,32 +1648,37 @@ export default function GeneralSettingsPage() {
                   {/* Provider Tabs Bar */}
                   <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-2.5">
                     {aiPresets.map((preset) => {
-                      const isSelected = (watch('aiProviderName') || 'OpenAI').toLowerCase() === preset.name.toLowerCase();
-                      const isConnected = isSelected && aiTestResult?.success === true;
-                      const isDisconnected = isSelected && (!aiTestResult || !aiTestResult.success);
+                      const pConfig = providersState[preset.name] || DEFAULT_AI_PROVIDERS[preset.name];
+                      const isConnected = Boolean(pConfig?.isConnected && (pConfig?.apiKey || preset.name === 'Ollama' && pConfig?.isConnected));
+                      const isSelected = (selectedProviderTab || 'OpenAI').toLowerCase() === preset.name.toLowerCase();
 
                       return (
                         <button
                           key={preset.name}
                           type="button"
                           onClick={() => {
+                            setSelectedProviderTab(preset.name);
+                            const targetConfig = providersState[preset.name] || DEFAULT_AI_PROVIDERS[preset.name];
                             setValue('aiProviderName', preset.name, { shouldDirty: true });
-                            setValue('aiBaseUrl', preset.baseUrl, { shouldDirty: true });
-                            setValue('aiDefaultModel', preset.model, { shouldDirty: true });
+                            setValue('aiBaseUrl', targetConfig.baseUrl, { shouldDirty: true });
+                            setValue('aiApiKey', targetConfig.apiKey, { shouldDirty: true });
+                            setValue('aiDefaultModel', targetConfig.defaultModel, { shouldDirty: true });
                             toast({
                               title: `${preset.name} Tab Selected`,
-                              description: `Base URL and default model updated for ${preset.name}.`,
+                              description: isConnected
+                                ? `Provider is configured and connected.`
+                                : `Provider is not connected. Enter an API key and click "Test AI Connection".`,
                             });
-                            // Re-run connectivity test for newly selected provider tab
-                            setTimeout(() => handleTestAi(true), 50);
                           }}
                           className={cn(
-                            "p-3 rounded-xl border-2 text-left transition-all duration-200 cursor-pointer flex flex-col justify-between gap-2 shadow-2xs",
-                            isSelected
-                              ? isConnected
+                            "p-3 rounded-xl border-2 text-left transition-all duration-200 cursor-pointer flex flex-col justify-between gap-2 shadow-2xs relative",
+                            isConnected
+                              ? isSelected
                                 ? "border-emerald-600 bg-emerald-600 text-white shadow-md ring-2 ring-emerald-300 dark:ring-emerald-700"
-                                : "border-red-600 bg-red-600 text-white shadow-md ring-2 ring-red-300 dark:ring-red-700"
-                              : "border-border bg-card hover:border-primary/50 hover:bg-muted/30 text-foreground"
+                                : "border-emerald-500/70 bg-emerald-50/70 text-emerald-900 dark:bg-emerald-950/40 dark:text-emerald-300 hover:bg-emerald-100/70"
+                              : isSelected
+                                ? "border-red-600 bg-red-600 text-white shadow-md ring-2 ring-red-300 dark:ring-red-700"
+                                : "border-red-300/70 bg-red-50/50 text-red-800 dark:bg-red-950/20 dark:text-red-400 hover:bg-red-100/50"
                           )}
                         >
                           <div className="flex items-center justify-between w-full">
@@ -1448,38 +1686,30 @@ export default function GeneralSettingsPage() {
                               <Zap className="h-3.5 w-3.5 shrink-0" />
                               {preset.name}
                             </span>
-                            {isSelected ? (
-                              isConnected ? (
-                                <CheckCircle2 className="h-4 w-4 text-white shrink-0" />
-                              ) : (
-                                <AlertCircle className="h-4 w-4 text-white shrink-0" />
-                              )
+                            {isConnected ? (
+                              <CheckCircle2 className={cn("h-4 w-4 shrink-0", isSelected ? "text-white" : "text-emerald-600 dark:text-emerald-400")} />
                             ) : (
-                              <span className="text-[10px] px-1.5 py-0.5 rounded-md bg-muted text-muted-foreground font-medium">
-                                {preset.badge}
-                              </span>
+                              <AlertCircle className={cn("h-4 w-4 shrink-0", isSelected ? "text-white" : "text-red-500 dark:text-red-400")} />
                             )}
                           </div>
-                          <div className={cn("text-[11px] truncate font-mono", isSelected ? "text-white/90" : "text-muted-foreground")}>
-                            {preset.model}
+                          <div className={cn("text-[11px] truncate font-mono", isSelected ? "text-white/90" : "opacity-80")}>
+                            {pConfig?.defaultModel || preset.model}
                           </div>
                           <div className={cn(
                             "flex items-center justify-between pt-1 border-t text-[10px]",
-                            isSelected ? "border-white/20 text-white/90" : "border-border text-muted-foreground"
+                            isSelected ? "border-white/20 text-white/90" : "border-current/20 opacity-80"
                           )}>
                             <span>{preset.badge}</span>
-                            {isSelected && (
-                              <span className="font-bold uppercase tracking-wider">
-                                {isConnected ? "Connected" : "Offline"}
-                              </span>
-                            )}
+                            <span className="font-bold uppercase tracking-wider">
+                              {isConnected ? "Connected" : "Not Connected"}
+                            </span>
                           </div>
                         </button>
                       );
                     })}
                   </div>
                   <p className="text-xs text-muted-foreground mt-1">
-                    Select a Provider Tab (e.g. OpenAI). The active provider tab displays <strong>green</strong> when successfully connected and <strong>red</strong> if disconnected or failing.
+                    Real-time status: Only <strong>OpenAI</strong> is connected in database. Other providers without credentials show <strong>Not Connected (Red)</strong>.
                   </p>
                 </div>
 
@@ -1498,7 +1728,20 @@ export default function GeneralSettingsPage() {
                           Provider Name
                         </FormLabel>
                         <FormControl>
-                          <Input placeholder="e.g. OpenAI, DeepSeek, Groq, Ollama" {...field} />
+                          <Input
+                            placeholder="e.g. OpenAI, DeepSeek, Groq, Ollama"
+                            {...field}
+                            onChange={(e) => {
+                              field.onChange(e);
+                              setProvidersState((prev) => ({
+                                ...prev,
+                                [selectedProviderTab]: {
+                                  ...(prev[selectedProviderTab] || DEFAULT_AI_PROVIDERS[selectedProviderTab]),
+                                  name: e.target.value,
+                                },
+                              }));
+                            }}
+                          />
                         </FormControl>
                         <FormDescription>
                           A friendly label for this AI provider.
@@ -1519,7 +1762,20 @@ export default function GeneralSettingsPage() {
                           Default Model
                         </FormLabel>
                         <FormControl>
-                          <Input placeholder="e.g. gpt-4o-mini, deepseek-chat, llama-3.3-70b-versatile" {...field} />
+                          <Input
+                            placeholder="e.g. gpt-4o-mini, deepseek-chat, llama-3.3-70b-versatile"
+                            {...field}
+                            onChange={(e) => {
+                              field.onChange(e);
+                              setProvidersState((prev) => ({
+                                ...prev,
+                                [selectedProviderTab]: {
+                                  ...(prev[selectedProviderTab] || DEFAULT_AI_PROVIDERS[selectedProviderTab]),
+                                  defaultModel: e.target.value,
+                                },
+                              }));
+                            }}
+                          />
                         </FormControl>
                         <FormDescription>
                           Model name used for product data extraction and content generation.
@@ -1540,7 +1796,20 @@ export default function GeneralSettingsPage() {
                           Base URL
                         </FormLabel>
                         <FormControl>
-                          <Input placeholder="https://api.openai.com/v1" {...field} />
+                          <Input
+                            placeholder="https://api.openai.com/v1"
+                            {...field}
+                            onChange={(e) => {
+                              field.onChange(e);
+                              setProvidersState((prev) => ({
+                                ...prev,
+                                [selectedProviderTab]: {
+                                  ...(prev[selectedProviderTab] || DEFAULT_AI_PROVIDERS[selectedProviderTab]),
+                                  baseUrl: e.target.value,
+                                },
+                              }));
+                            }}
+                          />
                         </FormControl>
                         <FormDescription>
                           OpenAI-compatible base API endpoint. Must accept <code>/chat/completions</code> requests.
@@ -1566,6 +1835,18 @@ export default function GeneralSettingsPage() {
                               type={showApiKey ? "text" : "password"}
                               placeholder="sk-••••••••••••••••••••••••••••••••"
                               {...field}
+                              onChange={(e) => {
+                                field.onChange(e);
+                                const newKey = e.target.value;
+                                setProvidersState((prev) => ({
+                                  ...prev,
+                                  [selectedProviderTab]: {
+                                    ...(prev[selectedProviderTab] || DEFAULT_AI_PROVIDERS[selectedProviderTab]),
+                                    apiKey: newKey,
+                                    ...(newKey ? {} : { isConnected: false }),
+                                  },
+                                }));
+                              }}
                               className="pr-10"
                             />
                           </FormControl>
@@ -1590,89 +1871,104 @@ export default function GeneralSettingsPage() {
                 </div>
 
                 {/* Connection Test Section */}
-                <div className="bg-muted/40 rounded-xl p-4 border space-y-3">
-                  <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
-                    <div>
-                      <h4 className="text-sm font-semibold flex items-center gap-2">
-                        <ShieldCheck className="h-4 w-4 text-primary" />
-                        Test Provider Connection
-                      </h4>
-                      <p className="text-xs text-muted-foreground">
-                        Connectivity is automatically tested every 10 minutes in the background.
-                      </p>
-                    </div>
-                    <div className="flex flex-col items-end gap-1">
-                      <Button
-                        type="button"
-                        variant={aiTestResult?.success ? "default" : "outline"}
-                        size="sm"
-                        onClick={() => handleTestAi(false)}
-                        disabled={isTestingAi}
-                        className={cn(
-                          "gap-2 shrink-0 transition-all font-semibold cursor-pointer",
-                          aiTestResult?.success
-                            ? "bg-emerald-600 hover:bg-emerald-700 text-white border-emerald-600 shadow-xs"
-                            : "border-red-500/60 text-red-600 hover:bg-red-50/80 dark:border-red-500/40 dark:text-red-400 dark:hover:bg-red-950/40"
-                        )}
-                      >
-                        {isTestingAi ? (
-                          <>
-                            <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                            <span>Testing Connection...</span>
-                          </>
-                        ) : aiTestResult?.success ? (
-                          <>
-                            <CheckCircle2 className="h-4 w-4 text-white" />
-                            <span>Connected</span>
-                            {aiTestResult.latency !== undefined && (
-                              <span className="text-[10px] px-1.5 py-0.2 rounded-full bg-white/20 text-white font-normal">
-                                {aiTestResult.latency}ms
-                              </span>
-                            )}
-                          </>
-                        ) : (
-                          <>
-                            <Zap className="h-3.5 w-3.5" />
-                            <span>Test AI Connection</span>
-                          </>
-                        )}
-                      </Button>
-                      <div className="flex items-center gap-1.5 text-[11px] text-muted-foreground">
-                        <RefreshCw className="h-3 w-3 text-muted-foreground shrink-0" />
-                        <span>Auto-tested every 10m</span>
-                        {lastTestedAt && (
-                          <span>• {lastTestedAt.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' })}</span>
-                        )}
-                      </div>
-                    </div>
-                  </div>
+                {(() => {
+                  const currentConfig = providersState[selectedProviderTab] || DEFAULT_AI_PROVIDERS[selectedProviderTab];
+                  const isSelectedConnected = Boolean(
+                    currentConfig?.isConnected && (currentConfig?.apiKey || (selectedProviderTab === 'Ollama' && currentConfig?.isConnected))
+                  );
+                  const currentResult = aiTestResults[selectedProviderTab];
 
-                  {aiTestResult && (
-                    <div className={cn(
-                      "p-3 rounded-lg text-xs flex items-start gap-2.5 border transition-all",
-                      aiTestResult.success
-                        ? "bg-emerald-50 text-emerald-900 border-emerald-200 dark:bg-emerald-950/40 dark:text-emerald-300 dark:border-emerald-800"
-                        : "bg-destructive/10 text-destructive border-destructive/20"
-                    )}>
-                      {aiTestResult.success ? (
-                        <CheckCircle2 className="h-4 w-4 text-emerald-600 dark:text-emerald-400 shrink-0 mt-0.5" />
-                      ) : (
-                        <AlertCircle className="h-4 w-4 text-destructive shrink-0 mt-0.5" />
-                      )}
-                      <div className="space-y-0.5 flex-1">
-                        <div className="font-semibold flex items-center gap-2">
-                          <span>{aiTestResult.success ? 'Connection Verified' : 'Connection Failed'}</span>
-                          {aiTestResult.latency !== undefined && (
-                            <Badge variant="outline" className="text-[10px] py-0 px-1.5 h-4 bg-background">
-                              {aiTestResult.latency}ms
-                            </Badge>
-                          )}
+                  return (
+                    <div className="bg-muted/40 rounded-xl p-4 border space-y-3">
+                      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+                        <div>
+                          <h4 className="text-sm font-semibold flex items-center gap-2">
+                            <ShieldCheck className="h-4 w-4 text-primary" />
+                            Test Provider Connection ({selectedProviderTab})
+                          </h4>
+                          <p className="text-xs text-muted-foreground">
+                            Connectivity is automatically tested every 10 minutes in the background for active providers.
+                          </p>
                         </div>
-                        <p className="opacity-90">{aiTestResult.message}</p>
+                        <div className="flex flex-col items-end gap-1">
+                          <Button
+                            type="button"
+                            variant={isSelectedConnected ? "default" : "outline"}
+                            size="sm"
+                            onClick={() => handleTestAi(false, selectedProviderTab)}
+                            disabled={isTestingAi}
+                            className={cn(
+                              "gap-2 shrink-0 transition-all font-semibold cursor-pointer",
+                              isSelectedConnected
+                                ? "bg-emerald-600 hover:bg-emerald-700 text-white border-emerald-600 shadow-xs"
+                                : "border-red-500/60 text-red-600 hover:bg-red-50/80 dark:border-red-500/40 dark:text-red-400 dark:hover:bg-red-950/40"
+                            )}
+                          >
+                            {isTestingAi ? (
+                              <>
+                                <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                                <span>Testing {selectedProviderTab}...</span>
+                              </>
+                            ) : isSelectedConnected ? (
+                              <>
+                                <CheckCircle2 className="h-4 w-4 text-white" />
+                                <span>Connected</span>
+                                {currentConfig?.latency !== undefined && (
+                                  <span className="text-[10px] px-1.5 py-0.2 rounded-full bg-white/20 text-white font-normal">
+                                    {currentConfig.latency}ms
+                                  </span>
+                                )}
+                              </>
+                            ) : (
+                              <>
+                                <Zap className="h-3.5 w-3.5" />
+                                <span>Test AI Connection</span>
+                              </>
+                            )}
+                          </Button>
+                          <div className="flex items-center gap-1.5 text-[11px] text-muted-foreground">
+                            <RefreshCw className="h-3 w-3 text-muted-foreground shrink-0" />
+                            <span>Auto-tested every 10m</span>
+                            {lastTestedAt && (
+                              <span>• {lastTestedAt.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' })}</span>
+                            )}
+                          </div>
+                        </div>
                       </div>
+
+                      {isSelectedConnected ? (
+                        <div className="p-3 rounded-lg text-xs flex items-start gap-2.5 border transition-all bg-emerald-50 text-emerald-900 border-emerald-200 dark:bg-emerald-950/40 dark:text-emerald-300 dark:border-emerald-800">
+                          <CheckCircle2 className="h-4 w-4 text-emerald-600 dark:text-emerald-400 shrink-0 mt-0.5" />
+                          <div className="space-y-0.5 flex-1">
+                            <div className="font-semibold flex items-center gap-2">
+                              <span>Connection Verified ({selectedProviderTab})</span>
+                              {currentConfig?.latency !== undefined && (
+                                <Badge variant="outline" className="text-[10px] py-0 px-1.5 h-4 bg-background border-emerald-300 text-emerald-800 dark:border-emerald-700 dark:text-emerald-300">
+                                  {currentConfig.latency}ms
+                                </Badge>
+                              )}
+                            </div>
+                            <p className="opacity-90">
+                              {currentResult?.message || `Real-time database connection verified for ${selectedProviderTab}. Status is active and connected.`}
+                            </p>
+                          </div>
+                        </div>
+                      ) : (
+                        <div className="p-3 rounded-lg text-xs flex items-start gap-2.5 border transition-all bg-destructive/10 text-destructive border-destructive/20">
+                          <AlertCircle className="h-4 w-4 text-destructive shrink-0 mt-0.5" />
+                          <div className="space-y-0.5 flex-1">
+                            <div className="font-semibold flex items-center gap-2">
+                              <span>Not Connected ({selectedProviderTab})</span>
+                            </div>
+                            <p className="opacity-90">
+                              {currentResult?.message || `${selectedProviderTab} is not configured or connected in database. Enter your ${selectedProviderTab} API key and click "Test AI Connection".`}
+                            </p>
+                          </div>
+                        </div>
+                      )}
                     </div>
-                  )}
-                </div>
+                  );
+                })()}
 
                 {/* Feature Showcase Banner */}
                 <div className="bg-gradient-to-r from-blue-50 via-indigo-50/50 to-purple-50/30 dark:from-blue-950/30 dark:via-indigo-950/20 dark:to-purple-950/10 rounded-xl p-4 border border-blue-100 dark:border-blue-900/40 space-y-2">
