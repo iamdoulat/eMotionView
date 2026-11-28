@@ -273,6 +273,16 @@ export type Supplier = {
   contactPerson: string;
   email: string;
   permalink: string;
+  phone?: string;
+  company?: string;
+  logo?: string;
+  website?: string;
+  address?: string;
+  city?: string;
+  country?: string;
+  taxId?: string;
+  status?: "active" | "inactive" | "pending";
+  notes?: string;
 };
 
 // Types for Homepage Settings
@@ -621,11 +631,76 @@ export const attributes: Attribute[] = [
   },
 ];
 export const suppliers: Omit<Supplier, 'id'>[] = [
-  { name: 'KOSPET Direct', contactPerson: 'John Kospet', email: 'sales@kospet.com', permalink: 'kospet-direct' },
-  { name: 'Haylou Official', contactPerson: 'Jane Haylou', email: 'distro@haylou.com', permalink: 'haylou-official' },
-  { name: 'Soundpeats Global', contactPerson: 'Peter Sound', email: 'global@soundpeats.com', permalink: 'soundpeats-global' },
-  { name: 'QCY Direct', contactPerson: 'Mary QCY', email: 'contact@qcy.com', permalink: 'qcy-direct' },
-  { name: 'Tech Wholesalers Inc.', contactPerson: 'Sam Smith', email: 'sam@techwholesalers.com', permalink: 'tech-wholesalers-inc' },
+  {
+    name: 'KOSPET Direct',
+    contactPerson: 'John Kospet',
+    email: 'sales@kospet.com',
+    permalink: 'kospet-direct',
+    phone: '+880 1711-223344',
+    company: 'KOSPET Technology Inc.',
+    logo: 'https://placehold.co/120x40.png',
+    website: 'https://kospet.com',
+    address: 'High-Tech Industrial Park, Nanshan',
+    city: 'Shenzhen',
+    country: 'China',
+    status: 'active',
+  },
+  {
+    name: 'Haylou Official',
+    contactPerson: 'Jane Haylou',
+    email: 'distro@haylou.com',
+    permalink: 'haylou-official',
+    phone: '+880 1819-556677',
+    company: 'Dongguan Liesheng Electronic Co., Ltd.',
+    logo: 'https://placehold.co/120x40.png',
+    website: 'https://haylou.info',
+    address: 'Suite 401, Building 1, No. 86 Hongtu Rd',
+    city: 'Dongguan',
+    country: 'China',
+    status: 'active',
+  },
+  {
+    name: 'Soundpeats Global',
+    contactPerson: 'Peter Sound',
+    email: 'global@soundpeats.com',
+    permalink: 'soundpeats-global',
+    phone: '+880 1912-334455',
+    company: 'Shenzhen Ginto E-Commerce Co., Ltd.',
+    logo: 'https://placehold.co/120x40.png',
+    website: 'https://soundpeats.com',
+    address: 'Building B, Galaxy World, Longgang',
+    city: 'Shenzhen',
+    country: 'China',
+    status: 'active',
+  },
+  {
+    name: 'QCY Direct',
+    contactPerson: 'Mary QCY',
+    email: 'contact@qcy.com',
+    permalink: 'qcy-direct',
+    phone: '+880 1610-998877',
+    company: 'Dongguan Hele Electronics Co., Ltd.',
+    logo: 'https://placehold.co/120x40.png',
+    website: 'https://qcy.com',
+    address: 'Yuehai Intelligent Park, Daojiao',
+    city: 'Dongguan',
+    country: 'China',
+    status: 'active',
+  },
+  {
+    name: 'Tech Wholesalers Inc.',
+    contactPerson: 'Sam Smith',
+    email: 'sam@techwholesalers.com',
+    permalink: 'tech-wholesalers-inc',
+    phone: '+880 1722-445566',
+    company: 'Tech Wholesalers Bangladesh Ltd.',
+    logo: 'https://placehold.co/120x40.png',
+    website: 'https://techwholesalers.example.com',
+    address: 'Level 5, Motijheel C/A',
+    city: 'Dhaka',
+    country: 'Bangladesh',
+    status: 'active',
+  },
 ];
 
 export const predefinedProductGrids: Section[] = [
