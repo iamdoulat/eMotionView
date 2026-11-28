@@ -198,9 +198,9 @@ export default async function HomePage() {
 
                 return (
                     <section key={section.id} className="container mx-auto px-4 py-2 md:py-4">
-                        <div className="flex justify-between items-center mb-3 md:mb-6 border-b pb-2 md:pb-4">
-                            <h2 className="font-headline text-base md:text-2xl font-bold tracking-tight text-foreground">{section.name}</h2>
-                            <Button asChild variant="outline" size="sm" className="h-7 px-3 text-xs rounded-full border-primary text-primary hover:bg-primary hover:text-primary-foreground transition-colors">
+                        <div className="rounded-xl border border-border/80 bg-card px-4 py-3 sm:px-6 sm:py-3.5 shadow-2xs flex items-center justify-between gap-4 mb-4 sm:mb-6">
+                            <h2 className="font-headline text-base sm:text-lg md:text-xl font-bold tracking-tight text-foreground">{section.name}</h2>
+                            <Button asChild variant="outline" size="sm" className="h-7 sm:h-8 px-3.5 text-xs font-semibold rounded-full border-primary text-primary hover:bg-primary hover:text-primary-foreground transition-colors shrink-0">
                                 <Link href={permalink}>See All</Link>
                             </Button>
                         </div>
