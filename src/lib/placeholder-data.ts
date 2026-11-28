@@ -214,6 +214,9 @@ export type User = {
   lastLogin: string;
   role: 'Admin' | 'Manager' | 'Staff' | 'Customer';
   points?: number;
+  department?: string;
+  permissions?: string[];
+  bio?: string;
 };
 
 export type Category = {
@@ -514,23 +517,57 @@ const allUsers: Omit<User, 'id'>[] = [
     uid: 'admin_user_seed_uid',
     name: 'Admin User',
     email: 'admin@example.com',
-    avatar: 'https://placehold.co/100x100.png',
+    mobileNumber: '+880 1711-000001',
+    avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=150&q=80',
     registeredDate: '2023-01-15T10:00:00Z',
     status: 'Active',
     lastLogin: '2024-05-20T10:00:00Z',
     role: 'Admin',
+    department: 'System Administration',
+    permissions: [
+      'manage_products', 'manage_categories', 'manage_brands', 'manage_suppliers',
+      'manage_orders', 'manage_customers', 'manage_reviews', 'manage_transactions',
+      'manage_coupons', 'manage_banners', 'manage_seo', 'manage_settings',
+      'manage_users', 'view_reports', 'export_data'
+    ],
+    bio: 'Primary store administrator responsible for system configuration, security, and global operations.',
     points: 1000
   },
   {
     uid: 'manager_user_seed_uid',
-    name: 'Manager User',
+    name: 'Sarah Rahman',
     email: 'manager@example.com',
-    avatar: 'https://placehold.co/100x100.png',
+    mobileNumber: '+880 1812-334455',
+    avatar: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&w=150&q=80',
     registeredDate: '2023-02-20T11:00:00Z',
     status: 'Active',
     lastLogin: '2024-05-19T11:00:00Z',
     role: 'Manager',
+    department: 'Inventory & Operations',
+    permissions: [
+      'manage_products', 'manage_categories', 'manage_brands', 'manage_suppliers',
+      'manage_orders', 'manage_customers', 'manage_reviews', 'manage_coupons',
+      'view_reports', 'export_data'
+    ],
+    bio: 'Operations manager overseeing warehouse inventory, product listings, and order fulfillment workflows.',
     points: 500
+  },
+  {
+    uid: 'staff_support_seed_uid',
+    name: 'Tanvir Hossain',
+    email: 'support@example.com',
+    mobileNumber: '+880 1913-778899',
+    avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=150&q=80',
+    registeredDate: '2023-06-12T09:30:00Z',
+    status: 'Active',
+    lastLogin: '2024-05-22T08:15:00Z',
+    role: 'Staff',
+    department: 'Customer Support & Dispatch',
+    permissions: [
+      'manage_orders', 'manage_customers', 'manage_reviews'
+    ],
+    bio: 'Senior customer support lead assisting shoppers with inquiries, ticket resolution, and dispatching.',
+    points: 150
   },
   {
     uid: 'customer_olivia_seed_uid',

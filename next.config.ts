@@ -18,6 +18,7 @@ if (typeof process !== 'undefined') {
 }
 
 const nextConfig: NextConfig = {
+  serverExternalPackages: ['mongodb'],
   webpack(config, { isServer }) {
     config.experiments = { ...config.experiments, asyncWebAssembly: true };
     
@@ -44,6 +45,14 @@ const nextConfig: NextConfig = {
         os: false,
         path: false,
         crypto: false,
+        socks: false,
+        'mongodb-client-encryption': false,
+        aws4: false,
+        kerberos: false,
+        '@mongodb-js/zstd': false,
+        snappy: false,
+        '@aws-sdk/credential-providers': false,
+        'gcp-metadata': false,
       };
     }
 

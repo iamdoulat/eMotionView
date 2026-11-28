@@ -2,7 +2,10 @@ const isServer = typeof window === 'undefined';
 
 let mongoServer: any = null;
 async function getMongo() {
-  if (!mongoServer) mongoServer = import('./mongodb');
+  if (typeof window !== 'undefined') return null;
+  if (!mongoServer) {
+    mongoServer = import(/* webpackIgnore: true */ './mongodb').catch(() => import('./mongodb'));
+  }
   return mongoServer;
 }
 
