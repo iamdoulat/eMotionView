@@ -1391,50 +1391,95 @@ export default function GeneralSettingsPage() {
                 </div>
               </CardHeader>
               <CardContent className="p-6 space-y-6">
-                {/* Provider Presets */}
-                <div className="space-y-2">
-                  <Label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground flex items-center gap-1.5">
-                    <Cpu className="h-3.5 w-3.5" /> Quick Provider Presets
-                  </Label>
-                  <div className="flex flex-wrap gap-2 pt-1">
+                {/* AI Provider Tabs (e.g. OpenAI, DeepSeek, Groq, OpenRouter, Ollama) */}
+                <div className="space-y-3">
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1.5">
+                    <Label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground flex items-center gap-1.5">
+                      <Cpu className="h-3.5 w-3.5" /> AI Provider Tabs
+                    </Label>
+                    <div className="flex items-center gap-2 text-xs">
+                      {aiTestResult?.success ? (
+                        <span className="flex items-center gap-1.5 text-emerald-600 dark:text-emerald-400 font-semibold">
+                          <span className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />
+                          {watch('aiProviderName') || 'OpenAI'} Tab: Connected (Green)
+                        </span>
+                      ) : (
+                        <span className="flex items-center gap-1.5 text-red-600 dark:text-red-400 font-semibold">
+                          <span className="h-2 w-2 rounded-full bg-red-500" />
+                          {watch('aiProviderName') || 'OpenAI'} Tab: Disconnected (Red)
+                        </span>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Provider Tabs Bar */}
+                  <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-2.5">
                     {aiPresets.map((preset) => {
-                      const isCurrent = watch('aiProviderName') === preset.name;
+                      const isSelected = (watch('aiProviderName') || 'OpenAI').toLowerCase() === preset.name.toLowerCase();
+                      const isConnected = isSelected && aiTestResult?.success === true;
+                      const isDisconnected = isSelected && (!aiTestResult || !aiTestResult.success);
+
                       return (
-                        <Button
+                        <button
                           key={preset.name}
                           type="button"
-                          variant={isCurrent ? "default" : "outline"}
-                          size="sm"
                           onClick={() => {
                             setValue('aiProviderName', preset.name, { shouldDirty: true });
                             setValue('aiBaseUrl', preset.baseUrl, { shouldDirty: true });
                             setValue('aiDefaultModel', preset.model, { shouldDirty: true });
                             toast({
-                              title: `${preset.name} Preset Applied`,
+                              title: `${preset.name} Tab Selected`,
                               description: `Base URL and default model updated for ${preset.name}.`,
                             });
+                            // Re-run connectivity test for newly selected provider tab
+                            setTimeout(() => handleTestAi(true), 50);
                           }}
                           className={cn(
-                            "h-8 gap-1.5 text-xs transition-all",
-                            isCurrent
-                              ? "bg-blue-600 text-white hover:bg-blue-700 shadow-xs"
-                              : "hover:border-blue-500 hover:text-blue-600 dark:hover:text-blue-400"
+                            "p-3 rounded-xl border-2 text-left transition-all duration-200 cursor-pointer flex flex-col justify-between gap-2 shadow-2xs",
+                            isSelected
+                              ? isConnected
+                                ? "border-emerald-600 bg-emerald-600 text-white shadow-md ring-2 ring-emerald-300 dark:ring-emerald-700"
+                                : "border-red-600 bg-red-600 text-white shadow-md ring-2 ring-red-300 dark:ring-red-700"
+                              : "border-border bg-card hover:border-primary/50 hover:bg-muted/30 text-foreground"
                           )}
                         >
-                          <Zap className="h-3 w-3" />
-                          <span className="font-semibold">{preset.name}</span>
-                          <span className={cn(
-                            "text-[10px] px-1.5 py-0.2 rounded-full",
-                            isCurrent ? "bg-white/20 text-white" : "bg-muted text-muted-foreground"
+                          <div className="flex items-center justify-between w-full">
+                            <span className="font-bold text-sm tracking-tight flex items-center gap-1.5">
+                              <Zap className="h-3.5 w-3.5 shrink-0" />
+                              {preset.name}
+                            </span>
+                            {isSelected ? (
+                              isConnected ? (
+                                <CheckCircle2 className="h-4 w-4 text-white shrink-0" />
+                              ) : (
+                                <AlertCircle className="h-4 w-4 text-white shrink-0" />
+                              )
+                            ) : (
+                              <span className="text-[10px] px-1.5 py-0.5 rounded-md bg-muted text-muted-foreground font-medium">
+                                {preset.badge}
+                              </span>
+                            )}
+                          </div>
+                          <div className={cn("text-[11px] truncate font-mono", isSelected ? "text-white/90" : "text-muted-foreground")}>
+                            {preset.model}
+                          </div>
+                          <div className={cn(
+                            "flex items-center justify-between pt-1 border-t text-[10px]",
+                            isSelected ? "border-white/20 text-white/90" : "border-border text-muted-foreground"
                           )}>
-                            {preset.badge}
-                          </span>
-                        </Button>
+                            <span>{preset.badge}</span>
+                            {isSelected && (
+                              <span className="font-bold uppercase tracking-wider">
+                                {isConnected ? "Connected" : "Offline"}
+                              </span>
+                            )}
+                          </div>
+                        </button>
                       );
                     })}
                   </div>
                   <p className="text-xs text-muted-foreground mt-1">
-                    Clicking a preset fills in standard base URLs and models. You can also specify any custom or self-hosted endpoint.
+                    Select a Provider Tab (e.g. OpenAI). The active provider tab displays <strong>green</strong> when successfully connected and <strong>red</strong> if disconnected or failing.
                   </p>
                 </div>
 
