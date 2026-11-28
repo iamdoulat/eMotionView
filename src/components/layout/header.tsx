@@ -55,6 +55,28 @@ export function Header({ logoUrl, companyName = "eMotionView" }: HeaderProps) {
   const [isSearchFocused, setIsSearchFocused] = useState(false);
   const searchWrapperRef = useRef<HTMLElement>(null);
 
+  const [categories, setCategories] = useState<{ name: string; href: string }[]>(categoryLinks);
+
+  useEffect(() => {
+    fetch('/api/data/categories')
+      .then(res => res.ok ? res.json() : [])
+      .then((data: any[]) => {
+        if (Array.isArray(data) && data.length > 0) {
+          const dynamicLinks = data
+            .filter((c: any) => c.showInMenu !== false)
+            .sort((a: any, b: any) => (a.order ?? 0) - (b.order ?? 0))
+            .map((c: any) => ({
+              name: c.name,
+              href: `/category/${c.permalink}`,
+            }));
+          if (dynamicLinks.length > 0) {
+            setCategories(dynamicLinks);
+          }
+        }
+      })
+      .catch(() => {});
+  }, []);
+
   useEffect(() => {
     let ticking = false;
     const handleScroll = () => {
@@ -423,7 +445,7 @@ export function Header({ logoUrl, companyName = "eMotionView" }: HeaderProps) {
                       All Categories
                     </h3>
                     <div className="space-y-0.5">
-                      {categoryLinks.map(link => (
+                      {categories.map(link => (
                         <SheetClose asChild key={link.name}>
                           <Link
                             href={link.href}
@@ -489,8 +511,8 @@ export function Header({ logoUrl, companyName = "eMotionView" }: HeaderProps) {
                     All Categories
                   </Button>
                 </DropdownMenuTrigger>
-                <DropdownMenuContent className="w-64">
-                  {categoryLinks.map((link) => (
+                <DropdownMenuContent className="w-64 max-h-96 overflow-y-auto">
+                  {categories.map((link) => (
                     <DropdownMenuItem key={link.name} asChild>
                       <Link href={link.href}>{link.name}</Link>
                     </DropdownMenuItem>

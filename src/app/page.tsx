@@ -120,37 +120,57 @@ export default async function HomePage() {
       {sections.map((section: any) => {
         switch (section.type) {
             case 'featured-categories':
-                const categoryItems = section.content || [];
-                const legacyCategoryMap: Record<string, string> = {
-                    'smart watches': 'wearables',
-                    'headphones': 'audio',
-                    'android smart tvs': 'smart-home',
-                    'charger & cables': 'accessories',
-                    'powerbanks': 'accessories',
-                };
-                const mappedCategories = categoryItems
-                    .map((category: any) => {
-                        const key = (category.name || '').toLowerCase();
-                        const categoryData = allCategories.find(
-                            c => c.name.toLowerCase() === key || c.permalink === legacyCategoryMap[key]
-                        );
-                        if (!categoryData?.permalink) return null;
+                // Dynamically resolve categories directly from database (allCategories)
+                let resolvedCategories: any[] = [];
+
+                if (allCategories && allCategories.length > 0) {
+                    // Sort categories: featured categories first, then display order, then alphabetically
+                    const sortedCategories = [...allCategories]
+                        .filter(c => c.showInMenu !== false || c.isFeatured)
+                        .sort((a, b) => {
+                            if (a.isFeatured && !b.isFeatured) return -1;
+                            if (!a.isFeatured && b.isFeatured) return 1;
+                            const orderA = a.order ?? 0;
+                            const orderB = b.order ?? 0;
+                            if (orderA !== orderB) return orderA - orderB;
+                            return (a.name || '').localeCompare(b.name || '');
+                        });
+
+                    resolvedCategories = sortedCategories.map(c => {
+                        const img = (c.image && c.image.trim()) || (c.banner && c.banner.trim()) || 'https://placehold.co/128x128.png';
                         return {
-                            id: category.id,
-                            name: category.name,
-                            image: category.image || 'https://placehold.co/128x128.png',
-                            permalink: categoryData.permalink,
+                            id: c.id,
+                            name: c.name,
+                            image: img,
+                            permalink: c.permalink,
                         };
-                    })
-                    .filter(Boolean);
-                const resolvedCategories = mappedCategories.length > 0
-                    ? mappedCategories
-                    : allCategories.map(c => ({
-                        id: c.id,
-                        name: c.name,
-                        image: 'https://placehold.co/128x128.png',
-                        permalink: c.permalink,
-                    }));
+                    });
+                } else {
+                    // Fallback to static section content if database is empty
+                    const categoryItems = section.content || [];
+                    const legacyCategoryMap: Record<string, string> = {
+                        'smart watches': 'wearables',
+                        'headphones': 'audio',
+                        'android smart tvs': 'smart-home',
+                        'charger & cables': 'accessories',
+                        'powerbanks': 'accessories',
+                    };
+                    resolvedCategories = categoryItems
+                        .map((category: any) => {
+                            const key = (category.name || '').toLowerCase();
+                            const categoryData = allCategories.find(
+                                c => c.name.toLowerCase() === key || c.permalink === legacyCategoryMap[key]
+                            );
+                            return {
+                                id: category.id,
+                                name: category.name,
+                                image: category.image || 'https://placehold.co/128x128.png',
+                                permalink: categoryData?.permalink || key.replace(/\s+/g, '-'),
+                            };
+                        })
+                        .filter(Boolean);
+                }
+
                 if (resolvedCategories.length === 0) return null;
                 return (
                     <section key={section.id} className="container mx-auto px-4 py-8">
@@ -164,7 +184,7 @@ export default async function HomePage() {
                                 <CarouselItem key={category.id} className="basis-1/3 sm:basis-1/4 md:basis-1/6 lg:basis-auto pl-2 md:pl-4">
                                 <Link href={`/category/${category.permalink}`} className="group text-center block w-full md:w-[130px]">
                                     <div className="w-20 h-20 sm:w-24 sm:h-24 md:w-32 md:h-32 mx-auto rounded-full bg-secondary/50 flex items-center justify-center overflow-hidden border-2 border-transparent group-hover:border-primary transition-all duration-300 group-hover:shadow-lg">
-                                        <Image src={category.image} alt={category.name} width={128} height={128} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-300" data-ai-hint="category icon" />
+                                        <Image src={category.image} alt={category.name} width={128} height={128} unoptimized className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-300" data-ai-hint="category icon" />
                                     </div>
                                     <h3 className="mt-3 md:mt-4 font-semibold text-xs sm:text-sm text-foreground group-hover:text-primary transition-colors truncate">{category.name}</h3>
                                 </Link>

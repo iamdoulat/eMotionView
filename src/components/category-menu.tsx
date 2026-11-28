@@ -9,8 +9,16 @@ import type { Category } from "@/lib/placeholder-data";
 export async function CategoryMenu() {
     let categories: Category[] = [];
     try {
-        const categoriesSnapshot = await getDocs(query(collection('categories'), limit(11)));
-        categories = categoriesSnapshot.docs.map(docToJSON) as Category[];
+        const categoriesSnapshot = await getDocs(query(collection('categories'), limit(25)));
+        const allCats = categoriesSnapshot.docs.map(docToJSON) as Category[];
+        categories = allCats
+            .filter(cat => cat.showInMenu !== false)
+            .sort((a, b) => {
+                const orderA = a.order ?? 0;
+                const orderB = b.order ?? 0;
+                if (orderA !== orderB) return orderA - orderB;
+                return (a.name || '').localeCompare(b.name || '');
+            });
     } catch (error) {
         console.warn("Could not load categories for menu.", error);
     }
