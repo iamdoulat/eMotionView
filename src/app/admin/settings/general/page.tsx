@@ -47,7 +47,8 @@ import {
   Zap,
   CheckCircle2,
   Cpu,
-  RefreshCw
+  RefreshCw,
+  Pencil
 } from "lucide-react";
 import { doc, getDoc, setDoc } from '@/lib/db';
 import { uploadFile, getFileUrl } from '@/lib/r2';
@@ -237,6 +238,31 @@ export default function GeneralSettingsPage() {
     model?: string;
   }>>({});
   const [lastTestedAt, setLastTestedAt] = useState<Date | null>(null);
+  const [editingTabKey, setEditingTabKey] = useState<string | null>(null);
+  const [editingNameValue, setEditingNameValue] = useState<string>('');
+
+  const handleSaveTabName = (tabKey: string, newName: string) => {
+    const trimmed = newName.trim();
+    if (!trimmed) {
+      setEditingTabKey(null);
+      return;
+    }
+    setProvidersState((prev) => ({
+      ...prev,
+      [tabKey]: {
+        ...(prev[tabKey] || DEFAULT_AI_PROVIDERS[tabKey]),
+        name: trimmed,
+      },
+    }));
+    if (selectedProviderTab === tabKey) {
+      setValue('aiProviderName', trimmed, { shouldDirty: true });
+    }
+    setEditingTabKey(null);
+    toast({
+      title: 'Tab Renamed',
+      description: `Provider tab renamed to "${trimmed}".`,
+    });
+  };
 
   const form = useForm<GeneralSettingsFormData>({
     resolver: zodResolver(generalSettingsSchema),
@@ -434,11 +460,12 @@ export default function GeneralSettingsPage() {
           const openAiKey = rawProviders['OpenAI']?.apiKey || existingKey || '';
           const openAiBase = rawProviders['OpenAI']?.baseUrl || existingBase || 'https://manifest.uddoktasoft.com/v1';
           const openAiModel = rawProviders['OpenAI']?.defaultModel || existingModel || 'auto';
+          const openAiName = rawProviders['OpenAI']?.name || existingProv || 'OpenAI';
           const isOpenAiWorkable = Boolean(openAiKey);
 
           const loadedProviders: Record<string, AIProviderConfig> = {
             OpenAI: {
-              name: 'OpenAI',
+              name: openAiName,
               baseUrl: openAiBase,
               apiKey: openAiKey,
               defaultModel: openAiModel,
@@ -447,7 +474,7 @@ export default function GeneralSettingsPage() {
               latency: rawProviders['OpenAI']?.latency || 120,
             },
             DeepSeek: {
-              name: 'DeepSeek',
+              name: rawProviders['DeepSeek']?.name || 'DeepSeek',
               baseUrl: rawProviders['DeepSeek']?.baseUrl || 'https://api.deepseek.com/v1',
               apiKey: rawProviders['DeepSeek']?.apiKey || '',
               defaultModel: rawProviders['DeepSeek']?.defaultModel || 'deepseek-chat',
@@ -456,7 +483,7 @@ export default function GeneralSettingsPage() {
               latency: rawProviders['DeepSeek']?.latency,
             },
             Groq: {
-              name: 'Groq',
+              name: rawProviders['Groq']?.name || 'Groq',
               baseUrl: rawProviders['Groq']?.baseUrl || 'https://api.groq.com/openai/v1',
               apiKey: rawProviders['Groq']?.apiKey || '',
               defaultModel: rawProviders['Groq']?.defaultModel || 'llama-3.3-70b-versatile',
@@ -465,7 +492,7 @@ export default function GeneralSettingsPage() {
               latency: rawProviders['Groq']?.latency,
             },
             OpenRouter: {
-              name: 'OpenRouter',
+              name: rawProviders['OpenRouter']?.name || 'OpenRouter',
               baseUrl: rawProviders['OpenRouter']?.baseUrl || 'https://openrouter.ai/api/v1',
               apiKey: rawProviders['OpenRouter']?.apiKey || '',
               defaultModel: rawProviders['OpenRouter']?.defaultModel || 'google/gemini-2.0-flash-001',
@@ -474,7 +501,7 @@ export default function GeneralSettingsPage() {
               latency: rawProviders['OpenRouter']?.latency,
             },
             Ollama: {
-              name: 'Ollama',
+              name: rawProviders['Ollama']?.name || 'Ollama',
               baseUrl: rawProviders['Ollama']?.baseUrl || 'http://localhost:11434/v1',
               apiKey: rawProviders['Ollama']?.apiKey || '',
               defaultModel: rawProviders['Ollama']?.defaultModel || 'llama3.2',
@@ -490,7 +517,7 @@ export default function GeneralSettingsPage() {
             setAiTestResults({
               OpenAI: {
                 success: true,
-                message: 'Real-time database connection verified with OpenAI provider.',
+                message: `Real-time database connection verified with ${openAiName} provider.`,
                 latency: rawProviders['OpenAI']?.latency || 120,
                 model: loadedProviders['OpenAI'].defaultModel,
               },
@@ -503,7 +530,7 @@ export default function GeneralSettingsPage() {
             storeName: data.storeName || data.companyName || defaultSettings.storeName,
             companyName: data.companyName || defaultSettings.companyName,
             aiProviders: loadedProviders,
-            aiProviderName: 'OpenAI',
+            aiProviderName: openAiName,
             aiBaseUrl: loadedProviders['OpenAI'].baseUrl,
             aiApiKey: loadedProviders['OpenAI'].apiKey,
             aiDefaultModel: loadedProviders['OpenAI'].defaultModel,
@@ -514,7 +541,7 @@ export default function GeneralSettingsPage() {
           try {
             await setDoc(docRef, {
               aiProviders: loadedProviders,
-              aiProviderName: 'OpenAI',
+              aiProviderName: openAiName,
               aiBaseUrl: loadedProviders['OpenAI'].baseUrl,
               aiApiKey: loadedProviders['OpenAI'].apiKey,
               aiDefaultModel: loadedProviders['OpenAI'].defaultModel,
@@ -578,11 +605,24 @@ export default function GeneralSettingsPage() {
 
   const onSubmit: SubmitHandler<GeneralSettingsFormData> = async (data) => {
     try {
+      const currentName = data.aiProviderName || providersState[selectedProviderTab]?.name || selectedProviderTab;
+      const updatedProviders = {
+        ...providersState,
+        [selectedProviderTab]: {
+          ...(providersState[selectedProviderTab] || DEFAULT_AI_PROVIDERS[selectedProviderTab]),
+          name: currentName,
+          baseUrl: data.aiBaseUrl,
+          apiKey: data.aiApiKey,
+          defaultModel: data.aiDefaultModel,
+        }
+      };
+      setProvidersState(updatedProviders);
+
       // Sync active provider and all provider configurations
       const payload: GeneralSettingsFormData = {
         ...data,
-        aiProviders: providersState,
-        aiProviderName: selectedProviderTab,
+        aiProviders: updatedProviders,
+        aiProviderName: currentName,
         aiBaseUrl: providersState[selectedProviderTab]?.baseUrl || data.aiBaseUrl,
         aiApiKey: providersState[selectedProviderTab]?.apiKey || data.aiApiKey,
         aiDefaultModel: providersState[selectedProviderTab]?.defaultModel || data.aiDefaultModel,
@@ -1634,12 +1674,12 @@ export default function GeneralSettingsPage() {
                       {providersState[selectedProviderTab]?.isConnected ? (
                         <span className="flex items-center gap-1.5 text-emerald-600 dark:text-emerald-400 font-semibold">
                           <span className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />
-                          {selectedProviderTab} Tab: Connected (Green)
+                          {providersState[selectedProviderTab]?.name || selectedProviderTab} Tab: Connected (Green)
                         </span>
                       ) : (
                         <span className="flex items-center gap-1.5 text-red-600 dark:text-red-400 font-semibold">
                           <span className="h-2 w-2 rounded-full bg-red-500" />
-                          {selectedProviderTab} Tab: Not Connected (Red)
+                          {providersState[selectedProviderTab]?.name || selectedProviderTab} Tab: Not Connected (Red)
                         </span>
                       )}
                     </div>
@@ -1649,29 +1689,42 @@ export default function GeneralSettingsPage() {
                   <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-2.5">
                     {aiPresets.map((preset) => {
                       const pConfig = providersState[preset.name] || DEFAULT_AI_PROVIDERS[preset.name];
+                      const displayName = pConfig?.name || preset.name;
                       const isConnected = Boolean(pConfig?.isConnected && (pConfig?.apiKey || preset.name === 'Ollama' && pConfig?.isConnected));
                       const isSelected = (selectedProviderTab || 'OpenAI').toLowerCase() === preset.name.toLowerCase();
 
                       return (
-                        <button
+                        <div
                           key={preset.name}
-                          type="button"
+                          role="button"
+                          tabIndex={0}
                           onClick={() => {
                             setSelectedProviderTab(preset.name);
                             const targetConfig = providersState[preset.name] || DEFAULT_AI_PROVIDERS[preset.name];
-                            setValue('aiProviderName', preset.name, { shouldDirty: true });
+                            setValue('aiProviderName', targetConfig.name || preset.name, { shouldDirty: true });
                             setValue('aiBaseUrl', targetConfig.baseUrl, { shouldDirty: true });
                             setValue('aiApiKey', targetConfig.apiKey, { shouldDirty: true });
                             setValue('aiDefaultModel', targetConfig.defaultModel, { shouldDirty: true });
                             toast({
-                              title: `${preset.name} Tab Selected`,
+                              title: `${displayName} Tab Selected`,
                               description: isConnected
                                 ? `Provider is configured and connected.`
                                 : `Provider is not connected. Enter an API key and click "Test AI Connection".`,
                             });
                           }}
+                          onKeyDown={(e) => {
+                            if (e.key === 'Enter' || e.key === ' ') {
+                              e.preventDefault();
+                              setSelectedProviderTab(preset.name);
+                              const targetConfig = providersState[preset.name] || DEFAULT_AI_PROVIDERS[preset.name];
+                              setValue('aiProviderName', targetConfig.name || preset.name, { shouldDirty: true });
+                              setValue('aiBaseUrl', targetConfig.baseUrl, { shouldDirty: true });
+                              setValue('aiApiKey', targetConfig.apiKey, { shouldDirty: true });
+                              setValue('aiDefaultModel', targetConfig.defaultModel, { shouldDirty: true });
+                            }
+                          }}
                           className={cn(
-                            "p-3 rounded-xl border-2 text-left transition-all duration-200 cursor-pointer flex flex-col justify-between gap-2 shadow-2xs relative",
+                            "p-3 rounded-xl border-2 text-left transition-all duration-200 cursor-pointer flex flex-col justify-between gap-2 shadow-2xs relative group select-none",
                             isConnected
                               ? isSelected
                                 ? "border-emerald-600 bg-emerald-600 text-white shadow-md ring-2 ring-emerald-300 dark:ring-emerald-700"
@@ -1681,15 +1734,60 @@ export default function GeneralSettingsPage() {
                                 : "border-red-300/70 bg-red-50/50 text-red-800 dark:bg-red-950/20 dark:text-red-400 hover:bg-red-100/50"
                           )}
                         >
-                          <div className="flex items-center justify-between w-full">
-                            <span className="font-bold text-sm tracking-tight flex items-center gap-1.5">
-                              <Zap className="h-3.5 w-3.5 shrink-0" />
-                              {preset.name}
-                            </span>
-                            {isConnected ? (
-                              <CheckCircle2 className={cn("h-4 w-4 shrink-0", isSelected ? "text-white" : "text-emerald-600 dark:text-emerald-400")} />
+                          <div className="flex items-center justify-between w-full gap-1">
+                            {editingTabKey === preset.name ? (
+                              <div className="flex items-center gap-1 w-full" onClick={(e) => e.stopPropagation()}>
+                                <input
+                                  type="text"
+                                  autoFocus
+                                  value={editingNameValue}
+                                  onChange={(e) => setEditingNameValue(e.target.value)}
+                                  onKeyDown={(e) => {
+                                    if (e.key === 'Enter') {
+                                      e.preventDefault();
+                                      handleSaveTabName(preset.name, editingNameValue);
+                                    } else if (e.key === 'Escape') {
+                                      setEditingTabKey(null);
+                                    }
+                                  }}
+                                  onBlur={() => handleSaveTabName(preset.name, editingNameValue)}
+                                  className="text-xs font-bold px-1.5 py-0.5 rounded bg-white text-black border border-blue-500 w-full focus:outline-hidden"
+                                />
+                                <button
+                                  type="button"
+                                  onClick={() => handleSaveTabName(preset.name, editingNameValue)}
+                                  className="p-1 hover:bg-black/10 rounded shrink-0 cursor-pointer"
+                                  title="Save Name"
+                                >
+                                  <Check className="h-3 w-3" />
+                                </button>
+                              </div>
                             ) : (
-                              <AlertCircle className={cn("h-4 w-4 shrink-0", isSelected ? "text-white" : "text-red-500 dark:text-red-400")} />
+                              <>
+                                <span className="font-bold text-sm tracking-tight flex items-center gap-1.5 truncate">
+                                  <Zap className="h-3.5 w-3.5 shrink-0" />
+                                  <span className="truncate" title={displayName}>{displayName}</span>
+                                  <span
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      setEditingTabKey(preset.name);
+                                      setEditingNameValue(displayName);
+                                    }}
+                                    title="Click to rename this tab"
+                                    className={cn(
+                                      "p-0.5 rounded transition-opacity cursor-pointer shrink-0 inline-flex items-center hover:bg-black/15 dark:hover:bg-white/15",
+                                      isSelected ? "text-white opacity-80 hover:opacity-100" : "text-muted-foreground opacity-40 hover:opacity-100"
+                                    )}
+                                  >
+                                    <Pencil className="h-3 w-3" />
+                                  </span>
+                                </span>
+                                {isConnected ? (
+                                  <CheckCircle2 className={cn("h-4 w-4 shrink-0", isSelected ? "text-white" : "text-emerald-600 dark:text-emerald-400")} />
+                                ) : (
+                                  <AlertCircle className={cn("h-4 w-4 shrink-0", isSelected ? "text-white" : "text-red-500 dark:text-red-400")} />
+                                )}
+                              </>
                             )}
                           </div>
                           <div className={cn("text-[11px] truncate font-mono", isSelected ? "text-white/90" : "opacity-80")}>
@@ -1704,12 +1802,13 @@ export default function GeneralSettingsPage() {
                               {isConnected ? "Connected" : "Not Connected"}
                             </span>
                           </div>
-                        </button>
+                        </div>
                       );
                     })}
                   </div>
-                  <p className="text-xs text-muted-foreground mt-1">
-                    Real-time status: Only <strong>OpenAI</strong> is connected in database. Other providers without credentials show <strong>Not Connected (Red)</strong>.
+                  <p className="text-xs text-muted-foreground mt-1 flex items-center gap-1.5">
+                    <Pencil className="h-3 w-3 text-muted-foreground shrink-0" />
+                    <span>Click the pencil icon on any tab or edit the <strong>Provider Name</strong> field below to rename it. Changes update in real time.</span>
                   </p>
                 </div>
 
@@ -1729,22 +1828,24 @@ export default function GeneralSettingsPage() {
                         </FormLabel>
                         <FormControl>
                           <Input
-                            placeholder="e.g. OpenAI, DeepSeek, Groq, Ollama"
+                            placeholder="e.g. OpenAI, Manifest, DeepSeek, Groq, Ollama"
                             {...field}
+                            value={field.value ?? providersState[selectedProviderTab]?.name ?? ''}
                             onChange={(e) => {
+                              const newName = e.target.value;
                               field.onChange(e);
                               setProvidersState((prev) => ({
                                 ...prev,
                                 [selectedProviderTab]: {
                                   ...(prev[selectedProviderTab] || DEFAULT_AI_PROVIDERS[selectedProviderTab]),
-                                  name: e.target.value,
+                                  name: newName,
                                 },
                               }));
                             }}
                           />
                         </FormControl>
                         <FormDescription>
-                          A friendly label for this AI provider.
+                          A custom name for this AI provider tab. Updating this renames the active tab above in real time.
                         </FormDescription>
                         <FormMessage />
                       </FormItem>
@@ -1873,6 +1974,7 @@ export default function GeneralSettingsPage() {
                 {/* Connection Test Section */}
                 {(() => {
                   const currentConfig = providersState[selectedProviderTab] || DEFAULT_AI_PROVIDERS[selectedProviderTab];
+                  const displayName = currentConfig?.name || selectedProviderTab;
                   const isSelectedConnected = Boolean(
                     currentConfig?.isConnected && (currentConfig?.apiKey || (selectedProviderTab === 'Ollama' && currentConfig?.isConnected))
                   );
@@ -1884,7 +1986,7 @@ export default function GeneralSettingsPage() {
                         <div>
                           <h4 className="text-sm font-semibold flex items-center gap-2">
                             <ShieldCheck className="h-4 w-4 text-primary" />
-                            Test Provider Connection ({selectedProviderTab})
+                            Test Provider Connection ({displayName})
                           </h4>
                           <p className="text-xs text-muted-foreground">
                             Connectivity is automatically tested every 10 minutes in the background for active providers.
@@ -1907,7 +2009,7 @@ export default function GeneralSettingsPage() {
                             {isTestingAi ? (
                               <>
                                 <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                                <span>Testing {selectedProviderTab}...</span>
+                                <span>Testing {displayName}...</span>
                               </>
                             ) : isSelectedConnected ? (
                               <>
@@ -1941,7 +2043,7 @@ export default function GeneralSettingsPage() {
                           <CheckCircle2 className="h-4 w-4 text-emerald-600 dark:text-emerald-400 shrink-0 mt-0.5" />
                           <div className="space-y-0.5 flex-1">
                             <div className="font-semibold flex items-center gap-2">
-                              <span>Connection Verified ({selectedProviderTab})</span>
+                              <span>Connection Verified ({displayName})</span>
                               {currentConfig?.latency !== undefined && (
                                 <Badge variant="outline" className="text-[10px] py-0 px-1.5 h-4 bg-background border-emerald-300 text-emerald-800 dark:border-emerald-700 dark:text-emerald-300">
                                   {currentConfig.latency}ms
@@ -1949,7 +2051,7 @@ export default function GeneralSettingsPage() {
                               )}
                             </div>
                             <p className="opacity-90">
-                              {currentResult?.message || `Real-time database connection verified for ${selectedProviderTab}. Status is active and connected.`}
+                              {currentResult?.message || `Real-time database connection verified for ${displayName}. Status is active and connected.`}
                             </p>
                           </div>
                         </div>
@@ -1958,10 +2060,10 @@ export default function GeneralSettingsPage() {
                           <AlertCircle className="h-4 w-4 text-destructive shrink-0 mt-0.5" />
                           <div className="space-y-0.5 flex-1">
                             <div className="font-semibold flex items-center gap-2">
-                              <span>Not Connected ({selectedProviderTab})</span>
+                              <span>Not Connected ({displayName})</span>
                             </div>
                             <p className="opacity-90">
-                              {currentResult?.message || `${selectedProviderTab} is not configured or connected in database. Enter your ${selectedProviderTab} API key and click "Test AI Connection".`}
+                              {currentResult?.message || `${displayName} is not configured or connected in database. Enter your ${displayName} API key and click "Test AI Connection".`}
                             </p>
                           </div>
                         </div>
