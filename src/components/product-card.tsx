@@ -137,6 +137,7 @@ export function ProductCard({ product }: ProductCardProps) {
                 alt={product.name}
                 width={300}
                 height={300}
+                unoptimized
                 className="w-full h-full object-contain p-3 group-hover:scale-105 transition-transform duration-300"
                 data-ai-hint={`${(product.categories || []).join(' ')} product`}
               />
@@ -191,6 +192,7 @@ export function ProductCard({ product }: ProductCardProps) {
                 src={selectedImage}
                 alt={product.name}
                 fill
+                unoptimized
                 className="w-full h-full object-contain rounded-lg"
                 data-ai-hint={`${(product.categories || []).join(' ')} product`}
               />
@@ -207,6 +209,7 @@ export function ProductCard({ product }: ProductCardProps) {
                     alt={`${product.name} thumbnail ${index + 1}`}
                     width={60}
                     height={60}
+                    unoptimized
                     className="w-full h-full object-contain"
                     data-ai-hint={`${(product.categories || []).join(' ')} product`}
                   />

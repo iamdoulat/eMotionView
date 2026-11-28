@@ -104,9 +104,13 @@ export default function AdminProductsPage() {
         toast({ title: "Success", description: "New product created successfully." });
       }
       handleCloseForm();
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error saving product:", error);
-      toast({ variant: 'destructive', title: "Error", description: "Could not save the product." });
+      toast({
+        variant: 'destructive',
+        title: "Error Saving Product",
+        description: error?.message || "Could not save the product to catalog.",
+      });
     } finally {
       setIsSaving(false);
     }
@@ -178,6 +182,7 @@ export default function AdminProductsPage() {
                         height="64"
                         src={product.images[0] || "https://placehold.co/64x64.png"}
                         width="64"
+                        unoptimized
                         data-ai-hint="product"
                       />
                     </TableCell>
@@ -239,7 +244,7 @@ export default function AdminProductsPage() {
       </Card>
 
       <Dialog open={isFormOpen} onOpenChange={setIsFormOpen}>
-        <DialogContent className="sm:max-w-4xl lg:max-w-5xl xl:max-w-6xl w-[95vw] h-[88vh] max-h-[92vh] p-0 flex flex-col overflow-hidden rounded-2xl border border-border/80 shadow-2xl bg-card gap-0">
+        <DialogContent className="sm:max-w-4xl lg:max-w-5xl xl:max-w-6xl w-[95vw] h-[80vh] max-h-[82vh] max-h-[calc(100vh-6rem)] top-[48%] translate-y-[-48%] p-0 flex flex-col overflow-hidden rounded-2xl border border-border/80 shadow-2xl bg-card gap-0">
           <DialogHeader className="px-6 py-4 border-b bg-card shrink-0">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
               <div className="flex items-center gap-3">

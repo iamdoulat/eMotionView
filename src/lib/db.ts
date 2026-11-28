@@ -11,6 +11,24 @@ async function getMongo() {
 
 const API = '/api/data';
 
+async function getAuthHeaders(): Promise<Record<string, string>> {
+  const headers: Record<string, string> = {
+    'Content-Type': 'application/json',
+  };
+  if (typeof window !== 'undefined') {
+    try {
+      const { auth } = await import('@/lib/firebase');
+      if (auth?.currentUser) {
+        const token = await auth.currentUser.getIdToken();
+        if (token) {
+          headers['Authorization'] = `Bearer ${token}`;
+        }
+      }
+    } catch {}
+  }
+  return headers;
+}
+
 async function apiGet(collection: string, id?: string, queryParams?: Record<string, string>): Promise<any> {
   let url = id
     ? `${API}/${encodeURIComponent(collection)}/${encodeURIComponent(id)}`
@@ -19,29 +37,71 @@ async function apiGet(collection: string, id?: string, queryParams?: Record<stri
     const qs = new URLSearchParams(queryParams).toString();
     url += `?${qs}`;
   }
-  const res = await fetch(url);
+  const headers = await getAuthHeaders();
+  const res = await fetch(url, { headers });
   if (!res.ok) throw new Error(`API GET ${collection} failed: ${res.status}`);
   return res.json();
 }
 
 async function apiPost(collection: string, data: any): Promise<any> {
+  const headers = await getAuthHeaders();
   const res = await fetch(`${API}/${encodeURIComponent(collection)}`, {
-    method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(data),
+    method: 'POST',
+    headers,
+    body: JSON.stringify(data),
   });
-  if (!res.ok) throw new Error(`API POST ${collection} failed: ${res.status}`);
+  if (!res.ok) {
+    let errDetail = `${res.status}`;
+    try {
+      const errJson = await res.json();
+      if (errJson?.error) errDetail = errJson.error;
+    } catch {
+      try {
+        const text = await res.text();
+        if (text) errDetail = text;
+      } catch {}
+    }
+    throw new Error(`Failed to save ${collection}: ${errDetail}`);
+  }
   return res.json();
 }
 
 async function apiPut(collection: string, id: string, data: any): Promise<void> {
+  const headers = await getAuthHeaders();
   const res = await fetch(`${API}/${encodeURIComponent(collection)}/${encodeURIComponent(id)}`, {
-    method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(data),
+    method: 'PUT',
+    headers,
+    body: JSON.stringify(data),
   });
-  if (!res.ok) throw new Error(`API PUT ${collection} failed: ${res.status}`);
+  if (!res.ok) {
+    let errDetail = `${res.status}`;
+    try {
+      const errJson = await res.json();
+      if (errJson?.error) errDetail = errJson.error;
+    } catch {
+      try {
+        const text = await res.text();
+        if (text) errDetail = text;
+      } catch {}
+    }
+    throw new Error(`Failed to update ${collection}: ${errDetail}`);
+  }
 }
 
 async function apiDelete(collection: string, id: string): Promise<void> {
-  const res = await fetch(`${API}/${encodeURIComponent(collection)}/${encodeURIComponent(id)}`, { method: 'DELETE' });
-  if (!res.ok) throw new Error(`API DELETE ${collection} failed: ${res.status}`);
+  const headers = await getAuthHeaders();
+  const res = await fetch(`${API}/${encodeURIComponent(collection)}/${encodeURIComponent(id)}`, {
+    method: 'DELETE',
+    headers,
+  });
+  if (!res.ok) {
+    let errDetail = `${res.status}`;
+    try {
+      const errJson = await res.json();
+      if (errJson?.error) errDetail = errJson.error;
+    } catch {}
+    throw new Error(`Failed to delete ${collection}: ${errDetail}`);
+  }
 }
 
 export type CollectionRef = { _name: string };

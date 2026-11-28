@@ -79,13 +79,13 @@ const productSchema = z.object({
   supplier: z.string().min(1, "Supplier is required"),
   warranty: z.string().optional(),
   points: z.coerce.number().optional(),
-  features: z.array(z.object({ value: z.string().min(1, "Feature cannot be empty.") })),
+  features: z.array(z.object({ value: z.string() })).default([]),
   specifications: z.array(
     z.object({
-      key: z.string().min(1, "Key cannot be empty"),
-      value: z.string().min(1, "Value cannot be empty"),
+      key: z.string(),
+      value: z.string(),
     })
-  ),
+  ).default([]),
   images: z.array(z.string()).default([]),
   productAttributes: z
     .array(
@@ -499,6 +499,9 @@ export function ProductForm({ product, onSave, onCancel, isSaving }: ProductForm
     await Promise.all(
       imagesToRemove.map(async (url) => {
         try {
+          if (!url.includes("/api/r2/proxy") && !url.includes(".r2.cloudflarestorage.com")) {
+            return;
+          }
           let key = url;
           if (url.includes("/api/r2/proxy")) {
             const urlObj = new URL(url, window.location.origin);
@@ -522,8 +525,8 @@ export function ProductForm({ product, onSave, onCancel, isSaving }: ProductForm
 
     // 4. Transform specifications to Record<string, string>
     const specObject: Record<string, string> = {};
-    data.specifications.forEach((spec) => {
-      if (spec.key.trim() && spec.value.trim()) {
+    (data.specifications || []).forEach((spec) => {
+      if (spec.key?.trim() && spec.value?.trim()) {
         specObject[spec.key.trim()] = spec.value.trim();
       }
     });
@@ -549,7 +552,7 @@ export function ProductForm({ product, onSave, onCancel, isSaving }: ProductForm
       downloadUrl: data.productType === "Digital" ? data.downloadUrl?.trim() : undefined,
       digitalProductNote: data.productType === "Digital" ? data.digitalProductNote?.trim() : undefined,
       productAttributes: data.productAttributes && data.productAttributes.length > 0 ? data.productAttributes : [],
-      features: data.features.map((f) => f.value.trim()).filter(Boolean),
+      features: (data.features || []).map((f) => f.value?.trim()).filter(Boolean),
       specifications: specObject,
       images: finalImageUrls.length > 0 ? finalImageUrls : ["https://placehold.co/600x600.png"],
       rating: product?.rating || 0,
@@ -567,9 +570,38 @@ export function ProductForm({ product, onSave, onCancel, isSaving }: ProductForm
     await onSave(productPayload as Product);
   };
 
+  const onInvalid = (formErrors: any) => {
+    console.warn("Product form validation errors:", formErrors);
+    const errorKeys = Object.keys(formErrors);
+    if (errorKeys.length === 0) return;
+
+    const firstKey = errorKeys[0];
+    const firstError = formErrors[firstKey];
+    const errorMessage = firstError?.message || `${firstKey} is invalid or required.`;
+
+    toast({
+      variant: "destructive",
+      title: "Required Fields Missing",
+      description: errorMessage,
+    });
+
+    // Switch to the relevant tab automatically
+    if (["name", "description", "brand", "supplier", "categories", "sku", "permalink"].includes(firstKey)) {
+      setActiveTab("basic");
+    } else if (["price", "originalPrice", "stock", "manageStock"].includes(firstKey)) {
+      setActiveTab("pricing");
+    } else if (["images"].includes(firstKey)) {
+      setActiveTab("media");
+    } else if (["features", "specifications", "warranty", "points"].includes(firstKey)) {
+      setActiveTab("specs");
+    } else if (["productAttributes", "downloadUrl", "digitalProductNote", "productType"].includes(firstKey)) {
+      setActiveTab("variants");
+    }
+  };
+
   return (
     <Form {...form}>
-      <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col flex-1 min-h-0 overflow-hidden">
+      <form onSubmit={handleSubmit(onSubmit, onInvalid)} className="flex flex-col flex-1 min-h-0 overflow-hidden">
         {/* Navigation Tabs Bar & Quick AI Import Action */}
         <div className="px-6 pt-3 pb-2 border-b bg-muted/30 shrink-0 flex flex-col md:flex-row items-stretch md:items-center justify-between gap-2.5">
           <Tabs value={activeTab} onValueChange={setActiveTab} className="flex-1 min-w-0">
@@ -1545,25 +1577,25 @@ export function ProductForm({ product, onSave, onCancel, isSaving }: ProductForm
         </div>
 
         {/* Sticky Action Footer */}
-        <div className="px-6 py-4 border-t bg-muted/40 flex items-center justify-between gap-4 shrink-0">
+        <div className="px-6 py-3.5 border-t bg-card/95 backdrop-blur-md flex items-center justify-between gap-4 shrink-0 shadow-[0_-4px_12px_rgba(0,0,0,0.06)] z-20">
           <div className="flex items-center gap-2 text-xs text-muted-foreground">
             {product?.id ? (
               <span className="flex items-center gap-1 font-mono">
                 <Tag className="h-3.5 w-3.5" /> ID: {product.id}
               </span>
             ) : (
-              <span>Ready to publish new product to catalog</span>
+              <span className="font-medium text-foreground/80">Ready to publish new product to catalog</span>
             )}
           </div>
 
           <div className="flex items-center gap-3">
-            <Button type="button" variant="outline" onClick={onCancel} disabled={isSaving} className="h-10 px-4">
+            <Button type="button" variant="outline" onClick={onCancel} disabled={isSaving} className="h-10 px-4 cursor-pointer">
               Cancel
             </Button>
             <Button
               type="submit"
               disabled={isSaving}
-              className="h-10 px-6 font-semibold shadow-xs bg-primary text-primary-foreground hover:bg-primary/90"
+              className="h-10 px-6 font-semibold shadow-xs bg-primary text-primary-foreground hover:bg-primary/90 cursor-pointer"
             >
               {isSaving ? (
                 <>

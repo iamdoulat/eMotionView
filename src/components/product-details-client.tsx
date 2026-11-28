@@ -78,6 +78,7 @@ export function ProductDetailsClient({ product, brand }: { product: Product, bra
             src={selectedImage}
             alt={product.name}
             fill
+            unoptimized
             className="w-full h-full object-contain transition-transform duration-300 group-hover:scale-125"
             data-ai-hint={`${(product.categories || []).join(' ')} product`}
           />
@@ -94,6 +95,7 @@ export function ProductDetailsClient({ product, brand }: { product: Product, bra
                 alt={`${product.name} thumbnail ${index + 1}`}
                 width={60}
                 height={60}
+                unoptimized
                 className="w-full h-full object-contain"
                 data-ai-hint={`${(product.categories || []).join(' ')} product`}
               />
