@@ -48,9 +48,11 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 import { MoreHorizontal, PlusCircle, Edit, Trash2, Loader2 } from "lucide-react";
 import { ProductForm } from "@/components/admin/product-form";
 import { useToast } from "@/hooks/use-toast";
+import { cn } from "@/lib/utils";
 
 export default function DigitalProductsPage() {
   const [allProducts, setAllProducts] = useState<Product[]>([]);
@@ -211,19 +213,51 @@ export default function DigitalProductsPage() {
       </Card>
 
       <Dialog open={isFormOpen} onOpenChange={setIsFormOpen}>
-        <DialogContent className="sm:max-w-3xl">
-          <DialogHeader>
-            <DialogTitle>{productToEdit ? "Edit Product" : "Add New Product"}</DialogTitle>
-            <DialogDescription>
-              {productToEdit ? "Update the details for this product." : "Fill in the details for the new product."}
-            </DialogDescription>
+        <DialogContent className="sm:max-w-4xl lg:max-w-5xl xl:max-w-6xl w-[95vw] max-h-[92vh] p-0 flex flex-col overflow-hidden rounded-2xl border border-border/80 shadow-2xl bg-card">
+          <DialogHeader className="px-6 py-4 border-b bg-card shrink-0">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+              <div className="flex items-center gap-3">
+                <div className={cn(
+                  "h-10 w-10 rounded-xl flex items-center justify-center shadow-xs shrink-0",
+                  productToEdit ? "bg-amber-500/10 text-amber-600 dark:text-amber-400" : "bg-primary/10 text-primary"
+                )}>
+                  {productToEdit ? <Edit className="h-5 w-5" /> : <PlusCircle className="h-5 w-5" />}
+                </div>
+                <div>
+                  <DialogTitle className="text-xl font-bold tracking-tight flex items-center gap-2">
+                    {productToEdit ? `Edit Digital Product: ${productToEdit.name}` : "Add New Digital Product"}
+                  </DialogTitle>
+                  <DialogDescription className="text-xs text-muted-foreground mt-0.5">
+                    {productToEdit
+                      ? "Update digital product details, download links, pricing, and license instructions."
+                      : "Fill in the digital product information, attach download URL, set pricing, and publish."}
+                  </DialogDescription>
+                </div>
+              </div>
+
+              {productToEdit && (
+                <div className="flex items-center gap-2 flex-wrap">
+                  {productToEdit.sku && (
+                    <Badge variant="outline" className="font-mono text-[11px] font-semibold">
+                      SKU: {productToEdit.sku}
+                    </Badge>
+                  )}
+                  <Badge variant="secondary" className="text-[11px]">
+                    Digital Asset
+                  </Badge>
+                </div>
+              )}
+            </div>
           </DialogHeader>
-          <ProductForm
-            product={productToEdit}
-            onSave={handleSaveProduct}
-            onCancel={handleCloseForm}
-            isSaving={isSaving}
-          />
+
+          <div className="flex-1 min-h-0 overflow-hidden flex flex-col">
+            <ProductForm
+              product={productToEdit}
+              onSave={handleSaveProduct}
+              onCancel={handleCloseForm}
+              isSaving={isSaving}
+            />
+          </div>
         </DialogContent>
       </Dialog>
 

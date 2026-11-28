@@ -1,712 +1,1435 @@
-
-
 "use client";
 
-import { useForm, useFieldArray, type SubmitHandler } from "react-hook-form";
+import { useEffect, useState, useMemo } from "react";
+import Image from "next/image";
+import { useForm, useFieldArray, type SubmitHandler, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import type { Product, Category, Brand, Supplier } from "@/lib/placeholder-data";
+import { cn } from "@/lib/utils";
+import { uploadFile, getFileUrl, deleteFile } from "@/lib/r2";
+
+// UI Components
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Loader2, Trash2, XCircle, Check, ChevronsUpDown } from "lucide-react";
+import { Switch } from "@/components/ui/switch";
+import { Textarea } from "@/components/ui/textarea";
+import { Badge } from "@/components/ui/badge";
+import { Card, CardContent } from "@/components/ui/card";
+import { Separator } from "@/components/ui/separator";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { DialogFooter } from "@/components/ui/dialog";
-import Image from "next/image";
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
-import { Card } from "@/components/ui/card";
-import { useEffect, useState } from "react";
-import { Switch } from "../ui/switch";
-import { uploadFile, getFileUrl, deleteFile } from "@/lib/r2";
-import { Textarea } from "../ui/textarea";
-import { Popover, PopoverContent, PopoverTrigger } from "../ui/popover";
-import { cn } from "@/lib/utils";
-import { Command, CommandEmpty, CommandGroup, CommandInput, CommandList } from "../ui/command";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
+
+// Icons
+import {
+  Loader2,
+  Trash2,
+  X,
+  XCircle,
+  Check,
+  ChevronsUpDown,
+  Upload,
+  Plus,
+  Image as ImageIcon,
+  Package,
+  Layers,
+  Sparkles,
+  Link2,
+  ExternalLink,
+  Star,
+  ShieldCheck,
+  Coins,
+  Download,
+  AlertCircle,
+  FileText,
+  Boxes,
+  HelpCircle,
+  Tag,
+  DollarSign
+} from "lucide-react";
 
 const productSchema = z.object({
-    id: z.string().optional(),
-    name: z.string().min(1, "Product name is required"),
-    permalink: z.string().optional(),
-    description: z.string().min(1, "Description is required"),
-    price: z.coerce.number().min(0, "Price must be a positive number"),
-    originalPrice: z.coerce.number().optional(),
-    categories: z.array(z.string()).min(1, "At least one category is required."),
-    brand: z.string().min(1, "Brand is required"),
-    sku: z.string().min(1, "SKU is required"),
-    manageStock: z.boolean().default(true),
-    stock: z.coerce.number().min(0, "Stock must be a positive number"),
-    supplier: z.string().min(1, "Supplier is required"),
-    warranty: z.string().optional(),
-    points: z.coerce.number().optional(),
-    features: z.array(z.object({ value: z.string().min(1, "Feature cannot be empty.") })),
-    specifications: z.array(z.object({
-        key: z.string().min(1, "Specification key cannot be empty."),
-        value: z.string().min(1, "Specification value cannot be empty.")
-    })),
-    images: z.array(z.string()).default([]),
-    productAttributes: z.array(z.object({
-        name: z.string().min(1, "Please select an attribute."),
-        values: z.array(z.string()).min(1, "Please select at least one value."),
-    })).optional(),
-    productType: z.enum(['Physical', 'Digital']).default('Physical'),
-    downloadUrl: z.string().url({ message: "Please enter a valid URL." }).optional().or(z.literal('')),
-    digitalProductNote: z.string().optional(),
-    createdAt: z.string().optional(),
+  id: z.string().optional(),
+  name: z.string().min(1, "Product name is required"),
+  permalink: z.string().optional(),
+  description: z.string().min(1, "Description is required"),
+  price: z.coerce.number().min(0, "Price must be a positive number"),
+  originalPrice: z.coerce.number().optional(),
+  categories: z.array(z.string()).min(1, "At least one category is required"),
+  brand: z.string().min(1, "Brand is required"),
+  sku: z.string().min(1, "SKU is required"),
+  manageStock: z.boolean().default(true),
+  stock: z.coerce.number().min(0, "Stock must be a positive number"),
+  supplier: z.string().min(1, "Supplier is required"),
+  warranty: z.string().optional(),
+  points: z.coerce.number().optional(),
+  features: z.array(z.object({ value: z.string().min(1, "Feature cannot be empty.") })),
+  specifications: z.array(
+    z.object({
+      key: z.string().min(1, "Key cannot be empty"),
+      value: z.string().min(1, "Value cannot be empty"),
+    })
+  ),
+  images: z.array(z.string()).default([]),
+  productAttributes: z
+    .array(
+      z.object({
+        name: z.string().min(1, "Please select an attribute"),
+        values: z.array(z.string()).min(1, "Please select at least one value"),
+      })
+    )
+    .optional(),
+  productType: z.enum(["Physical", "Digital"]).default("Physical"),
+  downloadUrl: z.string().url({ message: "Please enter a valid URL." }).optional().or(z.literal("")),
+  digitalProductNote: z.string().optional(),
+  createdAt: z.string().optional(),
 });
 
 type ProductFormData = z.infer<typeof productSchema>;
 
 interface ProductFormProps {
-    product?: Product | null;
-    onSave: (data: Product) => Promise<void>;
-    onCancel: () => void;
-    isSaving?: boolean;
+  product?: Product | null;
+  onSave: (data: Product) => Promise<void>;
+  onCancel: () => void;
+  isSaving?: boolean;
 }
 
+const COMMON_WARRANTIES = [
+  "No Warranty",
+  "6 Months Brand Warranty",
+  "1 Year Brand Warranty",
+  "1 Year Official Replacement Warranty",
+  "2 Years Brand Warranty",
+  "Lifetime Limited Warranty",
+];
+
 export function ProductForm({ product, onSave, onCancel, isSaving }: ProductFormProps) {
-    const [dbCategories, setDbCategories] = useState<Category[]>([]);
-    const [dbBrands, setDbBrands] = useState<Brand[]>([]);
-    const [dbSuppliers, setDbSuppliers] = useState<Supplier[]>([]);
-    const [attributes, setAttributes] = useState<{ id: string; name: string; values: string[] }[]>([]);
-    
-    useEffect(() => {
-        const fetchData = async () => {
-            const [cats, brds, supps, attrs] = await Promise.all([
-                fetch('/api/data/categories').then(r => r.json()),
-                fetch('/api/data/brands').then(r => r.json()),
-                fetch('/api/data/suppliers').then(r => r.json()),
-                fetch('/api/data/attributes').then(r => r.json()),
-            ]);
-            setDbCategories(cats.map((c: any) => ({ id: c._id || c.id, name: c.name, description: c.description, permalink: c.permalink })));
-            setDbBrands(brds.map((b: any) => ({ id: b._id || b.id, name: b.name, logo: b.logo, permalink: b.permalink })));
-            setDbSuppliers(supps.map((s: any) => ({ id: s._id || s.id, name: s.name, contactPerson: s.contactPerson, email: s.email, permalink: s.permalink })));
-            setAttributes(attrs.map((a: any) => ({ id: a._id || a.id || a.name, name: a.name, values: a.values })));
-        };
-        fetchData();
-    }, []);
+  const [dbCategories, setDbCategories] = useState<Category[]>([]);
+  const [dbBrands, setDbBrands] = useState<Brand[]>([]);
+  const [dbSuppliers, setDbSuppliers] = useState<Supplier[]>([]);
+  const [attributes, setAttributes] = useState<{ id: string; name: string; values: string[] }[]>([]);
+  const [activeTab, setActiveTab] = useState<string>("basic");
 
-    const form = useForm<ProductFormData>({
-        resolver: zodResolver(productSchema),
-        defaultValues: product ? {
-            ...product,
-            categories: product.categories || [],
-            permalink: product.permalink || '',
-            productType: product.productType || 'Physical',
-            manageStock: product.manageStock ?? (product.productType === 'Physical'),
-            warranty: product.warranty || '',
-            points: product.points || undefined,
-            features: product.features.map(f => ({ value: f })),
-            specifications: Object.entries(product.specifications).map(([key, value]) => ({ key, value })),
-            productAttributes: product.productAttributes || [],
-            downloadUrl: product.downloadUrl || '',
-            digitalProductNote: product.digitalProductNote || '',
-        } : {
-            name: "",
-            permalink: "",
-            description: "",
-            price: 0,
-            originalPrice: undefined,
-            categories: [],
-            brand: "",
-            sku: "",
-            manageStock: true,
-            stock: 0,
-            supplier: "",
-            warranty: "",
-            points: undefined,
-            features: [{ value: "" }],
-            specifications: [{ key: "", value: "" }],
-            images: [],
-            productAttributes: [],
-            productType: 'Physical',
-            downloadUrl: '',
-            digitalProductNote: '',
+  // Fetch reference metadata
+  useEffect(() => {
+    let isMounted = true;
+    const fetchData = async () => {
+      try {
+        const [cats, brds, supps, attrs] = await Promise.all([
+          fetch("/api/data/categories").then((r) => r.json()).catch(() => []),
+          fetch("/api/data/brands").then((r) => r.json()).catch(() => []),
+          fetch("/api/data/suppliers").then((r) => r.json()).catch(() => []),
+          fetch("/api/data/attributes").then((r) => r.json()).catch(() => []),
+        ]);
+        if (!isMounted) return;
+        setDbCategories(
+          (Array.isArray(cats) ? cats : []).map((c: any) => ({
+            id: c._id || c.id,
+            name: c.name,
+            description: c.description,
+            permalink: c.permalink,
+          }))
+        );
+        setDbBrands(
+          (Array.isArray(brds) ? brds : []).map((b: any) => ({
+            id: b._id || b.id,
+            name: b.name,
+            logo: b.logo,
+            permalink: b.permalink,
+          }))
+        );
+        setDbSuppliers(
+          (Array.isArray(supps) ? supps : []).map((s: any) => ({
+            id: s._id || s.id,
+            name: s.name,
+            contactPerson: s.contactPerson,
+            email: s.email,
+            permalink: s.permalink,
+          }))
+        );
+        setAttributes(
+          (Array.isArray(attrs) ? attrs : []).map((a: any) => ({
+            id: a._id || a.id || a.name,
+            name: a.name,
+            values: a.values || [],
+          }))
+        );
+      } catch (err) {
+        console.error("Error loading product references:", err);
+      }
+    };
+    fetchData();
+    return () => {
+      isMounted = false;
+    };
+  }, []);
+
+  const form = useForm<ProductFormData>({
+    resolver: zodResolver(productSchema),
+    defaultValues: product
+      ? {
+          ...product,
+          categories: product.categories || [],
+          permalink: product.permalink || "",
+          productType: product.productType || "Physical",
+          manageStock: product.manageStock ?? product.productType === "Physical",
+          warranty: product.warranty || "",
+          points: product.points || undefined,
+          features: (product.features || []).map((f) => ({ value: f })),
+          specifications: Object.entries(product.specifications || {}).map(([key, value]) => ({ key, value })),
+          productAttributes: product.productAttributes || [],
+          downloadUrl: product.downloadUrl || "",
+          digitalProductNote: product.digitalProductNote || "",
+        }
+      : {
+          name: "",
+          permalink: "",
+          description: "",
+          price: 0,
+          originalPrice: undefined,
+          categories: [],
+          brand: "",
+          sku: "",
+          manageStock: true,
+          stock: 0,
+          supplier: "",
+          warranty: "1 Year Brand Warranty",
+          points: undefined,
+          features: [{ value: "" }],
+          specifications: [{ key: "", value: "" }],
+          images: [],
+          productAttributes: [],
+          productType: "Physical",
+          downloadUrl: "",
+          digitalProductNote: "",
         },
+  });
+
+  const {
+    register,
+    handleSubmit,
+    control,
+    formState: { errors },
+    watch,
+    setValue,
+  } = form;
+
+  // Media state
+  const [imagePreviews, setImagePreviews] = useState<string[]>(product?.images || []);
+  const [filesToUpload, setFilesToUpload] = useState<File[]>([]);
+  const [imagesToRemove, setImagesToRemove] = useState<string[]>([]);
+  const [newImageUrl, setNewImageUrl] = useState<string>("");
+  const [isUrlAdding, setIsUrlAdding] = useState(false);
+
+  // Auto slug & SKU generators
+  const [isPermalinkLocked, setIsPermalinkLocked] = useState(true);
+  const [isSkuLocked, setIsSkuLocked] = useState(true);
+  const productName = watch("name");
+  const brandName = watch("brand");
+  const productPrice = watch("price");
+  const originalPrice = watch("originalPrice");
+  const productType = watch("productType");
+  const manageStock = watch("manageStock");
+  const stockQuantity = watch("stock");
+  const selectedCategories = watch("categories") || [];
+
+  // Auto-generate permalink when name changes (if locked)
+  useEffect(() => {
+    if (isPermalinkLocked && productName && !product?.id) {
+      const generatedPermalink = productName
+        .toLowerCase()
+        .trim()
+        .replace(/&/g, "and")
+        .replace(/[^a-z0-9\s-]/g, "")
+        .replace(/\s+/g, "-")
+        .replace(/-+/g, "-");
+      setValue("permalink", generatedPermalink, { shouldValidate: true });
+    }
+  }, [productName, isPermalinkLocked, setValue, product?.id]);
+
+  // Auto-generate SKU when name and brand change (if locked)
+  useEffect(() => {
+    if (isSkuLocked && productName && brandName && !product?.id) {
+      const brandPart = brandName.substring(0, 4).toUpperCase().replace(/[^A-Z0-9]/g, "");
+      const namePart = productName
+        .split(" ")
+        .slice(0, 3)
+        .map((word) => word[0] || "")
+        .join("")
+        .toUpperCase()
+        .replace(/[^A-Z0-9]/g, "");
+
+      if (brandPart && namePart) {
+        setValue("sku", `${brandPart}-${namePart}`, { shouldValidate: true });
+      }
+    }
+  }, [productName, brandName, isSkuLocked, setValue, product?.id]);
+
+  // Dynamic discount calculation
+  const discountInfo = useMemo(() => {
+    if (originalPrice && originalPrice > productPrice && productPrice > 0) {
+      const discountPercent = Math.round(((originalPrice - productPrice) / originalPrice) * 100);
+      const savings = originalPrice - productPrice;
+      return { discountPercent, savings };
+    }
+    return null;
+  }, [productPrice, originalPrice]);
+
+  // Field arrays
+  const {
+    fields: featureFields,
+    append: appendFeature,
+    remove: removeFeature,
+  } = useFieldArray({
+    control,
+    name: "features",
+  });
+
+  const {
+    fields: specFields,
+    append: appendSpec,
+    remove: removeSpec,
+  } = useFieldArray({
+    control,
+    name: "specifications",
+  });
+
+  const {
+    fields: attributeFields,
+    append: appendAttribute,
+    remove: removeAttribute,
+  } = useFieldArray({
+    control,
+    name: "productAttributes",
+  });
+
+  // Handle image files selection
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files) {
+      const newFiles = Array.from(e.target.files);
+      setFilesToUpload((prev) => [...prev, ...newFiles]);
+
+      const newPreviews = newFiles.map((file) => URL.createObjectURL(file));
+      setImagePreviews((prev) => [...prev, ...newPreviews]);
+    }
+  };
+
+  // Remove an image preview
+  const handleRemoveImage = (urlToRemove: string) => {
+    if (urlToRemove.startsWith("blob:")) {
+      const blobIndex = imagePreviews.filter((p) => p.startsWith("blob:")).indexOf(urlToRemove);
+      setFilesToUpload((files) => files.filter((_, i) => i !== blobIndex));
+    } else {
+      setImagesToRemove((prev) => [...prev, urlToRemove]);
+    }
+    setImagePreviews((previews) => previews.filter((p) => p !== urlToRemove));
+  };
+
+  // Make an image the primary / cover image (move to index 0)
+  const handleMakePrimary = (indexToPromote: number) => {
+    if (indexToPromote === 0) return;
+    setImagePreviews((prev) => {
+      const updated = [...prev];
+      const [promoted] = updated.splice(indexToPromote, 1);
+      return [promoted, ...updated];
     });
+  };
 
-    const { register, handleSubmit, control, formState: { errors }, watch, setValue } = form;
+  // Add direct image URL
+  const handleAddDirectUrl = () => {
+    if (!newImageUrl.trim()) return;
+    setImagePreviews((prev) => [...prev, newImageUrl.trim()]);
+    setNewImageUrl("");
+    setIsUrlAdding(false);
+  };
 
-    const [imagePreviews, setImagePreviews] = useState<string[]>(product?.images || []);
-    const [filesToUpload, setFilesToUpload] = useState<File[]>([]);
-    const [imagesToRemove, setImagesToRemove] = useState<string[]>([]);
+  const onSubmit: SubmitHandler<ProductFormData> = async (data) => {
+    // 1. Upload newly added file blobs to R2
+    const uploadedImageUrls = await Promise.all(
+      filesToUpload.map(async (file) => {
+        const path = `products/${Date.now()}-${file.name.replace(/[^a-zA-Z0-9.-]/g, "_")}`;
+        await uploadFile(path, file, file.type);
+        return getFileUrl(path);
+      })
+    );
 
-    const [isPermalinkManuallyEdited, setIsPermalinkManuallyEdited] = useState(!!product?.id);
-    const [isSkuManuallyEdited, setIsSkuManuallyEdited] = useState(!!product?.id);
-    const productName = watch('name');
-    const brandName = watch('brand');
-
-    useEffect(() => {
-        if (!isPermalinkManuallyEdited && productName) {
-            const generatedPermalink = productName
-                .toLowerCase()
-                .trim()
-                .replace(/&/g, 'and')
-                .replace(/[^a-z0-9\s-]/g, '')
-                .replace(/\s+/g, '-')
-                .replace(/-+/g, '-');
-            setValue('permalink', generatedPermalink, { shouldValidate: true });
+    // 2. Delete removed images from R2 if applicable
+    await Promise.all(
+      imagesToRemove.map(async (url) => {
+        try {
+          let key = url;
+          if (url.includes("/api/r2/proxy")) {
+            const urlObj = new URL(url, window.location.origin);
+            key = urlObj.searchParams.get("key") || url;
+          } else if (url.includes(".r2.cloudflarestorage.com")) {
+            const urlObj = new URL(url);
+            const parts = urlObj.pathname.split("/").filter(Boolean);
+            if (urlObj.hostname.split(".").length <= 4) parts.shift();
+            key = decodeURIComponent(parts.join("/"));
+          }
+          await deleteFile(key);
+        } catch (error: any) {
+          console.error("Error deleting image from storage:", error);
         }
-    }, [productName, isPermalinkManuallyEdited, setValue]);
-    
-    useEffect(() => {
-        if (!isSkuManuallyEdited && productName && brandName) {
-            const brandPart = brandName.substring(0, 4).toUpperCase();
-            const namePart = productName
-                .split(' ')
-                .slice(0, 3)
-                .map(word => word[0] || '')
-                .join('')
-                .toUpperCase();
-            
-            if (brandPart && namePart) {
-                setValue('sku', `${brandPart}-${namePart}`, { shouldValidate: true });
-            }
-        }
-    }, [productName, brandName, isSkuManuallyEdited, setValue]);
+      })
+    );
 
+    // 3. Combine existing URLs and freshly uploaded URLs
+    const existingUrlsLeft = imagePreviews.filter((p) => !p.startsWith("blob:"));
+    const finalImageUrls = [...existingUrlsLeft, ...uploadedImageUrls];
 
-    const productType = watch('productType');
-    const manageStock = watch('manageStock');
-
-    const { fields: featureFields, append: appendFeature, remove: removeFeature } = useFieldArray({
-        control,
-        name: "features",
+    // 4. Transform specifications to Record<string, string>
+    const specObject: Record<string, string> = {};
+    data.specifications.forEach((spec) => {
+      if (spec.key.trim() && spec.value.trim()) {
+        specObject[spec.key.trim()] = spec.value.trim();
+      }
     });
 
-    const { fields: specFields, append: appendSpec, remove: removeSpec } = useFieldArray({
-        control,
-        name: "specifications",
-    });
-
-    const { fields: attributeFields, append: appendAttribute, remove: removeAttribute } = useFieldArray({
-        control,
-        name: "productAttributes",
-    });
-
-    const skuRegister = register("sku");
-
-    const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-        if (e.target.files) {
-            const newFiles = Array.from(e.target.files);
-            setFilesToUpload(prev => [...prev, ...newFiles]);
-
-            const newPreviews = newFiles.map(file => URL.createObjectURL(file));
-            setImagePreviews(prev => [...prev, ...newPreviews]);
-        }
+    // 5. Build clean product object
+    const productPayload: Record<string, any> = {
+      id: product?.id || "",
+      name: data.name.trim(),
+      permalink: data.permalink?.trim() || data.name.toLowerCase().replace(/\s+/g, "-"),
+      description: data.description,
+      price: data.price,
+      originalPrice: data.originalPrice && data.originalPrice > 0 ? data.originalPrice : undefined,
+      discountPercentage: discountInfo ? discountInfo.discountPercent : undefined,
+      categories: data.categories,
+      brand: data.brand,
+      sku: data.sku.trim(),
+      manageStock: data.manageStock,
+      stock: data.manageStock ? data.stock : 9999,
+      supplier: data.supplier,
+      warranty: data.warranty?.trim() || undefined,
+      points: data.points && data.points > 0 ? data.points : undefined,
+      productType: data.productType,
+      downloadUrl: data.productType === "Digital" ? data.downloadUrl?.trim() : undefined,
+      digitalProductNote: data.productType === "Digital" ? data.digitalProductNote?.trim() : undefined,
+      productAttributes: data.productAttributes && data.productAttributes.length > 0 ? data.productAttributes : [],
+      features: data.features.map((f) => f.value.trim()).filter(Boolean),
+      specifications: specObject,
+      images: finalImageUrls.length > 0 ? finalImageUrls : ["https://placehold.co/600x600.png"],
+      rating: product?.rating || 0,
+      reviewCount: product?.reviewCount || 0,
+      createdAt: product?.createdAt || new Date().toISOString(),
     };
 
-    const handleRemoveImage = (urlToRemove: string) => {
-        if (urlToRemove.startsWith('blob:')) {
-            const blobIndex = imagePreviews.filter(p => p.startsWith('blob:')).indexOf(urlToRemove);
-            setFilesToUpload(files => files.filter((_, i) => i !== blobIndex));
-        } else {
-            setImagesToRemove(prev => [...prev, urlToRemove]);
-        }
-        setImagePreviews(previews => previews.filter(p => p !== urlToRemove));
-    };
+    // Remove undefined properties
+    Object.keys(productPayload).forEach((key) => {
+      if (productPayload[key] === undefined) {
+        delete productPayload[key];
+      }
+    });
 
-    const onSubmit: SubmitHandler<ProductFormData> = async (data) => {
-        const uploadedImageUrls = await Promise.all(
-            filesToUpload.map(async (file) => {
-                const path = `products/${Date.now()}-${file.name}`;
-                await uploadFile(path, file, file.type);
-                return getFileUrl(path);
-            })
-        );
-        
-        await Promise.all(
-            imagesToRemove.map(async (url) => {
-                try {
-                    let key = url;
-                    if (url.includes('/api/r2/proxy')) {
-                        const urlObj = new URL(url, window.location.origin);
-                        key = urlObj.searchParams.get('key') || url;
-                    } else if (url.includes('.r2.cloudflarestorage.com')) {
-                        const urlObj = new URL(url);
-                        const parts = urlObj.pathname.split('/').filter(Boolean);
-                        if (urlObj.hostname.split('.').length <= 4) parts.shift();
-                        key = decodeURIComponent(parts.join('/'));
-                    }
-                    await deleteFile(key);
-                } catch (error: any) {
-                    console.error("Error deleting image from storage: ", error);
-                }
-            })
-        );
+    await onSave(productPayload as Product);
+  };
 
-        const existingUrlsLeft = imagePreviews.filter(p => !p.startsWith('blob:'));
-        const finalImageUrls = [...existingUrlsLeft, ...uploadedImageUrls];
-        
-        const specObject: Record<string, string> = {};
-        data.specifications.forEach(spec => {
-            if (spec.key) {
-                specObject[spec.key] = spec.value;
-            }
-        });
+  return (
+    <Form {...form}>
+      <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col flex-1 min-h-0 overflow-hidden">
+        {/* Navigation Tabs Bar */}
+        <div className="px-6 pt-4 pb-2 border-b bg-muted/30 shrink-0">
+          <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+            <TabsList className="grid grid-cols-5 w-full h-auto p-1 bg-muted/80 rounded-xl gap-1">
+              <TabsTrigger
+                value="basic"
+                className="py-2 text-xs sm:text-sm font-medium rounded-lg data-[state=active]:bg-background data-[state=active]:text-primary data-[state=active]:shadow-xs flex items-center justify-center gap-1.5"
+              >
+                <Package className="h-4 w-4 shrink-0" />
+                <span className="hidden sm:inline">General</span>
+              </TabsTrigger>
+              <TabsTrigger
+                value="pricing"
+                className="py-2 text-xs sm:text-sm font-medium rounded-lg data-[state=active]:bg-background data-[state=active]:text-primary data-[state=active]:shadow-xs flex items-center justify-center gap-1.5"
+              >
+                <DollarSign className="h-4 w-4 shrink-0" />
+                <span className="hidden sm:inline">Price & Stock</span>
+              </TabsTrigger>
+              <TabsTrigger
+                value="media"
+                className="py-2 text-xs sm:text-sm font-medium rounded-lg data-[state=active]:bg-background data-[state=active]:text-primary data-[state=active]:shadow-xs flex items-center justify-center gap-1.5"
+              >
+                <ImageIcon className="h-4 w-4 shrink-0" />
+                <span className="hidden sm:inline">Media ({imagePreviews.length})</span>
+              </TabsTrigger>
+              <TabsTrigger
+                value="specs"
+                className="py-2 text-xs sm:text-sm font-medium rounded-lg data-[state=active]:bg-background data-[state=active]:text-primary data-[state=active]:shadow-xs flex items-center justify-center gap-1.5"
+              >
+                <Layers className="h-4 w-4 shrink-0" />
+                <span className="hidden sm:inline">Specs & Info</span>
+              </TabsTrigger>
+              <TabsTrigger
+                value="variants"
+                className="py-2 text-xs sm:text-sm font-medium rounded-lg data-[state=active]:bg-background data-[state=active]:text-primary data-[state=active]:shadow-xs flex items-center justify-center gap-1.5"
+              >
+                <Sparkles className="h-4 w-4 shrink-0" />
+                <span className="hidden sm:inline">Variants</span>
+              </TabsTrigger>
+            </TabsList>
+          </Tabs>
+        </div>
 
-        const productDataForFirestore = {
-            id: product?.id || "",
-            name: data.name,
-            permalink: data.permalink,
-            description: data.description,
-            price: data.price,
-            originalPrice: data.originalPrice,
-            categories: data.categories,
-            brand: data.brand,
-            sku: data.sku,
-            manageStock: data.manageStock,
-            stock: data.stock,
-            supplier: data.supplier,
-            warranty: data.warranty,
-            points: data.points,
-            productType: data.productType,
-            downloadUrl: data.downloadUrl,
-            digitalProductNote: data.digitalProductNote,
-            productAttributes: data.productAttributes,
-            features: data.features.map(f => f.value),
-            specifications: specObject,
-            images: finalImageUrls.length > 0 ? finalImageUrls : ['https://placehold.co/600x600.png'],
-            discountPercentage: (data.originalPrice && data.price < data.originalPrice)
-                ? Math.round(((data.originalPrice - data.price) / data.originalPrice) * 100)
-                : undefined,
-            rating: product?.rating || 0,
-            reviewCount: product?.reviewCount || 0,
-            createdAt: product?.createdAt || new Date().toISOString(),
-        };
+        {/* Scrollable Form Body */}
+        <ScrollArea className="flex-1 min-h-0 px-6 py-5">
+          {/* TAB 1: General Info */}
+          {activeTab === "basic" && (
+            <div className="space-y-6">
+              {/* Product Type Selector */}
+              <div className="space-y-2">
+                <Label className="text-sm font-semibold flex items-center gap-1.5">
+                  <Boxes className="h-4 w-4 text-primary" /> Product Type <span className="text-destructive">*</span>
+                </Label>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div
+                    onClick={() => {
+                      setValue("productType", "Physical");
+                      setValue("manageStock", true);
+                    }}
+                    className={cn(
+                      "flex items-start gap-3 p-3.5 rounded-xl border-2 cursor-pointer transition-all duration-200",
+                      productType === "Physical"
+                        ? "border-primary bg-primary/5 shadow-xs"
+                        : "border-border hover:border-primary/50 bg-card hover:bg-muted/30"
+                    )}
+                  >
+                    <div
+                      className={cn(
+                        "mt-0.5 h-4 w-4 rounded-full border-2 flex items-center justify-center",
+                        productType === "Physical" ? "border-primary bg-primary text-white" : "border-muted-foreground"
+                      )}
+                    >
+                      {productType === "Physical" && <div className="h-1.5 w-1.5 rounded-full bg-white" />}
+                    </div>
+                    <div>
+                      <div className="font-semibold text-sm">Physical Product</div>
+                      <div className="text-xs text-muted-foreground mt-0.5">
+                        Shippable tangible goods tracked via warehouse inventory.
+                      </div>
+                    </div>
+                  </div>
 
-        // Clean the object: remove any top-level keys with an 'undefined' value before saving.
-        Object.keys(productDataForFirestore).forEach(key => {
-            if ((productDataForFirestore as any)[key] === undefined) {
-                delete (productDataForFirestore as any)[key];
-            }
-        });
+                  <div
+                    onClick={() => {
+                      setValue("productType", "Digital");
+                      setValue("manageStock", false);
+                    }}
+                    className={cn(
+                      "flex items-start gap-3 p-3.5 rounded-xl border-2 cursor-pointer transition-all duration-200",
+                      productType === "Digital"
+                        ? "border-primary bg-primary/5 shadow-xs"
+                        : "border-border hover:border-primary/50 bg-card hover:bg-muted/30"
+                    )}
+                  >
+                    <div
+                      className={cn(
+                        "mt-0.5 h-4 w-4 rounded-full border-2 flex items-center justify-center",
+                        productType === "Digital" ? "border-primary bg-primary text-white" : "border-muted-foreground"
+                      )}
+                    >
+                      {productType === "Digital" && <div className="h-1.5 w-1.5 rounded-full bg-white" />}
+                    </div>
+                    <div>
+                      <div className="font-semibold text-sm">Digital Product / License</div>
+                      <div className="text-xs text-muted-foreground mt-0.5">
+                        Downloadable files, software keys, or digital service links.
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
 
-        await onSave(productDataForFirestore as Product);
-    };
+              {/* Title, Slug & SKU */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="space-y-2 md:col-span-2">
+                  <Label htmlFor="name" className="text-sm font-semibold flex items-center gap-1.5">
+                    Product Title / Name <span className="text-destructive">*</span>
+                  </Label>
+                  <Input
+                    id="name"
+                    {...register("name")}
+                    placeholder="e.g. Haylou Solar Plus RT3 Smartwatch"
+                    className="text-base font-medium h-11"
+                  />
+                  {errors.name && <p className="text-destructive text-xs font-medium">{errors.name.message}</p>}
+                </div>
 
-    return (
-        <Form {...form}>
-            <form onSubmit={handleSubmit(onSubmit)}>
-                <ScrollArea className="h-[70vh] pr-6">
-                    <div className="space-y-4">
-                        <FormField
-                            control={control}
-                            name="productType"
-                            render={({ field }) => (
-                                <FormItem className="space-y-3">
-                                <FormLabel>Product Type</FormLabel>
-                                <FormControl>
-                                    <RadioGroup
-                                    onValueChange={(value) => {
-                                        field.onChange(value);
-                                        setValue('manageStock', value === 'Physical');
-                                    }}
-                                    defaultValue={field.value}
-                                    className="flex items-center gap-4"
+                {/* Permalink */}
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between">
+                    <Label htmlFor="permalink" className="text-xs font-semibold text-muted-foreground flex items-center gap-1">
+                      <Link2 className="h-3.5 w-3.5" /> URL Slug / Permalink
+                    </Label>
+                    <button
+                      type="button"
+                      onClick={() => setIsPermalinkLocked(!isPermalinkLocked)}
+                      className="text-[11px] text-primary hover:underline font-medium"
+                    >
+                      {isPermalinkLocked ? "Customize Slug" : "Auto-Generate"}
+                    </button>
+                  </div>
+                  <div className="flex items-center rounded-md border bg-muted/40 px-3 py-1.5 text-xs text-muted-foreground">
+                    <span className="truncate">/products/{watch("permalink") || "your-product-slug"}</span>
+                  </div>
+                  {!isPermalinkLocked && (
+                    <Input
+                      id="permalink"
+                      {...register("permalink")}
+                      placeholder="custom-slug"
+                      className="h-8 text-xs font-mono"
+                    />
+                  )}
+                  {errors.permalink && <p className="text-destructive text-xs">{errors.permalink.message}</p>}
+                </div>
+
+                {/* SKU */}
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between">
+                    <Label htmlFor="sku" className="text-xs font-semibold text-muted-foreground flex items-center gap-1">
+                      <Tag className="h-3.5 w-3.5" /> Stock Keeping Unit (SKU) <span className="text-destructive">*</span>
+                    </Label>
+                    <button
+                      type="button"
+                      onClick={() => setIsSkuLocked(!isSkuLocked)}
+                      className="text-[11px] text-primary hover:underline font-medium"
+                    >
+                      {isSkuLocked ? "Manual SKU" : "Auto SKU"}
+                    </button>
+                  </div>
+                  <Input
+                    id="sku"
+                    {...register("sku")}
+                    placeholder="e.g. HAY-SOL-RT3"
+                    className="h-8 text-xs font-mono uppercase font-semibold"
+                  />
+                  {errors.sku && <p className="text-destructive text-xs">{errors.sku.message}</p>}
+                </div>
+              </div>
+
+              {/* Brand, Categories, Supplier */}
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                {/* Brand */}
+                <FormField
+                  control={control}
+                  name="brand"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel className="text-xs font-semibold">
+                        Brand <span className="text-destructive">*</span>
+                      </FormLabel>
+                      <Select onValueChange={field.onChange} value={field.value || ""}>
+                        <FormControl>
+                          <SelectTrigger className="h-10">
+                            <SelectValue placeholder="Select Brand" />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          {dbBrands.map((b) => (
+                            <SelectItem key={b.id} value={b.name} className="cursor-pointer">
+                              {b.name}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                {/* Supplier */}
+                <FormField
+                  control={control}
+                  name="supplier"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel className="text-xs font-semibold">
+                        Supplier / Vendor <span className="text-destructive">*</span>
+                      </FormLabel>
+                      <Select onValueChange={field.onChange} value={field.value || ""}>
+                        <FormControl>
+                          <SelectTrigger className="h-10">
+                            <SelectValue placeholder="Select Supplier" />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          {dbSuppliers.map((s) => (
+                            <SelectItem key={s.id} value={s.name} className="cursor-pointer">
+                              {s.name}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                {/* Categories Popover with Badges */}
+                <FormField
+                  control={control}
+                  name="categories"
+                  render={({ field }) => (
+                    <FormItem className="flex flex-col">
+                      <FormLabel className="text-xs font-semibold">
+                        Categories <span className="text-destructive">*</span>
+                      </FormLabel>
+                      <Popover>
+                        <PopoverTrigger asChild>
+                          <FormControl>
+                            <Button
+                              variant="outline"
+                              role="combobox"
+                              className="w-full justify-between h-10 font-normal px-3"
+                            >
+                              <span className="truncate">
+                                {field.value?.length > 0 ? `${field.value.length} categories chosen` : "Choose Categories"}
+                              </span>
+                              <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                            </Button>
+                          </FormControl>
+                        </PopoverTrigger>
+                        <PopoverContent className="w-64 p-0" align="start">
+                          <Command>
+                            <CommandInput placeholder="Search categories..." />
+                            <CommandList>
+                              <CommandEmpty>No category found.</CommandEmpty>
+                              <CommandGroup>
+                                {dbCategories.map((category) => {
+                                  const isChecked = (field.value || []).includes(category.name);
+                                  return (
+                                    <CommandItem
+                                      key={category.id}
+                                      onSelect={() => {
+                                        const current = field.value || [];
+                                        const updated = isChecked
+                                          ? current.filter((c) => c !== category.name)
+                                          : [...current, category.name];
+                                        field.onChange(updated);
+                                      }}
+                                      className="cursor-pointer flex items-center justify-between"
                                     >
-                                    <FormItem className="flex items-center space-x-2 space-y-0">
-                                        <FormControl>
-                                        <RadioGroupItem value="Physical" />
-                                        </FormControl>
-                                        <FormLabel className="font-normal">Physical</FormLabel>
-                                    </FormItem>
-                                    <FormItem className="flex items-center space-x-2 space-y-0">
-                                        <FormControl>
-                                        <RadioGroupItem value="Digital" />
-                                        </FormControl>
-                                        <FormLabel className="font-normal">Digital</FormLabel>
-                                    </FormItem>
-                                    </RadioGroup>
-                                </FormControl>
-                                </FormItem>
-                            )}
+                                      <div className="flex items-center gap-2">
+                                        <Checkbox checked={isChecked} />
+                                        <span>{category.name}</span>
+                                      </div>
+                                    </CommandItem>
+                                  );
+                                })}
+                              </CommandGroup>
+                            </CommandList>
+                          </Command>
+                        </PopoverContent>
+                      </Popover>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
+
+              {/* Selected Categories Chips */}
+              {selectedCategories.length > 0 && (
+                <div className="flex flex-wrap items-center gap-1.5 p-2 rounded-lg bg-muted/40 border">
+                  <span className="text-xs font-medium text-muted-foreground mr-1">Selected:</span>
+                  {selectedCategories.map((catName) => (
+                    <Badge
+                      key={catName}
+                      variant="secondary"
+                      className="gap-1 pl-2.5 pr-1.5 py-0.5 text-xs font-medium bg-background border"
+                    >
+                      {catName}
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setValue(
+                            "categories",
+                            selectedCategories.filter((c) => c !== catName),
+                            { shouldValidate: true }
+                          );
+                        }}
+                        className="hover:text-destructive"
+                      >
+                        <X className="h-3 w-3" />
+                      </button>
+                    </Badge>
+                  ))}
+                </div>
+              )}
+
+              {/* Description */}
+              <div className="space-y-2">
+                <Label htmlFor="description" className="text-sm font-semibold flex items-center gap-1.5">
+                  <FileText className="h-4 w-4 text-primary" /> Product Description <span className="text-destructive">*</span>
+                </Label>
+                <FormField
+                  control={control}
+                  name="description"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormControl>
+                        <Textarea
+                          id="description"
+                          rows={6}
+                          placeholder="Provide a comprehensive product overview, features, specifications, and details..."
+                          className="font-normal text-sm leading-relaxed"
+                          {...field}
                         />
+                      </FormControl>
+                      <FormDescription className="text-xs flex justify-between">
+                        <span>HTML tags and paragraphs are supported.</span>
+                        <span>{field.value?.length || 0} characters</span>
+                      </FormDescription>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
+            </div>
+          )}
 
-                        {productType === 'Digital' && (
-                            <div className="space-y-4 p-4 border border-dashed rounded-md">
-                                <h3 className="text-lg font-medium">Digital Product Files</h3>
-                                <div className="space-y-2">
-                                    <Label htmlFor="downloadUrl">Download URL</Label>
-                                    <Input id="downloadUrl" {...register("downloadUrl")} placeholder="https://example.com/your-file.zip" />
-                                    {errors.downloadUrl && <p className="text-destructive text-sm">{errors.downloadUrl.message}</p>}
-                                </div>
-                                <div className="space-y-2">
-                                    <Label htmlFor="digitalProductNote">Download Note for Customer</Label>
-                                    <Textarea
-                                        id="digitalProductNote"
-                                        {...register("digitalProductNote")}
-                                        placeholder="e.g. Your download link will expire in 48 hours."
-                                    />
-                                    {errors.digitalProductNote && <p className="text-destructive text-sm">{errors.digitalProductNote.message}</p>}
-                                </div>
-                            </div>
+          {/* TAB 2: Pricing & Inventory */}
+          {activeTab === "pricing" && (
+            <div className="space-y-6">
+              {/* Pricing Grid */}
+              <div className="p-4 rounded-xl border bg-card space-y-4">
+                <h3 className="text-sm font-semibold flex items-center gap-2 text-foreground">
+                  <DollarSign className="h-4 w-4 text-primary" /> Product Pricing (BDT ৳)
+                </h3>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {/* Selling Price */}
+                  <div className="space-y-2">
+                    <Label htmlFor="price" className="text-xs font-semibold flex items-center gap-1">
+                      Regular / Selling Price (৳) <span className="text-destructive">*</span>
+                    </Label>
+                    <div className="relative">
+                      <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground font-bold text-sm">
+                        ৳
+                      </span>
+                      <Input
+                        id="price"
+                        type="number"
+                        step="0.01"
+                        {...register("price")}
+                        className="pl-8 text-lg font-bold text-primary h-11"
+                        placeholder="0.00"
+                      />
+                    </div>
+                    {errors.price && <p className="text-destructive text-xs font-medium">{errors.price.message}</p>}
+                  </div>
+
+                  {/* Original / Compare at price */}
+                  <div className="space-y-2">
+                    <Label htmlFor="originalPrice" className="text-xs font-semibold text-muted-foreground flex items-center gap-1">
+                      Original / Strike-through Price (৳)
+                    </Label>
+                    <div className="relative">
+                      <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground font-bold text-sm">
+                        ৳
+                      </span>
+                      <Input
+                        id="originalPrice"
+                        type="number"
+                        step="0.01"
+                        {...register("originalPrice")}
+                        className="pl-8 text-base font-medium h-11"
+                        placeholder="Optional compare price"
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                {/* Live Discount Pill */}
+                {discountInfo && (
+                  <div className="p-2.5 rounded-lg bg-blue-50/70 dark:bg-blue-950/40 border border-blue-200 dark:border-blue-900 flex items-center justify-between text-xs">
+                    <div className="flex items-center gap-2">
+                      <Badge className="bg-blue-600 text-white font-bold text-xs px-2">
+                        {discountInfo.discountPercent}% OFF
+                      </Badge>
+                      <span className="text-blue-900 dark:text-blue-300 font-medium">
+                        Customer saves ৳{discountInfo.savings.toFixed(2)} on this product.
+                      </span>
+                    </div>
+                    <span className="text-muted-foreground">Automatic discount badge will display on storefront.</span>
+                  </div>
+                )}
+              </div>
+
+              {/* Inventory Management Card */}
+              <div className="p-4 rounded-xl border bg-card space-y-4">
+                <div className="flex items-center justify-between">
+                  <div className="space-y-0.5">
+                    <Label className="text-sm font-semibold flex items-center gap-2">
+                      <Package className="h-4 w-4 text-primary" /> Track Stock & Inventory
+                    </Label>
+                    <p className="text-xs text-muted-foreground">
+                      Enable to monitor available units and prevent overselling.
+                    </p>
+                  </div>
+                  <FormField
+                    control={control}
+                    name="manageStock"
+                    render={({ field }) => (
+                      <Switch
+                        checked={field.value}
+                        onCheckedChange={field.onChange}
+                        disabled={productType === "Digital"}
+                      />
+                    )}
+                  />
+                </div>
+
+                {manageStock && (
+                  <div className="pt-2 border-t grid grid-cols-1 sm:grid-cols-2 gap-4 items-center">
+                    <div className="space-y-2">
+                      <Label htmlFor="stock" className="text-xs font-semibold">
+                        Available Stock Quantity <span className="text-destructive">*</span>
+                      </Label>
+                      <Input
+                        id="stock"
+                        type="number"
+                        {...register("stock")}
+                        placeholder="e.g. 50"
+                        className="h-10 font-bold"
+                      />
+                      {errors.stock && <p className="text-destructive text-xs font-medium">{errors.stock.message}</p>}
+                    </div>
+
+                    <div className="p-3 rounded-lg border bg-muted/40 text-xs space-y-1">
+                      <span className="font-semibold text-muted-foreground">Live Stock Status:</span>
+                      <div>
+                        {stockQuantity > 10 ? (
+                          <Badge variant="outline" className="border-emerald-600 text-emerald-600 bg-emerald-50/50">
+                            In Stock ({stockQuantity} Units)
+                          </Badge>
+                        ) : stockQuantity > 0 ? (
+                          <Badge variant="outline" className="border-amber-600 text-amber-600 bg-amber-50/50">
+                            Low Stock Warning ({stockQuantity} Units Remaining)
+                          </Badge>
+                        ) : (
+                          <Badge variant="destructive">Out of Stock (0 Units)</Badge>
                         )}
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </div>
 
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            <div className="space-y-2">
-                                <Label htmlFor="name">Product Name</Label>
-                                <Input id="name" {...register("name")} />
-                                {errors.name && <p className="text-destructive text-sm">{errors.name.message}</p>}
+              {/* Warranty and Club Points */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {/* Warranty */}
+                <div className="space-y-2">
+                  <Label htmlFor="warranty" className="text-xs font-semibold flex items-center gap-1.5">
+                    <ShieldCheck className="h-4 w-4 text-primary" /> Warranty Period
+                  </Label>
+                  <Input
+                    id="warranty"
+                    {...register("warranty")}
+                    placeholder="e.g. 1 Year Brand Warranty"
+                    className="h-10"
+                  />
+                  <div className="flex flex-wrap gap-1 mt-1.5">
+                    {COMMON_WARRANTIES.map((preset) => (
+                      <button
+                        key={preset}
+                        type="button"
+                        onClick={() => setValue("warranty", preset, { shouldDirty: true })}
+                        className="text-[10px] px-2 py-0.5 rounded border bg-muted/50 hover:bg-muted text-foreground/80 hover:text-foreground transition-colors"
+                      >
+                        {preset}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Club Points */}
+                <div className="space-y-2">
+                  <Label htmlFor="points" className="text-xs font-semibold flex items-center gap-1.5">
+                    <Coins className="h-4 w-4 text-amber-500" /> Club Reward Points
+                  </Label>
+                  <Input
+                    id="points"
+                    type="number"
+                    {...register("points")}
+                    placeholder="e.g. 50"
+                    className="h-10"
+                  />
+                  <p className="text-[11px] text-muted-foreground">
+                    Points awarded to the customer upon order completion.
+                  </p>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* TAB 3: Media & Images */}
+          {activeTab === "media" && (
+            <div className="space-y-6">
+              {/* Upload Dropzone */}
+              <div className="p-6 rounded-xl border-2 border-dashed border-primary/30 bg-primary/5 hover:bg-primary/10 transition-colors text-center relative cursor-pointer">
+                <input
+                  id="image-dropzone"
+                  type="file"
+                  multiple
+                  accept="image/*"
+                  onChange={handleFileChange}
+                  disabled={isSaving}
+                  className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                />
+                <div className="flex flex-col items-center justify-center space-y-2 pointer-events-none">
+                  <div className="h-12 w-12 rounded-full bg-primary/10 flex items-center justify-center text-primary">
+                    <Upload className="h-6 w-6" />
+                  </div>
+                  <div className="font-semibold text-sm">Click or Drag & Drop Product Images Here</div>
+                  <p className="text-xs text-muted-foreground max-w-sm">
+                    Supports high-resolution WebP, PNG, JPG, or AVIF. Stored securely on Cloudflare R2.
+                  </p>
+                </div>
+              </div>
+
+              {/* Direct URL Adder */}
+              <div className="flex items-center justify-between gap-3 p-3 rounded-lg border bg-card">
+                <div className="flex items-center gap-2 text-xs font-semibold text-foreground">
+                  <ExternalLink className="h-4 w-4 text-primary" /> Add Image by Direct URL:
+                </div>
+                {isUrlAdding ? (
+                  <div className="flex items-center gap-2 flex-1 max-w-md">
+                    <Input
+                      placeholder="https://... or /api/r2/proxy?key=..."
+                      value={newImageUrl}
+                      onChange={(e) => setNewImageUrl(e.target.value)}
+                      className="h-8 text-xs font-mono"
+                    />
+                    <Button type="button" size="sm" onClick={handleAddDirectUrl} className="h-8 text-xs">
+                      Add
+                    </Button>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => setIsUrlAdding(false)}
+                      className="h-8 text-xs"
+                    >
+                      Cancel
+                    </Button>
+                  </div>
+                ) : (
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setIsUrlAdding(true)}
+                    className="h-8 text-xs"
+                  >
+                    <Plus className="h-3.5 w-3.5 mr-1" /> Add Image Link
+                  </Button>
+                )}
+              </div>
+
+              {/* Image Previews Gallery */}
+              <div className="space-y-3">
+                <div className="flex items-center justify-between">
+                  <Label className="text-sm font-semibold flex items-center gap-1.5">
+                    <ImageIcon className="h-4 w-4 text-primary" /> Gallery ({imagePreviews.length} images)
+                  </Label>
+                  <span className="text-xs text-muted-foreground">
+                    First image is used as primary product card thumbnail.
+                  </span>
+                </div>
+
+                {imagePreviews.length === 0 ? (
+                  <div className="p-8 text-center border rounded-xl bg-muted/20 text-muted-foreground text-sm">
+                    No images added yet. Upload files or paste an image URL above.
+                  </div>
+                ) : (
+                  <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
+                    {imagePreviews.map((src, index) => {
+                      const isPrimary = index === 0;
+                      return (
+                        <div
+                          key={index}
+                          className={cn(
+                            "group relative aspect-square rounded-xl overflow-hidden border-2 transition-all duration-200 bg-secondary/30",
+                            isPrimary ? "border-primary shadow-sm ring-2 ring-primary/20" : "border-border"
+                          )}
+                        >
+                          <Image
+                            src={src}
+                            alt={`Product preview ${index + 1}`}
+                            fill
+                            className="object-contain p-2"
+                            unoptimized
+                          />
+
+                          {/* Primary Badge */}
+                          {isPrimary && (
+                            <Badge className="absolute top-2 left-2 bg-primary text-white text-[10px] px-1.5 py-0.5 font-bold shadow-xs flex items-center gap-1">
+                              <Star className="h-3 w-3 fill-white" /> Cover
+                            </Badge>
+                          )}
+
+                          {/* Action Overlay */}
+                          <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col items-center justify-between p-2">
+                            <div className="w-full flex justify-end">
+                              <button
+                                type="button"
+                                onClick={() => handleRemoveImage(src)}
+                                className="h-6 w-6 rounded-full bg-destructive text-destructive-foreground flex items-center justify-center hover:scale-110 transition-transform shadow-xs"
+                                title="Remove image"
+                              >
+                                <Trash2 className="h-3.5 w-3.5" />
+                              </button>
                             </div>
-                            <div className="space-y-2">
-                                <Label htmlFor="sku">SKU</Label>
-                                <Input
-                                  id="sku"
-                                  {...skuRegister}
-                                  onChange={(e) => {
-                                    skuRegister.onChange(e);
-                                    setIsSkuManuallyEdited(true);
-                                  }}
-                                />
-                                {errors.sku && <p className="text-destructive text-sm">{errors.sku.message}</p>}
-                            </div>
-                        </div>
 
-                        <div className="space-y-2">
-                            <Label htmlFor="permalink">Permalink</Label>
-                            <Input
-                                id="permalink"
-                                {...register("permalink")}
-                                onChange={(e) => {
-                                    setIsPermalinkManuallyEdited(true);
-                                    setValue('permalink', e.target.value);
-                                }}
-                            />
-                            {errors.permalink && <p className="text-destructive text-sm">{errors.permalink.message}</p>}
-                        </div>
-
-
-                        <div className="space-y-2">
-                            <Label htmlFor="description">Description</Label>
-                             <FormField
-                                control={control}
-                                name="description"
-                                render={({ field }) => (
-                                    <FormItem>
-                                        <FormControl>
-                                            <Textarea
-                                                id="description"
-                                                rows={8}
-                                                placeholder="Write a detailed description for the product..."
-                                                {...field}
-                                            />
-                                        </FormControl>
-                                        <FormMessage />
-                                    </FormItem>
-                                )}
-                            />
-                        </div>
-
-                        <div className="space-y-2">
-                            <Label>Images</Label>
-                            <Input id="images" type="file" multiple onChange={handleFileChange} accept="image/*" className="block" disabled={isSaving} />
-                            {isSaving && <p className="text-sm text-primary flex items-center gap-2 mt-2"><Loader2 className="animate-spin" /> Uploading images, please wait...</p>}
-                            {imagePreviews.length > 0 && (
-                                <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 gap-4 mt-4">
-                                    {imagePreviews.map((src, index) => (
-                                        <div key={index} className="relative group aspect-square">
-                                            <Image src={src} alt={`Product image ${index + 1}`} fill className="object-cover rounded-md border" />
-                                            <button
-                                                type="button"
-                                                onClick={() => handleRemoveImage(src)}
-                                                className="absolute -top-2 -right-2 bg-destructive text-destructive-foreground rounded-full p-0.5 opacity-0 group-hover:opacity-100 transition-opacity"
-                                                disabled={isSaving}
-                                            >
-                                                <XCircle className="h-5 w-5" />
-                                                <span className="sr-only">Remove image</span>
-                                            </button>
-                                        </div>
-                                    ))}
-                                </div>
+                            {!isPrimary && (
+                              <button
+                                type="button"
+                                onClick={() => handleMakePrimary(index)}
+                                className="text-[10px] font-semibold bg-white text-black px-2 py-1 rounded-md shadow-xs hover:bg-primary hover:text-white transition-colors"
+                              >
+                                Set as Cover
+                              </button>
                             )}
+                          </div>
                         </div>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
 
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            <div className="space-y-2">
-                                <Label htmlFor="price">Price</Label>
-                                <Input id="price" type="number" step="0.01" {...register("price")} />
-                                {errors.price && <p className="text-destructive text-sm">{errors.price.message}</p>}
-                            </div>
-                            <div className="space-y-2">
-                                <Label htmlFor="originalPrice">Original Price (Optional)</Label>
-                                <Input id="originalPrice" type="number" step="0.01" {...register("originalPrice")} />
-                            </div>
-                        </div>
+          {/* TAB 4: Specifications & Highlights */}
+          {activeTab === "specs" && (
+            <div className="space-y-6">
+              {/* Bullet Highlights / Features */}
+              <div className="p-4 rounded-xl border bg-card space-y-3">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <Label className="text-sm font-semibold flex items-center gap-1.5">
+                      <Sparkles className="h-4 w-4 text-primary" /> Key Features & Highlights
+                    </Label>
+                    <p className="text-xs text-muted-foreground mt-0.5">
+                      Short bullet points displayed next to the product price on product details page.
+                    </p>
+                  </div>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={() => appendFeature({ value: "" })}
+                    className="h-8 text-xs font-semibold"
+                  >
+                    <Plus className="h-3.5 w-3.5 mr-1" /> Add Feature
+                  </Button>
+                </div>
 
-                        <Card className="p-4 bg-secondary/50">
-                            <FormField
+                <div className="space-y-2 pt-2">
+                  {featureFields.map((field, index) => (
+                    <div key={field.id} className="flex items-center gap-2">
+                      <span className="text-xs font-mono font-bold text-muted-foreground w-6 text-center">
+                        #{index + 1}
+                      </span>
+                      <Input
+                        {...register(`features.${index}.value`)}
+                        placeholder="e.g. 1.43'' AMOLED Display with Always-On Display"
+                        className="h-9 text-sm"
+                      />
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => removeFeature(index)}
+                        className="h-8 w-8 text-muted-foreground hover:text-destructive shrink-0"
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* Technical Specifications */}
+              <div className="p-4 rounded-xl border bg-card space-y-3">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <Label className="text-sm font-semibold flex items-center gap-1.5">
+                      <Layers className="h-4 w-4 text-primary" /> Technical Specifications
+                    </Label>
+                    <p className="text-xs text-muted-foreground mt-0.5">
+                      Full specifications table displayed under the "Specification" tab on the product page.
+                    </p>
+                  </div>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={() => appendSpec({ key: "", value: "" })}
+                    className="h-8 text-xs font-semibold"
+                  >
+                    <Plus className="h-3.5 w-3.5 mr-1" /> Add Specification
+                  </Button>
+                </div>
+
+                <div className="space-y-2 pt-2">
+                  <div className="grid grid-cols-12 gap-2 text-xs font-semibold text-muted-foreground px-1 pb-1 border-b">
+                    <div className="col-span-5">Specification Key</div>
+                    <div className="col-span-6">Value / Detail</div>
+                    <div className="col-span-1 text-right">Action</div>
+                  </div>
+
+                  {specFields.map((field, index) => (
+                    <div key={field.id} className="grid grid-cols-12 gap-2 items-center">
+                      <div className="col-span-5">
+                        <Input
+                          {...register(`specifications.${index}.key`)}
+                          placeholder="e.g. Battery Capacity"
+                          className="h-9 text-xs sm:text-sm font-medium"
+                        />
+                      </div>
+                      <div className="col-span-6">
+                        <Input
+                          {...register(`specifications.${index}.value`)}
+                          placeholder="e.g. 410mAh Pure Cobalt, 7-day battery life"
+                          className="h-9 text-xs sm:text-sm"
+                        />
+                      </div>
+                      <div className="col-span-1 flex justify-end">
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="icon"
+                          onClick={() => removeSpec(index)}
+                          className="h-8 w-8 text-muted-foreground hover:text-destructive"
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* TAB 5: Variants & Attributes */}
+          {activeTab === "variants" && (
+            <div className="space-y-6">
+              {/* Product Attributes (Color, Size, etc.) */}
+              <div className="p-4 rounded-xl border bg-card space-y-4">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <Label className="text-sm font-semibold flex items-center gap-1.5">
+                      <Sparkles className="h-4 w-4 text-primary" /> Product Attributes (Variants)
+                    </Label>
+                    <p className="text-xs text-muted-foreground mt-0.5">
+                      Configure selectable variant options such as Color, Strap Size, or Storage.
+                    </p>
+                  </div>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={() => appendAttribute({ name: "", values: [] })}
+                    className="h-8 text-xs font-semibold"
+                  >
+                    <Plus className="h-3.5 w-3.5 mr-1" /> Add Option
+                  </Button>
+                </div>
+
+                {attributeFields.length === 0 ? (
+                  <div className="p-6 text-center border rounded-lg bg-muted/20 text-muted-foreground text-xs">
+                    No custom variants configured. Click "Add Option" to attach Colors, Sizes, or Models.
+                  </div>
+                ) : (
+                  <div className="space-y-4">
+                    {attributeFields.map((field, index) => {
+                      const attributeName = watch(`productAttributes.${index}.name`);
+                      const availableValues = attributes.find((a) => a.name === attributeName)?.values || [];
+                      const selectedValues = watch(`productAttributes.${index}.values`) || [];
+
+                      return (
+                        <div key={field.id} className="p-4 rounded-lg border bg-secondary/20 space-y-3">
+                          <div className="flex items-center justify-between gap-4">
+                            <div className="flex-1 max-w-xs">
+                              <FormField
                                 control={control}
-                                name="manageStock"
-                                render={({ field }) => (
-                                <FormItem className="flex flex-row items-center justify-between">
-                                    <div className="space-y-0.5">
-                                        <FormLabel className="text-base">Manage Stock</FormLabel>
-                                        <FormDescription>
-                                            Enable to track inventory for this product.
-                                        </FormDescription>
-                                    </div>
-                                    <FormControl>
-                                        <Switch
-                                            checked={field.value}
-                                            onCheckedChange={field.onChange}
-                                            disabled={productType === 'Digital'}
-                                        />
-                                    </FormControl>
-                                </FormItem>
-                                )}
-                            />
-                            {manageStock && (
-                                <div className="mt-4 space-y-2">
-                                <Label htmlFor="stock">Stock Quantity</Label>
-                                <Input id="stock" type="number" {...register("stock")} />
-                                {errors.stock && <p className="text-destructive text-sm">{errors.stock.message}</p>}
-                                </div>
-                            )}
-                        </Card>
-
-
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                           <FormField
-                                control={control}
-                                name="brand"
-                                render={({ field }) => (
-                                    <FormItem>
-                                        <FormLabel>Brand</FormLabel>
-                                        <Select onValueChange={field.onChange} defaultValue={field.value}>
-                                            <FormControl>
-                                                <SelectTrigger>
-                                                    <SelectValue placeholder="Select a brand" />
-                                                </SelectTrigger>
-                                            </FormControl>
-                                            <SelectContent>
-                                                {dbBrands.map(brand => <SelectItem key={brand.id} value={brand.name}>{brand.name}</SelectItem>)}
-                                            </SelectContent>
-                                        </Select>
-                                        <FormMessage />
-                                    </FormItem>
-                                )}
-                            />
-                           <FormField
-                                control={control}
-                                name="categories"
-                                render={({ field }) => (
-                                <FormItem className="flex flex-col">
-                                    <FormLabel>Categories</FormLabel>
-                                    <Popover>
-                                    <PopoverTrigger asChild>
-                                        <FormControl>
-                                        <Button
-                                            variant="outline"
-                                            role="combobox"
-                                            className={cn(
-                                            "w-full justify-between",
-                                            !field.value?.length && "text-muted-foreground"
-                                            )}
-                                        >
-                                            <span className="truncate">
-                                            {field.value?.length > 0
-                                                ? `${field.value.length} selected`
-                                                : "Select categories"}
-                                            </span>
-                                            <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-                                        </Button>
-                                        </FormControl>
-                                    </PopoverTrigger>
-                                    <PopoverContent className="w-[--radix-popover-trigger-width] p-0">
-                                        <Command>
-                                        <CommandInput placeholder="Search categories..." />
-                                        <CommandList>
-                                            <CommandEmpty>No categories found.</CommandEmpty>
-                                            <CommandGroup>
-                                            {dbCategories.map((category) => (
-                                                <div
-                                                    key={category.id}
-                                                    className="relative flex cursor-default select-none items-center rounded-sm px-2 py-1.5 text-sm outline-none hover:bg-accent"
-                                                    onClick={() => {
-                                                        const selected = field.value || [];
-                                                        const isSelected = selected.includes(category.name);
-                                                        field.onChange(
-                                                            isSelected
-                                                            ? selected.filter((name) => name !== category.name)
-                                                            : [...selected, category.name]
-                                                        );
-                                                    }}
-                                                >
-                                                    <Checkbox
-                                                        checked={(field.value || []).includes(category.name)}
-                                                        className="mr-2"
-                                                    />
-                                                    <span>{category.name}</span>
-                                                </div>
-                                            ))}
-                                            </CommandGroup>
-                                        </CommandList>
-                                        </Command>
-                                    </PopoverContent>
-                                    </Popover>
-                                    <FormMessage />
-                                </FormItem>
-                                )}
-                            />
-                        </div>
-                        
-                         <FormField
-                            control={control}
-                            name="supplier"
-                            render={({ field }) => (
-                                <FormItem>
-                                    <FormLabel>Supplier</FormLabel>
-                                    <Select onValueChange={field.onChange} defaultValue={field.value}>
-                                        <FormControl>
-                                            <SelectTrigger>
-                                                <SelectValue placeholder="Select a supplier" />
-                                            </SelectTrigger>
-                                        </FormControl>
-                                        <SelectContent>
-                                            {dbSuppliers.map(sup => <SelectItem key={sup.id} value={sup.name}>{sup.name}</SelectItem>)}
-                                        </SelectContent>
+                                name={`productAttributes.${index}.name`}
+                                render={({ field: selectField }) => (
+                                  <FormItem>
+                                    <FormLabel className="text-xs font-semibold">Attribute Type</FormLabel>
+                                    <Select
+                                      onValueChange={(val) => {
+                                        selectField.onChange(val);
+                                        setValue(`productAttributes.${index}.values`, []);
+                                      }}
+                                      value={selectField.value}
+                                    >
+                                      <FormControl>
+                                        <SelectTrigger className="h-9">
+                                          <SelectValue placeholder="Select attribute (Color, Size...)" />
+                                        </SelectTrigger>
+                                      </FormControl>
+                                      <SelectContent>
+                                        {attributes.map((attr) => (
+                                          <SelectItem key={attr.id} value={attr.name}>
+                                            {attr.name}
+                                          </SelectItem>
+                                        ))}
+                                      </SelectContent>
                                     </Select>
                                     <FormMessage />
-                                </FormItem>
-                            )}
-                        />
-                         <div className="space-y-2">
-                            <Label htmlFor="points">Club Points</Label>
-                            <Input id="points" type="number" {...register("points")} placeholder="e.g. 100" />
-                            {errors.points && <p className="text-destructive text-sm">{errors.points.message}</p>}
-                        </div>
-
-                        <div className="space-y-2">
-                            <Label>Features</Label>
-                            {featureFields.map((field, index) => (
-                                <div key={field.id} className="flex gap-2 items-center">
-                                    <Input {...register(`features.${index}.value`)} placeholder="e.g. 3ATM Water Resistance" />
-                                    <Button type="button" variant="destructive" size="icon" onClick={() => removeFeature(index)}>
-                                        <Trash2 className="h-4 w-4" />
-                                    </Button>
-                                </div>
-                            ))}
-                            <Button type="button" variant="outline" size="sm" onClick={() => appendFeature({ value: "" })}>Add Feature</Button>
-                        </div>
-                        
-                        <div className="space-y-2">
-                            <Label htmlFor="warranty">Warranty Information</Label>
-                            <Input id="warranty" {...register("warranty")} placeholder="e.g. 1 Year Brand Warranty" />
-                            {errors.warranty && <p className="text-destructive text-sm">{errors.warranty.message}</p>}
-                        </div>
-
-                        <div className="space-y-2">
-                            <Label>Product Attributes</Label>
-                            <div className="space-y-4">
-                                {attributeFields.map((field, index) => {
-                                    const attributeName = watch(`productAttributes.${index}.name`);
-                                    const availableValues = attributes.find(a => a.name === attributeName)?.values || [];
-                                    const selectedValues = watch(`productAttributes.${index}.values`) || [];
-                                    
-                                    return (
-                                        <Card key={field.id} className="p-4 bg-secondary/50">
-                                            <div className="flex gap-4">
-                                                <div className="flex-1 space-y-2">
-                                                    <FormField
-                                                        control={control}
-                                                        name={`productAttributes.${index}.name`}
-                                                        render={({ field: selectField }) => (
-                                                            <FormItem>
-                                                                <FormLabel>Attribute</FormLabel>
-                                                                <Select 
-                                                                    onValueChange={(value) => {
-                                                                        selectField.onChange(value);
-                                                                        setValue(`productAttributes.${index}.values`, []);
-                                                                    }} 
-                                                                    defaultValue={selectField.value}
-                                                                >
-                                                                    <FormControl>
-                                                                        <SelectTrigger>
-                                                                            <SelectValue placeholder="Select an attribute" />
-                                                                        </SelectTrigger>
-                                                                    </FormControl>
-                                                                    <SelectContent>
-                                                                        {attributes.map(attr => (
-                                                                            <SelectItem key={attr.id} value={attr.name}>{attr.name}</SelectItem>
-                                                                        ))}
-                                                                    </SelectContent>
-                                                                </Select>
-                                                                <FormMessage />
-                                                            </FormItem>
-                                                        )}
-                                                    />
-                                                    {attributeName && (
-                                                        <div className="space-y-2">
-                                                            <Label>Values</Label>
-                                                            <div className="flex flex-wrap gap-2">
-                                                                {availableValues.map(value => (
-                                                                    <Button
-                                                                        type="button"
-                                                                        key={value}
-                                                                        variant={selectedValues.includes(value) ? 'default' : 'outline'}
-                                                                        size="sm"
-                                                                        onClick={() => {
-                                                                            const newValues = selectedValues.includes(value)
-                                                                                ? selectedValues.filter((v: string) => v !== value)
-                                                                                : [...selectedValues, value];
-                                                                            setValue(`productAttributes.${index}.values`, newValues, { shouldValidate: true });
-                                                                        }}
-                                                                    >
-                                                                        {value}
-                                                                    </Button>
-                                                                ))}
-                                                            </div>
-                                                            {errors.productAttributes?.[index]?.values && <p className="text-destructive text-sm">{errors.productAttributes[index]?.values?.message}</p>}
-                                                        </div>
-                                                    )}
-                                                </div>
-                                                <Button type="button" variant="destructive" size="icon" onClick={() => removeAttribute(index)}>
-                                                    <Trash2 className="h-4 w-4" />
-                                                </Button>
-                                            </div>
-                                        </Card>
-                                    )
-                                })}
+                                  </FormItem>
+                                )}
+                              />
                             </div>
-                            <Button 
-                                type="button" 
-                                variant="outline" 
-                                size="sm" 
-                                onClick={() => appendAttribute({ name: '', values: [] })}
-                                className="mt-2"
+
+                            <Button
+                              type="button"
+                              variant="ghost"
+                              size="icon"
+                              onClick={() => removeAttribute(index)}
+                              className="text-muted-foreground hover:text-destructive h-8 w-8 mt-5"
                             >
-                                Add Attribute
+                              <Trash2 className="h-4 w-4" />
                             </Button>
-                        </div>
+                          </div>
 
-
-                        <div className="space-y-2">
-                            <Label>Specifications</Label>
-                            {specFields.map((field, index) => (
-                                <div key={field.id} className="flex gap-2 items-center">
-                                    <Input {...register(`specifications.${index}.key`)} placeholder="Key (e.g. Display)" />
-                                    <Input {...register(`specifications.${index}.value`)} placeholder='Value (e.g. 1.5" IPS Screen)' />
-                                    <Button type="button" variant="destructive" size="icon" onClick={() => removeSpec(index)}>
-                                        <Trash2 className="h-4 w-4" />
+                          {attributeName && (
+                            <div className="space-y-2 pt-2 border-t">
+                              <Label className="text-xs font-medium text-muted-foreground">
+                                Select Available Values for {attributeName}:
+                              </Label>
+                              <div className="flex flex-wrap gap-2">
+                                {availableValues.map((value) => {
+                                  const isSelected = selectedValues.includes(value);
+                                  return (
+                                    <Button
+                                      type="button"
+                                      key={value}
+                                      variant={isSelected ? "default" : "outline"}
+                                      size="sm"
+                                      onClick={() => {
+                                        const newValues = isSelected
+                                          ? selectedValues.filter((v: string) => v !== value)
+                                          : [...selectedValues, value];
+                                        setValue(`productAttributes.${index}.values`, newValues, {
+                                          shouldValidate: true,
+                                        });
+                                      }}
+                                      className={cn(
+                                        "h-8 text-xs font-medium",
+                                        isSelected
+                                          ? "bg-primary text-primary-foreground font-semibold"
+                                          : "hover:bg-primary/10"
+                                      )}
+                                    >
+                                      {isSelected && <Check className="h-3 w-3 mr-1" />}
+                                      {value}
                                     </Button>
-                                </div>
-                            ))}
-                            <Button type="button" variant="outline" size="sm" onClick={() => appendSpec({ key: "", value: "" })}>Add Specification</Button>
+                                  );
+                                })}
+                              </div>
+                            </div>
+                          )}
                         </div>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
 
+              {/* Digital Product Delivery (Conditional) */}
+              {productType === "Digital" && (
+                <div className="p-4 rounded-xl border-2 border-dashed border-blue-400/50 bg-blue-50/20 dark:bg-blue-950/20 space-y-4">
+                  <div className="flex items-center gap-2">
+                    <Download className="h-5 w-5 text-blue-600" />
+                    <div>
+                      <h4 className="font-semibold text-sm">Digital Asset Delivery</h4>
+                      <p className="text-xs text-muted-foreground">
+                        Configure customer download URL and instructions delivered on successful payment.
+                      </p>
                     </div>
-                </ScrollArea>
-                <DialogFooter className="pt-6">
-                    <Button type="button" variant="ghost" onClick={onCancel}>Cancel</Button>
-                    <Button type="submit" disabled={isSaving}>
-                        {isSaving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                        Save Product
-                    </Button>
-                </DialogFooter>
-            </form>
-        </Form>
-    );
-};
+                  </div>
+
+                  <div className="space-y-3">
+                    <div className="space-y-1.5">
+                      <Label htmlFor="downloadUrl" className="text-xs font-semibold">
+                        Secure Download File URL
+                      </Label>
+                      <Input
+                        id="downloadUrl"
+                        {...register("downloadUrl")}
+                        placeholder="https://example.com/software-download-v1.zip"
+                        className="font-mono text-xs"
+                      />
+                      {errors.downloadUrl && (
+                        <p className="text-destructive text-xs">{errors.downloadUrl.message}</p>
+                      )}
+                    </div>
+
+                    <div className="space-y-1.5">
+                      <Label htmlFor="digitalProductNote" className="text-xs font-semibold">
+                        Delivery Note / License Instructions
+                      </Label>
+                      <Textarea
+                        id="digitalProductNote"
+                        rows={3}
+                        {...register("digitalProductNote")}
+                        placeholder="e.g. Your license activation key and link will expire in 48 hours."
+                        className="text-xs"
+                      />
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+        </ScrollArea>
+
+        {/* Sticky Action Footer */}
+        <div className="px-6 py-4 border-t bg-muted/40 flex items-center justify-between gap-4 shrink-0">
+          <div className="flex items-center gap-2 text-xs text-muted-foreground">
+            {product?.id ? (
+              <span className="flex items-center gap-1 font-mono">
+                <Tag className="h-3.5 w-3.5" /> ID: {product.id}
+              </span>
+            ) : (
+              <span>Ready to publish new product to catalog</span>
+            )}
+          </div>
+
+          <div className="flex items-center gap-3">
+            <Button type="button" variant="outline" onClick={onCancel} disabled={isSaving} className="h-10 px-4">
+              Cancel
+            </Button>
+            <Button
+              type="submit"
+              disabled={isSaving}
+              className="h-10 px-6 font-semibold shadow-xs bg-primary text-primary-foreground hover:bg-primary/90"
+            >
+              {isSaving ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Saving...
+                </>
+              ) : (
+                <>
+                  <Check className="mr-2 h-4 w-4" />
+                  {product?.id ? "Update Product" : "Publish Product"}
+                </>
+              )}
+            </Button>
+          </div>
+        </div>
+      </form>
+    </Form>
+  );
+}
