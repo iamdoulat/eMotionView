@@ -76,6 +76,7 @@ export default function BrandsPage() {
   const [searchQuery, setSearchQuery] = useState("");
   const [activeTab, setActiveTab] = useState("general");
   const [isPermalinkManuallyEdited, setIsPermalinkManuallyEdited] = useState(false);
+  const [isGeneratingAi, setIsGeneratingAi] = useState(false);
 
   // File upload states
   const [logoFile, setLogoFile] = useState<File | null>(null);
@@ -143,6 +144,57 @@ export default function BrandsPage() {
     };
     fetchBrands();
   }, [toast]);
+
+  const handleAiGenerateBrandStory = async () => {
+    const name = watch("name")?.trim();
+    if (!name) {
+      toast({
+        variant: "destructive",
+        title: "Brand Name Required",
+        description: "Please enter a Brand Name first so AI can write the story.",
+      });
+      return;
+    }
+
+    setIsGeneratingAi(true);
+    try {
+      const res = await fetch("/api/admin/ai/generate", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          type: "brand-description",
+          context: {
+            name,
+            website: watch("website"),
+          },
+        }),
+      });
+      const data = await res.json();
+      if (data.success && data.text) {
+        setValue("description", data.text, { shouldDirty: true });
+        if (!watch("metaTitle")) {
+          setValue("metaTitle", `${name} Official Products & Warranty | eMotionView`, { shouldDirty: true });
+        }
+        if (!watch("metaDescription")) {
+          setValue("metaDescription", `Shop genuine ${name} products in Bangladesh with official warranty and nationwide delivery from eMotionView.`, { shouldDirty: true });
+        }
+        toast({
+          title: "AI Brand Story Generated!",
+          description: `Generated brand overview via ${data.provider}.`,
+        });
+      } else {
+        toast({
+          variant: "destructive",
+          title: "Generation Failed",
+          description: data.message || "Could not generate brand story.",
+        });
+      }
+    } catch {
+      toast({ variant: "destructive", title: "Error", description: "Could not generate brand story." });
+    } finally {
+      setIsGeneratingAi(false);
+    }
+  };
 
   const handleOpenForm = (brand?: Brand) => {
     setActiveTab("general");
@@ -690,12 +742,29 @@ export default function BrandsPage() {
                   {/* Description / Story */}
                   <div className="space-y-2">
                     <div className="flex items-center justify-between">
-                      <Label htmlFor="brand-description" className="text-sm font-semibold">
+                      <Label htmlFor="brand-description" className="text-sm font-semibold flex items-center gap-1.5">
                         Brand Story / About
                       </Label>
-                      <span className="text-xs text-muted-foreground">
-                        {(currentDescription || "").length} characters
-                      </span>
+                      <div className="flex items-center gap-2">
+                        <span className="text-xs text-muted-foreground font-mono">
+                          {(currentDescription || "").length} characters
+                        </span>
+                        <Button
+                          type="button"
+                          size="sm"
+                          variant="outline"
+                          onClick={handleAiGenerateBrandStory}
+                          disabled={isGeneratingAi || isSubmitting}
+                          className="h-7 px-2.5 text-xs font-semibold text-purple-700 bg-purple-50/80 hover:bg-purple-100 dark:bg-purple-950/40 dark:text-purple-300 dark:border-purple-800 border-purple-200 shadow-2xs gap-1.5 cursor-pointer"
+                        >
+                          {isGeneratingAi ? (
+                            <Loader2 className="h-3 w-3 animate-spin text-purple-600" />
+                          ) : (
+                            <Sparkles className="h-3 w-3 text-purple-600 dark:text-purple-400" />
+                          )}
+                          <span>AI Generate</span>
+                        </Button>
+                      </div>
                     </div>
                     <Textarea
                       id="brand-description"
@@ -705,6 +774,23 @@ export default function BrandsPage() {
                       placeholder="Official brand background, quality certifications, or warranty commitments..."
                       className="text-xs sm:text-sm resize-none"
                     />
+                    <div className="flex justify-end pt-1">
+                      <Button
+                        type="button"
+                        size="sm"
+                        variant="outline"
+                        onClick={handleAiGenerateBrandStory}
+                        disabled={isGeneratingAi || isSubmitting}
+                        className="h-7 px-2.5 text-xs font-semibold text-purple-700 bg-purple-50 hover:bg-purple-100 dark:bg-purple-950/40 dark:text-purple-300 dark:border-purple-800 border-purple-300 shadow-2xs gap-1.5 cursor-pointer"
+                      >
+                        {isGeneratingAi ? (
+                          <Loader2 className="h-3 w-3 animate-spin text-purple-600" />
+                        ) : (
+                          <Sparkles className="h-3 w-3 text-purple-600 dark:text-purple-400" />
+                        )}
+                        <span>AI Generate Brand Story</span>
+                      </Button>
+                    </div>
                   </div>
                 </div>
               )}

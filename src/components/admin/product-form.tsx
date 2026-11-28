@@ -246,6 +246,10 @@ export function ProductForm({ product, onSave, onCancel, isSaving }: ProductForm
   const [fetchStep, setFetchStep] = useState<"idle" | "fetching" | "extracting" | "populating">("idle");
   const [fetchError, setFetchError] = useState<string | null>(null);
 
+  // AI Write states
+  const [isGeneratingAiDesc, setIsGeneratingAiDesc] = useState(false);
+  const [isGeneratingAiFeatures, setIsGeneratingAiFeatures] = useState(false);
+
   // Auto slug & SKU generators
   const [isPermalinkLocked, setIsPermalinkLocked] = useState(true);
   const [isSkuLocked, setIsSkuLocked] = useState(true);
@@ -368,6 +372,111 @@ export function ProductForm({ product, onSave, onCancel, isSaving }: ProductForm
     setImagePreviews((prev) => [...prev, newImageUrl.trim()]);
     setNewImageUrl("");
     setIsUrlAdding(false);
+  };
+
+  // AI Generate Product Description
+  const handleAiGenerateProductDescription = async () => {
+    const name = watch("name")?.trim();
+    if (!name) {
+      toast({
+        variant: "destructive",
+        title: "Product Name Required",
+        description: "Please enter a Product Name first so AI can write an accurate description.",
+      });
+      return;
+    }
+
+    setIsGeneratingAiDesc(true);
+    try {
+      const res = await fetch("/api/admin/ai/generate", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          type: "product-description",
+          context: {
+            name,
+            brand: watch("brand"),
+            category: selectedCategories[0],
+            supplier: watch("supplier"),
+            warranty: watch("warranty"),
+          },
+        }),
+      });
+      const data = await res.json();
+      if (data.success && data.text) {
+        setValue("description", data.text, { shouldValidate: true, shouldDirty: true });
+        toast({
+          title: "AI Description Written!",
+          description: `Generated comprehensive product overview via ${data.provider}.`,
+        });
+      } else {
+        toast({
+          variant: "destructive",
+          title: "Generation Failed",
+          description: data.message || "Could not generate description.",
+        });
+      }
+    } catch (err: any) {
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: err.message || "Failed to contact AI service.",
+      });
+    } finally {
+      setIsGeneratingAiDesc(false);
+    }
+  };
+
+  // AI Generate Key Features & Highlights
+  const handleAiGenerateFeatures = async () => {
+    const name = watch("name")?.trim();
+    if (!name) {
+      toast({
+        variant: "destructive",
+        title: "Product Name Required",
+        description: "Please enter a Product Name first so AI can extract standout features.",
+      });
+      return;
+    }
+
+    setIsGeneratingAiFeatures(true);
+    try {
+      const res = await fetch("/api/admin/ai/generate", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          type: "product-features",
+          context: {
+            name,
+            brand: watch("brand"),
+            category: selectedCategories[0],
+          },
+        }),
+      });
+      const data = await res.json();
+      if (data.success && data.text) {
+        const lines = data.text
+          .split("\n")
+          .map((l: string) => l.replace(/^[-•*]\s*/, "").trim())
+          .filter((l: string) => l.length > 0);
+
+        if (lines.length > 0) {
+          replaceFeatures(lines.map((l: string) => ({ value: l })));
+        }
+        toast({
+          title: "AI Features Generated!",
+          description: `Extracted ${lines.length} key highlight bullets via ${data.provider}.`,
+        });
+      }
+    } catch (err: any) {
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: err.message || "Failed to generate features.",
+      });
+    } finally {
+      setIsGeneratingAiFeatures(false);
+    }
   };
 
   // Fetch product from external URL with Custom AI
@@ -946,9 +1055,26 @@ export function ProductForm({ product, onSave, onCancel, isSaving }: ProductForm
 
               {/* Description */}
               <div className="space-y-2">
-                <Label htmlFor="description" className="text-sm font-semibold flex items-center gap-1.5">
-                  <FileText className="h-4 w-4 text-primary" /> Product Description <span className="text-destructive">*</span>
-                </Label>
+                <div className="flex items-center justify-between">
+                  <Label htmlFor="description" className="text-sm font-semibold flex items-center gap-1.5">
+                    <FileText className="h-4 w-4 text-primary" /> Product Description <span className="text-destructive">*</span>
+                  </Label>
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant="outline"
+                    onClick={handleAiGenerateProductDescription}
+                    disabled={isGeneratingAiDesc || isSaving}
+                    className="h-7 px-2.5 text-xs font-semibold text-purple-700 bg-purple-50/80 hover:bg-purple-100 dark:bg-purple-950/40 dark:text-purple-300 dark:border-purple-800 border-purple-200 shadow-2xs gap-1.5 cursor-pointer"
+                  >
+                    {isGeneratingAiDesc ? (
+                      <Loader2 className="h-3 w-3 animate-spin text-purple-600" />
+                    ) : (
+                      <Sparkles className="h-3 w-3 text-purple-600 dark:text-purple-400" />
+                    )}
+                    <span>{isGeneratingAiDesc ? "Writing..." : "AI Write Description"}</span>
+                  </Button>
+                </div>
                 <FormField
                   control={control}
                   name="description"
@@ -963,10 +1089,27 @@ export function ProductForm({ product, onSave, onCancel, isSaving }: ProductForm
                           {...field}
                         />
                       </FormControl>
-                      <FormDescription className="text-xs flex justify-between">
-                        <span>HTML tags and paragraphs are supported.</span>
-                        <span>{field.value?.length || 0} characters</span>
-                      </FormDescription>
+                      <div className="flex items-center justify-between pt-1">
+                        <span className="text-[11px] text-muted-foreground">HTML tags and formatting supported.</span>
+                        <div className="flex items-center gap-3">
+                          <span className="text-[11px] text-muted-foreground font-mono">{field.value?.length || 0} characters</span>
+                          <Button
+                            type="button"
+                            size="sm"
+                            variant="outline"
+                            onClick={handleAiGenerateProductDescription}
+                            disabled={isGeneratingAiDesc || isSaving}
+                            className="h-7 px-2.5 text-xs font-semibold text-purple-700 bg-purple-50 hover:bg-purple-100 dark:bg-purple-950/40 dark:text-purple-300 dark:border-purple-800 border-purple-300 shadow-2xs gap-1.5 cursor-pointer"
+                          >
+                            {isGeneratingAiDesc ? (
+                              <Loader2 className="h-3 w-3 animate-spin text-purple-600" />
+                            ) : (
+                              <Sparkles className="h-3 w-3 text-purple-600 dark:text-purple-400" />
+                            )}
+                            <span>{isGeneratingAiDesc ? "Generating..." : "AI Generate"}</span>
+                          </Button>
+                        </div>
+                      </div>
                       <FormMessage />
                     </FormItem>
                   )}
@@ -1302,15 +1445,32 @@ export function ProductForm({ product, onSave, onCancel, isSaving }: ProductForm
                       Short bullet points displayed next to the product price on product details page.
                     </p>
                   </div>
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="sm"
-                    onClick={() => appendFeature({ value: "" })}
-                    className="h-8 text-xs font-semibold"
-                  >
-                    <Plus className="h-3.5 w-3.5 mr-1" /> Add Feature
-                  </Button>
+                  <div className="flex items-center gap-2">
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={handleAiGenerateFeatures}
+                      disabled={isGeneratingAiFeatures || isSaving}
+                      className="h-8 px-2.5 text-xs font-semibold text-purple-700 bg-purple-50 hover:bg-purple-100 dark:bg-purple-950/40 dark:text-purple-300 dark:border-purple-800 border-purple-200 cursor-pointer shadow-2xs gap-1.5"
+                    >
+                      {isGeneratingAiFeatures ? (
+                        <Loader2 className="h-3.5 w-3.5 animate-spin text-purple-600" />
+                      ) : (
+                        <Sparkles className="h-3.5 w-3.5 text-purple-600 dark:text-purple-400" />
+                      )}
+                      <span>{isGeneratingAiFeatures ? "Extracting..." : "AI Generate Features"}</span>
+                    </Button>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={() => appendFeature({ value: "" })}
+                      className="h-8 text-xs font-semibold cursor-pointer"
+                    >
+                      <Plus className="h-3.5 w-3.5 mr-1" /> Add Feature
+                    </Button>
+                  </div>
                 </div>
 
                 <div className="space-y-2 pt-2">

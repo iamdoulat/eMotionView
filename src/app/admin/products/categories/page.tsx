@@ -78,6 +78,7 @@ export default function CategoriesPage() {
   const [searchQuery, setSearchQuery] = useState("");
   const [activeTab, setActiveTab] = useState("general");
   const [isPermalinkManuallyEdited, setIsPermalinkManuallyEdited] = useState(false);
+  const [isGeneratingAi, setIsGeneratingAi] = useState(false);
 
   // File upload states
   const [iconFile, setIconFile] = useState<File | null>(null);
@@ -148,6 +149,102 @@ export default function CategoriesPage() {
     };
     fetchCategories();
   }, [toast]);
+
+  const handleAiGenerateDescription = async () => {
+    const name = watch("name")?.trim();
+    if (!name) {
+      toast({
+        variant: "destructive",
+        title: "Category Name Required",
+        description: "Please enter a Category Name first so AI can generate an accurate description.",
+      });
+      return;
+    }
+
+    setIsGeneratingAi(true);
+    try {
+      const parentCat = categories.find((c) => c.id === watch("parentId"))?.name;
+      const res = await fetch("/api/admin/ai/generate", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          type: "category-description",
+          context: {
+            name,
+            parentCategory: parentCat,
+          },
+        }),
+      });
+      const data = await res.json();
+      if (data.success && data.text) {
+        setValue("description", data.text, { shouldValidate: true, shouldDirty: true });
+
+        // Auto-populate metaTitle and metaDescription if empty
+        if (!watch("metaTitle")) {
+          setValue("metaTitle", `${name} | Authentic Gadgets & Accessories | eMotionView`, { shouldDirty: true });
+        }
+        if (!watch("metaDescription")) {
+          setValue("metaDescription", `Buy authentic ${name} at the best price in Bangladesh. Official warranty, verified products, and fast home delivery from eMotionView.`, { shouldDirty: true });
+        }
+
+        toast({
+          title: "AI Description Generated!",
+          description: `Generated high-converting category description via ${data.provider}.`,
+        });
+      } else {
+        toast({
+          variant: "destructive",
+          title: "Generation Failed",
+          description: data.message || "Could not generate category description.",
+        });
+      }
+    } catch (err: any) {
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: err.message || "Failed to contact AI service.",
+      });
+    } finally {
+      setIsGeneratingAi(false);
+    }
+  };
+
+  const handleAiGenerateSeo = async () => {
+    const name = watch("name")?.trim();
+    if (!name) {
+      toast({
+        variant: "destructive",
+        title: "Category Name Required",
+        description: "Please enter a Category Name first so AI can generate SEO tags.",
+      });
+      return;
+    }
+    setIsGeneratingAi(true);
+    try {
+      const res = await fetch("/api/admin/ai/generate", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          type: "seo-meta",
+          context: { name },
+        }),
+      });
+      const data = await res.json();
+      if (data.success && data.text) {
+        setValue("metaTitle", `${name} | Authentic Gadgets & Accessories | eMotionView`, { shouldDirty: true });
+        setValue("metaDescription", data.text, { shouldDirty: true });
+        setValue("metaKeywords", `${name.toLowerCase()}, ${name.toLowerCase()} price in bd, buy ${name.toLowerCase()}, motion view`, { shouldDirty: true });
+        toast({
+          title: "SEO Metadata Generated",
+          description: "Meta title, description, and keywords have been updated.",
+        });
+      }
+    } catch {
+      toast({ variant: "destructive", title: "Error", description: "Could not generate SEO metadata." });
+    } finally {
+      setIsGeneratingAi(false);
+    }
+  };
 
   const handleOpenForm = (category?: Category) => {
     setActiveTab("general");
@@ -330,29 +427,31 @@ export default function CategoriesPage() {
     <div className="space-y-6">
       <Card className="border border-border/80 shadow-xs">
         <CardHeader className="pb-4">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-            <div>
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 w-full">
+            <div className="space-y-1">
               <div className="flex items-center gap-2">
                 <div className="h-8 w-8 rounded-lg bg-primary/10 text-primary flex items-center justify-center font-bold">
                   <Layers className="h-4 w-4" />
                 </div>
-                <CardTitle className="text-xl">Product Categories</CardTitle>
+                <CardTitle className="text-xl font-bold tracking-tight">Product Categories</CardTitle>
               </div>
-              <CardDescription className="mt-1 text-xs sm:text-sm">
+              <CardDescription className="text-xs sm:text-sm">
                 Organize your catalog with hierarchical categories, custom icons, banners, and SEO metadata.
               </CardDescription>
             </div>
 
-            <div className="flex items-center gap-2 flex-wrap">
-              <div className="flex items-center gap-1.5 px-3 py-1 rounded-lg bg-muted text-xs font-medium text-muted-foreground">
-                <span>Total:</span>
-                <strong className="text-foreground">{categories.length}</strong>
+            <div className="flex flex-col sm:items-end gap-2 shrink-0 ml-auto self-start sm:self-center">
+              <div className="flex items-center gap-2">
+                <div className="flex items-center gap-1.5 px-3 py-1 rounded-lg bg-muted text-xs font-medium text-muted-foreground border">
+                  <span>Total:</span>
+                  <strong className="text-foreground">{categories.length}</strong>
+                </div>
+                <div className="flex items-center gap-1.5 px-3 py-1 rounded-lg bg-amber-500/10 text-amber-600 dark:text-amber-400 text-xs font-medium border border-amber-500/20">
+                  <span>Featured:</span>
+                  <strong>{featuredCount}</strong>
+                </div>
               </div>
-              <div className="flex items-center gap-1.5 px-3 py-1 rounded-lg bg-amber-500/10 text-amber-600 dark:text-amber-400 text-xs font-medium">
-                <span>Featured:</span>
-                <strong>{featuredCount}</strong>
-              </div>
-              <Button onClick={() => handleOpenForm()} className="shadow-xs font-semibold">
+              <Button onClick={() => handleOpenForm()} className="shadow-xs font-semibold cursor-pointer">
                 <PlusCircle className="mr-2 h-4 w-4" />
                 Add Category
               </Button>
@@ -716,12 +815,29 @@ export default function CategoriesPage() {
                   {/* Description */}
                   <div className="space-y-2">
                     <div className="flex items-center justify-between">
-                      <Label htmlFor="category-description" className="text-sm font-semibold">
+                      <Label htmlFor="category-description" className="text-sm font-semibold flex items-center gap-1.5">
                         Category Description <span className="text-destructive">*</span>
                       </Label>
-                      <span className="text-xs text-muted-foreground">
-                        {(currentDescription || "").length} characters
-                      </span>
+                      <div className="flex items-center gap-2">
+                        <span className="text-xs text-muted-foreground font-mono">
+                          {(currentDescription || "").length} characters
+                        </span>
+                        <Button
+                          type="button"
+                          size="sm"
+                          variant="outline"
+                          onClick={handleAiGenerateDescription}
+                          disabled={isGeneratingAi || isSubmitting}
+                          className="h-7 px-2.5 text-xs font-semibold text-purple-700 bg-purple-50/80 hover:bg-purple-100 dark:bg-purple-950/40 dark:text-purple-300 dark:border-purple-800 border-purple-200 shadow-2xs gap-1.5 cursor-pointer"
+                        >
+                          {isGeneratingAi ? (
+                            <Loader2 className="h-3 w-3 animate-spin text-purple-600" />
+                          ) : (
+                            <Sparkles className="h-3 w-3 text-purple-600 dark:text-purple-400" />
+                          )}
+                          <span>AI Generate</span>
+                        </Button>
+                      </div>
                     </div>
                     <Textarea
                       id="category-description"
@@ -731,9 +847,28 @@ export default function CategoriesPage() {
                       placeholder="Brief overview of the category displayed in search results and category headers..."
                       className="text-xs sm:text-sm resize-none"
                     />
-                    {errors.description && (
-                      <p className="text-destructive text-xs font-medium">{errors.description.message}</p>
-                    )}
+                    <div className="flex items-center justify-between gap-2 pt-1">
+                      <div>
+                        {errors.description && (
+                          <p className="text-destructive text-xs font-medium">{errors.description.message}</p>
+                        )}
+                      </div>
+                      <Button
+                        type="button"
+                        size="sm"
+                        variant="outline"
+                        onClick={handleAiGenerateDescription}
+                        disabled={isGeneratingAi || isSubmitting}
+                        className="h-8 px-3 text-xs font-semibold text-purple-700 bg-purple-50 hover:bg-purple-100 dark:bg-purple-950/40 dark:text-purple-300 dark:border-purple-800 border-purple-300 shadow-2xs gap-1.5 cursor-pointer ml-auto transition-all active:scale-95"
+                      >
+                        {isGeneratingAi ? (
+                          <Loader2 className="h-3.5 w-3.5 animate-spin text-purple-600" />
+                        ) : (
+                          <Sparkles className="h-3.5 w-3.5 text-purple-600 dark:text-purple-400" />
+                        )}
+                        <span>{isGeneratingAi ? "Generating Description..." : "AI Generate Description"}</span>
+                      </Button>
+                    </div>
                   </div>
                 </div>
               )}
@@ -963,13 +1098,30 @@ export default function CategoriesPage() {
 
                   {/* SEO Metadata */}
                   <div className="p-4 rounded-xl border bg-card space-y-4">
-                    <div>
-                      <Label className="text-sm font-semibold flex items-center gap-1.5">
-                        <Globe className="h-4 w-4 text-primary" /> Search Engine Optimization (SEO)
-                      </Label>
-                      <p className="text-xs text-muted-foreground mt-0.5">
-                        Customize meta titles and descriptions for Google and social media indexing.
-                      </p>
+                    <div className="flex items-center justify-between gap-2">
+                      <div>
+                        <Label className="text-sm font-semibold flex items-center gap-1.5">
+                          <Globe className="h-4 w-4 text-primary" /> Search Engine Optimization (SEO)
+                        </Label>
+                        <p className="text-xs text-muted-foreground mt-0.5">
+                          Customize meta titles and descriptions for Google and social media indexing.
+                        </p>
+                      </div>
+                      <Button
+                        type="button"
+                        size="sm"
+                        variant="outline"
+                        onClick={handleAiGenerateSeo}
+                        disabled={isGeneratingAi || isSubmitting}
+                        className="h-7 px-2.5 text-xs font-semibold text-purple-700 bg-purple-50/80 hover:bg-purple-100 dark:bg-purple-950/40 dark:text-purple-300 dark:border-purple-800 border-purple-200 shadow-2xs gap-1 cursor-pointer shrink-0"
+                      >
+                        {isGeneratingAi ? (
+                          <Loader2 className="h-3 w-3 animate-spin text-purple-600" />
+                        ) : (
+                          <Sparkles className="h-3 w-3 text-purple-600 dark:text-purple-400" />
+                        )}
+                        <span>AI Generate SEO</span>
+                      </Button>
                     </div>
 
                     <div className="space-y-3">
