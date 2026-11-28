@@ -57,6 +57,7 @@ const generalSettingsSchema = z.object({
   address: z.string().min(1, 'Address is required'),
   phone: z.string().min(1, 'Phone number is required'),
   email: z.string().email('A valid email is required'),
+  contactNotificationEmail: z.string().email('Must be a valid email').or(z.literal('')).optional().default(''),
 
   // SEO & Browser Titles
   browserTitle: z.string().min(1, 'Browser Title is required'),
@@ -104,6 +105,7 @@ const defaultSettings: GeneralSettingsFormData = {
   address: '10/25 Eastern Plaza, Hatirpool, Dhaka-1205',
   phone: '09677460460',
   email: 'motionview22@gmail.com.bd',
+  contactNotificationEmail: 'motionview22@gmail.com.bd',
 
   browserTitle: 'eMotionView | Smart Gadgets & Lifestyle Store',
   titleSeparator: '|',
@@ -545,6 +547,22 @@ export default function GeneralSettingsPage() {
                           <FormControl>
                             <Input placeholder="09677460460" {...field} />
                           </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    <FormField
+                      control={form.control}
+                      name="contactNotificationEmail"
+                      render={({ field }) => (
+                        <FormItem className="md:col-span-2">
+                          <FormLabel>Designated Contact Form Notification Email</FormLabel>
+                          <FormControl>
+                            <Input type="email" placeholder="admin@emotionview.com.bd (Leave empty to use Customer Support Email)" {...field} />
+                          </FormControl>
+                          <FormDescription className="text-xs">
+                            Inquiries submitted via the customer-facing /contact page are automatically forwarded to this address.
+                          </FormDescription>
                           <FormMessage />
                         </FormItem>
                       )}
