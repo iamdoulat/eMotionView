@@ -46,7 +46,8 @@ import {
   Bot,
   Zap,
   CheckCircle2,
-  Cpu
+  Cpu,
+  RefreshCw
 } from "lucide-react";
 import { doc, getDoc, setDoc } from '@/lib/db';
 import { uploadFile, getFileUrl } from '@/lib/r2';
@@ -172,6 +173,14 @@ export default function GeneralSettingsPage() {
     latency?: number;
     model?: string;
   } | null>(null);
+  const [lastTestedAt, setLastTestedAt] = useState<Date | null>(null);
+
+  const form = useForm<GeneralSettingsFormData>({
+    resolver: zodResolver(generalSettingsSchema),
+    defaultValues: defaultSettings,
+  });
+
+  const { reset, handleSubmit, watch, setValue, getValues, formState: { isSubmitting, isDirty } } = form;
 
   const aiPresets = [
     {
@@ -206,53 +215,64 @@ export default function GeneralSettingsPage() {
     },
   ];
 
-  const handleTestAi = async () => {
+  const handleTestAi = async (silent = false) => {
+    const providerName = getValues('aiProviderName') || 'OpenAI';
+    const baseUrl = getValues('aiBaseUrl') || 'https://api.openai.com/v1';
+    const apiKey = getValues('aiApiKey') || '';
+    const defaultModel = getValues('aiDefaultModel') || 'gpt-4o-mini';
+    const isAiEnabled = getValues('aiEnabled');
+
+    if (!isAiEnabled) {
+      setAiTestResult({ success: false, message: 'Custom AI is disabled in settings.' });
+      setLastTestedAt(new Date());
+      return;
+    }
+
     setIsTestingAi(true);
-    setAiTestResult(null);
     try {
       const res = await fetch('/api/admin/ai/test', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          providerName: watch('aiProviderName'),
-          baseUrl: watch('aiBaseUrl'),
-          apiKey: watch('aiApiKey'),
-          defaultModel: watch('aiDefaultModel'),
+          providerName,
+          baseUrl,
+          apiKey,
+          defaultModel,
         }),
       });
       const data = await res.json();
       setAiTestResult(data);
-      if (data.success) {
-        toast({
-          title: 'AI Connection Successful',
-          description: `Connected to ${watch('aiProviderName')} (${watch('aiDefaultModel')}) in ${data.latency}ms.`,
-        });
-      } else {
-        toast({
-          variant: 'destructive',
-          title: 'AI Connection Failed',
-          description: data.message || 'Unable to connect to AI provider.',
-        });
+      setLastTestedAt(new Date());
+
+      if (!silent) {
+        if (data.success) {
+          toast({
+            title: 'AI Connection Successful',
+            description: `Connected to ${providerName} (${defaultModel}) in ${data.latency}ms.`,
+          });
+        } else {
+          toast({
+            variant: 'destructive',
+            title: 'AI Connection Failed',
+            description: data.message || 'Unable to connect to AI provider.',
+          });
+        }
       }
     } catch (err: any) {
       const msg = err.message || 'Network error while testing connection';
       setAiTestResult({ success: false, message: msg });
-      toast({
-        variant: 'destructive',
-        title: 'Connection Error',
-        description: msg,
-      });
+      setLastTestedAt(new Date());
+      if (!silent) {
+        toast({
+          variant: 'destructive',
+          title: 'Connection Error',
+          description: msg,
+        });
+      }
     } finally {
       setIsTestingAi(false);
     }
   };
-
-  const form = useForm<GeneralSettingsFormData>({
-    resolver: zodResolver(generalSettingsSchema),
-    defaultValues: defaultSettings,
-  });
-
-  const { reset, handleSubmit, watch, setValue, formState: { isSubmitting, isDirty } } = form;
 
   const currentLogo = watch('logo');
   const currentFavicon = watch('favicon');
@@ -289,6 +309,21 @@ export default function GeneralSettingsPage() {
     };
     fetchSettings();
   }, [reset, toast]);
+
+  // Periodic AI connectivity test every 10 minutes (and on initial mount)
+  useEffect(() => {
+    if (isLoading) return;
+
+    // Initial check right after settings finish loading
+    handleTestAi(true);
+
+    // Re-check connectivity every 10 minutes (600,000 ms)
+    const intervalId = setInterval(() => {
+      handleTestAi(true);
+    }, 10 * 60 * 1000);
+
+    return () => clearInterval(intervalId);
+  }, [isLoading]);
 
   const handleFileUpload = async (
     file: File,
@@ -413,11 +448,27 @@ export default function GeneralSettingsPage() {
             >
               <KeyRound className="h-4 w-4 mr-2 shrink-0" /> Social Login
             </TabsTrigger>
+            {/* Custom AI Tab: Green if Connected, Red otherwise */}
             <TabsTrigger
               value="ai"
-              className="py-2.5 px-3 sm:px-4 rounded-lg font-medium transition-all duration-200 border-2 border-blue-600 bg-white text-foreground hover:bg-blue-50/80 hover:text-blue-700 dark:bg-card dark:border-blue-500 dark:text-foreground dark:hover:bg-blue-950/40 data-[state=active]:!bg-blue-600 data-[state=active]:!text-white data-[state=active]:!border-blue-600 data-[state=active]:shadow-md cursor-pointer text-xs sm:text-sm"
+              className={cn(
+                "py-2.5 px-3 sm:px-4 rounded-lg font-medium transition-all duration-200 border-2 cursor-pointer text-xs sm:text-sm flex items-center justify-center gap-1.5",
+                aiTestResult?.success
+                  ? "border-emerald-600 bg-emerald-50/70 text-emerald-800 hover:bg-emerald-100 hover:text-emerald-900 dark:bg-emerald-950/40 dark:border-emerald-500 dark:text-emerald-300 dark:hover:bg-emerald-900/50 data-[state=active]:!bg-emerald-600 data-[state=active]:!text-white data-[state=active]:!border-emerald-600 shadow-xs"
+                  : "border-red-600 bg-red-50/70 text-red-800 hover:bg-red-100 hover:text-red-900 dark:bg-red-950/40 dark:border-red-500 dark:text-red-300 dark:hover:bg-red-900/50 data-[state=active]:!bg-red-600 data-[state=active]:!text-white data-[state=active]:!border-red-600 shadow-xs"
+              )}
             >
-              <Sparkles className="h-4 w-4 mr-2 shrink-0" /> Custom AI
+              <Sparkles className="h-4 w-4 shrink-0" />
+              <span>Custom AI</span>
+              <span
+                className={cn(
+                  "h-2 w-2 rounded-full shrink-0 ml-0.5",
+                  aiTestResult?.success
+                    ? "bg-emerald-500 ring-2 ring-emerald-300 dark:ring-emerald-700 animate-pulse"
+                    : "bg-red-500 ring-2 ring-red-300 dark:ring-red-700"
+                )}
+                title={aiTestResult?.success ? "Connected (Auto-tested every 10 min)" : "Disconnected / Offline"}
+              />
             </TabsTrigger>
           </TabsList>
 
@@ -1502,29 +1553,53 @@ export default function GeneralSettingsPage() {
                         Test Provider Connection
                       </h4>
                       <p className="text-xs text-muted-foreground">
-                        Verify your Base URL, API Key, and Model before using them across the store.
+                        Connectivity is automatically tested every 10 minutes in the background.
                       </p>
                     </div>
-                    <Button
-                      type="button"
-                      variant="outline"
-                      size="sm"
-                      onClick={handleTestAi}
-                      disabled={isTestingAi}
-                      className="gap-2 shrink-0 border-blue-600/40 text-blue-600 hover:bg-blue-50/70 dark:border-blue-500/40 dark:text-blue-400 dark:hover:bg-blue-950/40"
-                    >
-                      {isTestingAi ? (
-                        <>
-                          <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                          Testing Connection...
-                        </>
-                      ) : (
-                        <>
-                          <Zap className="h-3.5 w-3.5" />
-                          Test AI Connection
-                        </>
-                      )}
-                    </Button>
+                    <div className="flex flex-col items-end gap-1">
+                      <Button
+                        type="button"
+                        variant={aiTestResult?.success ? "default" : "outline"}
+                        size="sm"
+                        onClick={() => handleTestAi(false)}
+                        disabled={isTestingAi}
+                        className={cn(
+                          "gap-2 shrink-0 transition-all font-semibold cursor-pointer",
+                          aiTestResult?.success
+                            ? "bg-emerald-600 hover:bg-emerald-700 text-white border-emerald-600 shadow-xs"
+                            : "border-red-500/60 text-red-600 hover:bg-red-50/80 dark:border-red-500/40 dark:text-red-400 dark:hover:bg-red-950/40"
+                        )}
+                      >
+                        {isTestingAi ? (
+                          <>
+                            <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                            <span>Testing Connection...</span>
+                          </>
+                        ) : aiTestResult?.success ? (
+                          <>
+                            <CheckCircle2 className="h-4 w-4 text-white" />
+                            <span>Connected</span>
+                            {aiTestResult.latency !== undefined && (
+                              <span className="text-[10px] px-1.5 py-0.2 rounded-full bg-white/20 text-white font-normal">
+                                {aiTestResult.latency}ms
+                              </span>
+                            )}
+                          </>
+                        ) : (
+                          <>
+                            <Zap className="h-3.5 w-3.5" />
+                            <span>Test AI Connection</span>
+                          </>
+                        )}
+                      </Button>
+                      <div className="flex items-center gap-1.5 text-[11px] text-muted-foreground">
+                        <RefreshCw className="h-3 w-3 text-muted-foreground shrink-0" />
+                        <span>Auto-tested every 10m</span>
+                        {lastTestedAt && (
+                          <span>• {lastTestedAt.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' })}</span>
+                        )}
+                      </div>
+                    </div>
                   </div>
 
                   {aiTestResult && (
