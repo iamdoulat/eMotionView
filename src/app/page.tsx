@@ -94,9 +94,11 @@ export default async function HomePage() {
       {/* Hero Section */}
       <section className="bg-background">
         <div className="container mx-auto px-4 py-3">
-            <div className="grid grid-cols-1 lg:grid-cols-4 gap-6 items-start">
-                <div className="hidden lg:block lg:col-span-1">
-                    <CategoryMenu />
+            <div className="grid grid-cols-1 lg:grid-cols-4 gap-6 items-stretch">
+                <div className="hidden lg:block lg:col-span-1 relative min-h-0">
+                    <div className="absolute inset-0">
+                        <CategoryMenu className="h-full" />
+                    </div>
                 </div>
                 <div className="lg:col-span-3 flex flex-col">
                   <nav className="hidden md:flex items-center gap-2.5 -mt-[1px] mb-[15px] flex-wrap">
