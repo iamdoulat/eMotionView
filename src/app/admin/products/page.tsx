@@ -2,7 +2,7 @@
 
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import type { Product } from "@/lib/placeholder-data";
 import { collection, getDocs, doc, setDoc, deleteDoc, addDoc, docToJSON } from "@/lib/db";
 import { db } from '@/lib/db';
@@ -50,27 +50,37 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { MoreHorizontal, PlusCircle, Edit, Trash2, View, Loader2 } from "lucide-react";
+import { MoreHorizontal, PlusCircle, Edit, Trash2, View, Loader2, Package } from "lucide-react";
 import { ProductForm } from "@/components/admin/product-form";
 import { useToast } from "@/hooks/use-toast";
+import { useCurrency } from "@/hooks/use-currency";
 import { cn } from "@/lib/utils";
 
 export default function AdminProductsPage() {
   const [products, setProducts] = useState<Product[]>([]);
+  const [brandsCount, setBrandsCount] = useState<number>(0);
   const [isLoading, setIsLoading] = useState(true);
   const [productToEdit, setProductToEdit] = useState<Product | null>(null);
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [productToDelete, setProductToDelete] = useState<Product | null>(null);
   const [isSaving, setIsSaving] = useState(false);
   const { toast } = useToast();
+  const { formatPrice } = useCurrency();
 
   useEffect(() => {
     const fetchProducts = async () => {
         setIsLoading(true);
         try {
-            const productsSnapshot = await getDocs(collection(db, 'products'));
+            const [productsSnapshot, brandsSnapshot] = await Promise.all([
+              getDocs(collection(db, 'products')),
+              getDocs(collection(db, 'brands')).catch(() => ({ docs: [] } as any)),
+            ]);
             const productList = productsSnapshot.docs.map(docToJSON) as Product[];
             setProducts(productList);
+
+            const dbBrands = brandsSnapshot?.docs?.length || 0;
+            const prodBrands = new Set(productList.map((p) => p.brand).filter(Boolean)).size;
+            setBrandsCount(Math.max(dbBrands, prodBrands));
         } catch (error) {
             console.error(error);
         }
@@ -78,6 +88,26 @@ export default function AdminProductsPage() {
     }
     fetchProducts();
   }, []);
+
+  const stats = useMemo(() => {
+    const totalProducts = products.length;
+    const totalQuantity = products.reduce((sum, p) => sum + (Number(p.stock) || 0), 0);
+    const prodBrands = new Set(products.map((p) => p.brand).filter(Boolean)).size;
+    const totalBrands = Math.max(brandsCount, prodBrands);
+
+    const inStock = products.filter((p) => !p.manageStock || (Number(p.stock) || 0) > 5).length;
+    const lowStock = products.filter((p) => p.manageStock && (Number(p.stock) || 0) > 0 && (Number(p.stock) || 0) <= 5).length;
+    const outOfStock = products.filter((p) => p.manageStock && (Number(p.stock) || 0) <= 0).length;
+
+    return {
+      totalProducts,
+      totalQuantity,
+      totalBrands,
+      inStock,
+      lowStock,
+      outOfStock,
+    };
+  }, [products, brandsCount]);
 
   const handleOpenForm = (product?: Product) => {
     setProductToEdit(product || null);
@@ -133,16 +163,75 @@ export default function AdminProductsPage() {
   return (
     <div>
       <Card>
-        <CardHeader>
-          <div className="flex items-center justify-between">
-              <div>
-                  <CardTitle>Products</CardTitle>
-                  <CardDescription>Manage your products here. Add, edit, or delete products.</CardDescription>
+        <CardHeader className="pb-4">
+          <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+            <div className="space-y-1">
+              <div className="flex items-center gap-2">
+                <div className="h-8 w-8 rounded-lg bg-primary/10 text-primary flex items-center justify-center font-bold">
+                  <Package className="h-4 w-4" />
+                </div>
+                <CardTitle className="text-xl font-bold tracking-tight">Products</CardTitle>
               </div>
-              <Button onClick={() => handleOpenForm()}>
-                  <PlusCircle className="mr-2 h-4 w-4" />
-                  Add Product
+              <CardDescription className="text-xs sm:text-sm">
+                Manage your products here. Add, edit, or delete products.
+              </CardDescription>
+            </div>
+
+            <div className="flex items-center gap-3.5 flex-wrap sm:flex-nowrap shrink-0 ml-auto">
+              {/* 2x3 Stat Badges Grid (Matching User Diagram) */}
+              <div className="grid grid-cols-3 gap-2 text-xs">
+                {/* Total Products */}
+                <div className="flex items-center justify-between gap-2 px-3 py-1.5 rounded-lg border bg-secondary/40 min-w-[110px] shadow-2xs">
+                  <span className="text-[11px] text-muted-foreground font-medium">Products</span>
+                  <strong className="text-foreground font-bold font-mono text-xs">{stats.totalProducts}</strong>
+                </div>
+
+                {/* Total Quantity */}
+                <div className="flex items-center justify-between gap-2 px-3 py-1.5 rounded-lg border bg-secondary/40 min-w-[110px] shadow-2xs">
+                  <span className="text-[11px] text-muted-foreground font-medium">Total Qty</span>
+                  <strong className="text-foreground font-bold font-mono text-xs">{stats.totalQuantity}</strong>
+                </div>
+
+                {/* Total Brands */}
+                <div className="flex items-center justify-between gap-2 px-3 py-1.5 rounded-lg border bg-secondary/40 min-w-[110px] shadow-2xs">
+                  <span className="text-[11px] text-muted-foreground font-medium">Brands</span>
+                  <strong className="text-foreground font-bold font-mono text-xs">{stats.totalBrands}</strong>
+                </div>
+
+                {/* In Stock */}
+                <div className="flex items-center justify-between gap-2 px-3 py-1.5 rounded-lg border border-emerald-500/30 bg-emerald-50/60 dark:bg-emerald-950/30 text-emerald-800 dark:text-emerald-300 min-w-[110px] shadow-2xs">
+                  <span className="text-[11px] font-medium flex items-center gap-1.5">
+                    <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 inline-block" />
+                    In Stock
+                  </span>
+                  <strong className="font-bold font-mono text-xs text-emerald-700 dark:text-emerald-300">{stats.inStock}</strong>
+                </div>
+
+                {/* Low Stock */}
+                <div className="flex items-center justify-between gap-2 px-3 py-1.5 rounded-lg border border-amber-500/30 bg-amber-50/60 dark:bg-amber-950/30 text-amber-800 dark:text-amber-300 min-w-[110px] shadow-2xs">
+                  <span className="text-[11px] font-medium flex items-center gap-1.5">
+                    <span className="h-1.5 w-1.5 rounded-full bg-amber-500 inline-block" />
+                    Low Stock
+                  </span>
+                  <strong className="font-bold font-mono text-xs text-amber-700 dark:text-amber-300">{stats.lowStock}</strong>
+                </div>
+
+                {/* Out of Stock */}
+                <div className="flex items-center justify-between gap-2 px-3 py-1.5 rounded-lg border border-rose-500/30 bg-rose-50/60 dark:bg-rose-950/30 text-rose-800 dark:text-rose-300 min-w-[110px] shadow-2xs">
+                  <span className="text-[11px] font-medium flex items-center gap-1.5">
+                    <span className="h-1.5 w-1.5 rounded-full bg-rose-500 inline-block" />
+                    Out of Stock
+                  </span>
+                  <strong className="font-bold font-mono text-xs text-rose-700 dark:text-rose-300">{stats.outOfStock}</strong>
+                </div>
+              </div>
+
+              {/* Add Product Button */}
+              <Button onClick={() => handleOpenForm()} className="h-10 px-4 font-semibold shadow-xs shrink-0 cursor-pointer">
+                <PlusCircle className="mr-2 h-4 w-4" />
+                Add Product
               </Button>
+            </div>
           </div>
         </CardHeader>
         <CardContent>
@@ -212,7 +301,7 @@ export default function AdminProductsPage() {
                         })}
                       </div>
                     </TableCell>
-                    <TableCell className="hidden md:table-cell">${product.price.toFixed(2)}</TableCell>
+                    <TableCell className="hidden md:table-cell font-medium">{formatPrice(product.price)}</TableCell>
                     <TableCell className="hidden md:table-cell">{isStockManaged ? product.stock : "N/A"}</TableCell>
                     <TableCell>
                       <DropdownMenu>
