@@ -118,15 +118,48 @@ function normalizeMongoDoc(doc: any): any {
   return doc;
 }
 
+export function normalizeMongoFilter<T = Document>(filter: MongoFilter<T>): MongoFilter<T> {
+  if (!filter || typeof filter !== 'object') return filter;
+  const normalized: any = { ...filter };
+
+  if (typeof normalized._id === 'string') {
+    if (ObjectId.isValid(normalized._id)) {
+      normalized._id = { $in: [new ObjectId(normalized._id), normalized._id] };
+    }
+  } else if (normalized._id && typeof normalized._id === 'object' && !Array.isArray(normalized._id)) {
+    if (typeof normalized._id.$eq === 'string' && ObjectId.isValid(normalized._id.$eq)) {
+      normalized._id = { $in: [new ObjectId(normalized._id.$eq), normalized._id.$eq] };
+    } else if (Array.isArray(normalized._id.$in)) {
+      const expanded: any[] = [];
+      for (const val of normalized._id.$in) {
+        if (typeof val === 'string' && ObjectId.isValid(val)) {
+          expanded.push(new ObjectId(val), val);
+        } else {
+          expanded.push(val);
+        }
+      }
+      normalized._id = { ...normalized._id, $in: expanded };
+    }
+  }
+
+  if (Array.isArray(normalized.$or)) {
+    normalized.$or = normalized.$or.map((sub: any) => normalizeMongoFilter(sub));
+  }
+
+  return normalized;
+}
+
 export async function findOne(collectionName: string, filter: MongoFilter<Document> = {}) {
   const db = await getMongoDb();
-  const doc = await db.collection(collectionName).findOne(filter);
+  const normalized = normalizeMongoFilter(filter);
+  const doc = await db.collection(collectionName).findOne(normalized);
   return normalizeMongoDoc(doc);
 }
 
 export async function findMany(collectionName: string, filter: MongoFilter<Document> = {}, sort?: MongoSort, limitCount?: number) {
   const db = await getMongoDb();
-  let cursor = db.collection(collectionName).find(filter);
+  const normalized = normalizeMongoFilter(filter);
+  let cursor = db.collection(collectionName).find(normalized);
   if (sort) cursor = cursor.sort(sort);
   if (limitCount !== undefined) cursor = cursor.limit(limitCount);
   const docs = await cursor.toArray();
@@ -141,6 +174,7 @@ export async function insertOne(collectionName: string, data: any) {
 
 export async function updateOne(collectionName: string, filter: MongoFilter<Document>, data: any, upsert = false) {
   const db = await getMongoDb();
+  const normalizedFilter = normalizeMongoFilter(filter);
   
   const $set: Record<string, any> = {};
   const $inc: Record<string, any> = {};
@@ -153,6 +187,7 @@ export async function updateOne(collectionName: string, filter: MongoFilter<Docu
   let hasPull = false;
 
   for (const [key, value] of Object.entries(data)) {
+    if (key === '_id' || key === 'id') continue;
     if (value && typeof value === 'object' && !Array.isArray(value)) {
       if ('_increment' in value) {
         $inc[key] = (value as any)._increment;
@@ -184,19 +219,21 @@ export async function updateOne(collectionName: string, filter: MongoFilter<Docu
       else return { modifiedCount: 0 };
   }
 
-  const result = await db.collection(collectionName).updateOne(filter, updateDoc, { upsert });
+  const result = await db.collection(collectionName).updateOne(normalizedFilter, updateDoc, { upsert });
   return result;
 }
 
 export async function replaceOne(collectionName: string, filter: MongoFilter<Document>, data: any) {
   const db = await getMongoDb();
-  const result = await db.collection(collectionName).replaceOne(filter, data, { upsert: true });
+  const normalizedFilter = normalizeMongoFilter(filter);
+  const result = await db.collection(collectionName).replaceOne(normalizedFilter, data, { upsert: true });
   return result;
 }
 
 export async function deleteOne(collectionName: string, filter: MongoFilter<Document>) {
   const db = await getMongoDb();
-  const result = await db.collection(collectionName).deleteOne(filter);
+  const normalizedFilter = normalizeMongoFilter(filter);
+  const result = await db.collection(collectionName).deleteOne(normalizedFilter);
   return result;
 }
 
@@ -207,7 +244,8 @@ export async function aggregate(collectionName: string, pipeline: Document[]) {
 
 export async function countDocuments(collectionName: string, filter: MongoFilter<Document> = {}) {
   const db = await getMongoDb();
-  return db.collection(collectionName).countDocuments(filter);
+  const normalizedFilter = normalizeMongoFilter(filter);
+  return db.collection(collectionName).countDocuments(normalizedFilter);
 }
 
 export function toPlainObject(doc: Document | null): any {

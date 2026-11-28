@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { useForm, type SubmitHandler } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -129,26 +129,37 @@ export default function CategoriesPage() {
   }, [categoryName, isPermalinkManuallyEdited, setValue]);
 
   // Fetch categories from DB
-  useEffect(() => {
-    const fetchCategories = async () => {
-      setIsLoading(true);
-      try {
-        const categoriesSnapshot = await getDocs(collection(db, "categories"));
-        const categoryList = categoriesSnapshot.docs.map((doc) => docToJSON(doc) as Category);
-        setCategories(categoryList);
-      } catch (error) {
-        console.error("Failed to fetch categories:", error);
-        toast({
-          variant: "destructive",
-          title: "Error Fetching Categories",
-          description: "Could not load category data. Please try again.",
-        });
-      } finally {
-        setIsLoading(false);
+  const fetchCategories = useCallback(async () => {
+    setIsLoading(true);
+    try {
+      const categoriesSnapshot = await getDocs(collection(db, "categories"));
+      const categoryList = categoriesSnapshot.docs.map((doc) => docToJSON(doc) as Category);
+      // Defensive deduplication by ID or permalink to prevent React duplicate key errors
+      const seen = new Set<string>();
+      const uniqueList: Category[] = [];
+      for (const cat of categoryList) {
+        const idKey = cat.id || (cat as any)._id || cat.permalink;
+        if (!seen.has(idKey)) {
+          seen.add(idKey);
+          uniqueList.push(cat);
+        }
       }
-    };
-    fetchCategories();
+      setCategories(uniqueList);
+    } catch (error) {
+      console.error("Failed to fetch categories:", error);
+      toast({
+        variant: "destructive",
+        title: "Error Fetching Categories",
+        description: "Could not load category data. Please try again.",
+      });
+    } finally {
+      setIsLoading(false);
+    }
   }, [toast]);
+
+  useEffect(() => {
+    fetchCategories();
+  }, [fetchCategories]);
 
   const handleAiGenerateDescription = async () => {
     const name = watch("name")?.trim();
@@ -367,18 +378,15 @@ export default function CategoriesPage() {
 
       if (categoryToEdit) {
         // Update existing category
-        const docRef = doc(db, "categories", categoryToEdit.id);
+        const targetId = categoryToEdit.id || (categoryToEdit as any)._id;
+        const docRef = doc(db, "categories", targetId);
         await setDoc(docRef, categoryPayload, { merge: true });
-        setCategories(
-          categories.map((c) =>
-            c.id === categoryToEdit.id ? { ...categoryPayload, id: categoryToEdit.id } : c
-          )
-        );
+        await fetchCategories();
         toast({ title: "Success", description: "Category updated successfully." });
       } else {
         // Create new category
-        const docRef = await addDoc(collection(db, "categories"), categoryPayload);
-        setCategories([...categories, { ...categoryPayload, id: docRef.id }]);
+        await addDoc(collection(db, "categories"), categoryPayload);
+        await fetchCategories();
         toast({ title: "Success", description: "New category created successfully." });
       }
       handleCloseForm();
@@ -398,8 +406,9 @@ export default function CategoriesPage() {
   const handleDeleteCategory = async () => {
     if (!categoryToDelete) return;
     try {
-      await deleteDoc(doc(db, "categories", categoryToDelete.id));
-      setCategories(categories.filter((c) => c.id !== categoryToDelete.id));
+      const targetId = categoryToDelete.id || (categoryToDelete as any)._id;
+      await deleteDoc(doc(db, "categories", targetId));
+      await fetchCategories();
       toast({ title: "Success", description: "Category deleted successfully." });
     } catch (error) {
       console.error("Error deleting category:", error);
@@ -498,8 +507,10 @@ export default function CategoriesPage() {
                     </TableCell>
                   </TableRow>
                 ) : filteredCategories.length > 0 ? (
-                  filteredCategories.map((category) => (
-                    <TableRow key={category.id} className="hover:bg-muted/30 transition-colors">
+                  filteredCategories.map((category, catIdx) => {
+                    const rowKey = category.id || (category as any)._id || `category-${catIdx}`;
+                    return (
+                      <TableRow key={rowKey} className="hover:bg-muted/30 transition-colors">
                       <TableCell>
                         <div className="flex items-center gap-3">
                           <div className="relative h-10 w-10 rounded-full border bg-secondary/50 flex items-center justify-center overflow-hidden shrink-0 shadow-xs">
@@ -601,7 +612,8 @@ export default function CategoriesPage() {
                         </DropdownMenu>
                       </TableCell>
                     </TableRow>
-                  ))
+                  );
+                })
                 ) : (
                   <TableRow>
                     <TableCell colSpan={6} className="h-28 text-center text-muted-foreground text-xs">

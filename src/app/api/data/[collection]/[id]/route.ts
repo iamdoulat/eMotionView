@@ -150,6 +150,11 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ coll
       }
     }
 
+    if (data && typeof data === 'object') {
+      delete data._id;
+      delete data.id;
+    }
+
     await updateOne(collection, { _id: id } as any, data, true);
     return NextResponse.json({ success: true });
   } catch (e: any) {
