@@ -169,12 +169,20 @@ export default function AdminProductsPage() {
                         <Loader2 className="h-6 w-6 animate-spin mx-auto" />
                     </TableCell>
                 </TableRow>
-              ) : products.length > 0 ? products.map((product) => {
+              ) : products.length > 0 ? products.map((product, index) => {
                 const isStockManaged = product.manageStock ?? true;
                 const isInStock = !isStockManaged || product.stock > 0;
+                const safeKey =
+                  product.id && product.id !== '[object Object]'
+                    ? product.id
+                    : (product as any)._id && String((product as any)._id) !== '[object Object]'
+                    ? String((product as any)._id)
+                    : product.permalink
+                    ? `${product.permalink}-${index}`
+                    : `product-${index}`;
                 
                 return (
-                  <TableRow key={product.id}>
+                  <TableRow key={safeKey}>
                     <TableCell className="hidden sm:table-cell">
                       <Image
                         alt={product.name}
@@ -194,7 +202,14 @@ export default function AdminProductsPage() {
                     </TableCell>
                     <TableCell>
                       <div className="flex flex-wrap gap-1">
-                        {product.categories?.map(cat => <Badge key={cat} variant="secondary" className="whitespace-nowrap">{cat}</Badge>)}
+                        {product.categories?.map((cat, catIdx) => {
+                          const catName = typeof cat === 'string' ? cat : (cat as any)?.name || String(cat);
+                          return (
+                            <Badge key={`${safeKey}-cat-${catIdx}-${catName}`} variant="secondary" className="whitespace-nowrap">
+                              {catName}
+                            </Badge>
+                          );
+                        })}
                       </div>
                     </TableCell>
                     <TableCell className="hidden md:table-cell">${product.price.toFixed(2)}</TableCell>

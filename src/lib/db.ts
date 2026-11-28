@@ -202,13 +202,31 @@ function arrayRemove(...values: any[]): { _arrayRemove: any[] } {
   return { _arrayRemove: values };
 }
 
+function extractDocId(d: any): string {
+  if (!d) return '';
+  if (typeof d.id === 'string' && d.id && d.id !== '[object Object]') return d.id;
+  if (typeof d._id === 'string' && d._id && d._id !== '[object Object]') return d._id;
+  if (d._id && typeof d._id === 'object') {
+    if (d._id.buffer && typeof d._id.buffer === 'object') {
+      const bytes = Object.values(d._id.buffer) as number[];
+      return bytes.map((b) => Number(b).toString(16).padStart(2, '0')).join('');
+    }
+    if (typeof d._id.toString === 'function') {
+      const str = d._id.toString();
+      if (str && str !== '[object Object]') return str;
+    }
+  }
+  return '';
+}
+
 function toDocumentSnapshot(d: any): DocumentSnapshot {
-  const id = d._id?.toString() || d.id || '';
+  const id = extractDocId(d) || generateId();
   return {
     ...d,
     id,
+    _id: id,
     exists: () => true,
-    data: () => d,
+    data: () => ({ ...d, id, _id: id }),
   };
 }
 
@@ -446,7 +464,8 @@ function docToJSON(doc: any): any {
       if (key === '_id' || key === 'id') continue;
       result[key] = rewriteUrl(data[key]);
   }
-  return { ...result, id: doc.id || data._id?.toString() || data.id };
+  const resolvedId = extractDocId(doc) || extractDocId(data) || generateId();
+  return { ...result, id: resolvedId, _id: resolvedId };
 }
 
 async function getDocByField(collectionName: string, field: string, value: any): Promise<any> {

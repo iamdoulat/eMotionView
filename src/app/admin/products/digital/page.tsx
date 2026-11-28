@@ -169,8 +169,18 @@ export default function DigitalProductsPage() {
                     <Loader2 className="h-6 w-6 animate-spin mx-auto" />
                   </TableCell>
                 </TableRow>
-              ) : digitalProducts.map((product) => (
-                <TableRow key={product.id}>
+              ) : digitalProducts.map((product, index) => {
+                const safeKey =
+                  product.id && product.id !== '[object Object]'
+                    ? product.id
+                    : (product as any)._id && String((product as any)._id) !== '[object Object]'
+                    ? String((product as any)._id)
+                    : product.permalink
+                    ? `${product.permalink}-${index}`
+                    : `digital-product-${index}`;
+
+                return (
+                  <TableRow key={safeKey}>
                   <TableCell className="hidden sm:table-cell">
                     <Image
                       alt={product.name}
@@ -206,7 +216,8 @@ export default function DigitalProductsPage() {
                     </DropdownMenu>
                   </TableCell>
                 </TableRow>
-              ))}
+              );
+            })}
             </TableBody>
           </Table>
         </CardContent>

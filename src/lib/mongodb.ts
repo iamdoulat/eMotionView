@@ -101,9 +101,27 @@ export async function getMongoDb(): Promise<Db> {
   return cachedDb;
 }
 
+function normalizeMongoDoc(doc: any): any {
+  if (!doc || typeof doc !== 'object') return doc;
+  if (doc._id) {
+    const idStr =
+      typeof doc._id.toString === 'function' && doc._id.toString() !== '[object Object]'
+        ? doc._id.toString()
+        : doc._id.buffer
+        ? Object.values(doc._id.buffer)
+            .map((b: any) => Number(b).toString(16).padStart(2, '0'))
+            .join('')
+        : String(doc._id);
+    doc._id = idStr;
+    if (!doc.id) doc.id = idStr;
+  }
+  return doc;
+}
+
 export async function findOne(collectionName: string, filter: MongoFilter<Document> = {}) {
   const db = await getMongoDb();
-  return db.collection(collectionName).findOne(filter);
+  const doc = await db.collection(collectionName).findOne(filter);
+  return normalizeMongoDoc(doc);
 }
 
 export async function findMany(collectionName: string, filter: MongoFilter<Document> = {}, sort?: MongoSort, limitCount?: number) {
@@ -111,7 +129,8 @@ export async function findMany(collectionName: string, filter: MongoFilter<Docum
   let cursor = db.collection(collectionName).find(filter);
   if (sort) cursor = cursor.sort(sort);
   if (limitCount !== undefined) cursor = cursor.limit(limitCount);
-  return cursor.toArray();
+  const docs = await cursor.toArray();
+  return docs.map(normalizeMongoDoc);
 }
 
 export async function insertOne(collectionName: string, data: any) {

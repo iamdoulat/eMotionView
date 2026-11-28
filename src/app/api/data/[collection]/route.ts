@@ -56,6 +56,18 @@ function rewriteR2Value(item: any): any {
 
 function sanitizePublicDoc(collection: string, doc: any, isAdmin: boolean) {
   if (!doc) return doc;
+  if (doc._id) {
+    const idStr =
+      typeof doc._id.toString === 'function' && doc._id.toString() !== '[object Object]'
+        ? doc._id.toString()
+        : doc._id.buffer
+        ? Object.values(doc._id.buffer)
+            .map((b: any) => Number(b).toString(16).padStart(2, '0'))
+            .join('')
+        : String(doc._id);
+    doc._id = idStr;
+    if (!doc.id) doc.id = idStr;
+  }
   const rewritten = rewriteR2Value(doc);
   if (isAdmin) return rewritten;
 
